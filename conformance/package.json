@@ -1,5 +1,5 @@
 {
-  "name": "@a2ui/conformance",
+  "name": "@a2ui-ts/conformance",
   "version": "1.1.0",
   "private": true,
   "description": "A2UI v1.0 协议一致性测试套件",
@@ -9,7 +9,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@a2ui/sdk": "workspace:*"
+    "@a2ui-ts/sdk": "workspace:*"
   },
   "devDependencies": {
     "ajv": "^8.17.0",

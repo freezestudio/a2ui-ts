@@ -46,7 +46,7 @@ importers:
 
   conformance:
     dependencies:
-      '@a2ui/sdk':
+      '@a2ui-ts/sdk':
         specifier: workspace:*
         version: link:../packages/sdk
     devDependencies:
@@ -74,10 +74,10 @@ importers:
 
   eval:
     dependencies:
-      '@a2ui/agent':
+      '@a2ui-ts/agent':
         specifier: workspace:*
         version: link:../packages/agent
-      '@a2ui/sdk':
+      '@a2ui-ts/sdk':
         specifier: workspace:*
         version: link:../packages/sdk
       ajv:
@@ -114,7 +114,7 @@ importers:
 
   packages/agent:
     dependencies:
-      '@a2ui/sdk':
+      '@a2ui-ts/sdk':
         specifier: workspace:*
         version: link:../sdk
       '@ai-sdk/deepseek':
@@ -148,7 +148,7 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@a2ui/shared':
+      '@a2ui-ts/shared':
         specifier: workspace:*
         version: link:../shared
       pino:
@@ -203,7 +203,7 @@ importers:
 
   packages/web-core:
     dependencies:
-      '@a2ui/shared':
+      '@a2ui-ts/shared':
         specifier: workspace:*
         version: link:../shared
       '@preact/signals-core':
@@ -234,10 +234,10 @@ importers:
 
   renderers/angular:
     dependencies:
-      '@a2ui/shared':
+      '@a2ui-ts/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@a2ui/web-core':
+      '@a2ui-ts/web-core':
         specifier: workspace:*
         version: link:../../packages/web-core
       '@preact/signals-core':
@@ -301,10 +301,10 @@ importers:
 
   samples/client/angular:
     dependencies:
-      '@a2ui/angular':
+      '@a2ui-ts/angular':
         specifier: workspace:*
         version: link:../../../renderers/angular
-      '@a2ui/web-core':
+      '@a2ui-ts/web-core':
         specifier: workspace:*
         version: link:../../../packages/web-core
       '@angular/common':

@@ -11,7 +11,7 @@
 
 import { z } from 'zod';
 import { Subscription } from '../core/events.js';
-import { FORBIDDEN_KEYS } from '@a2ui/shared';
+import { FORBIDDEN_KEYS } from '@a2ui-ts/shared';
 import { parsePointer, serializePointer, normalizePath } from './path-utils.js';
 
 // ============================================================================

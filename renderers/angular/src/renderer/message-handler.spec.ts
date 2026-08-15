@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vite-plus/test';
-import { SurfaceManager as CoreSurfaceManager } from '@a2ui/web-core';
+import { SurfaceManager as CoreSurfaceManager } from '@a2ui-ts/web-core';
 import { processMessage, isValidMessage, clearAllPending } from './message-handler.js';
 
 describe('message-handler', () => {

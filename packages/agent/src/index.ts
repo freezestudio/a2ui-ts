@@ -1,5 +1,5 @@
 /**
- * @a2ui/agent — A2UI LLM 客户端
+ * @a2ui-ts/agent — A2UI LLM 客户端
  *
  * 提供 LLM 生成器抽象（Generator）与 DeepSeek/Ollama 具体实现，
  * 供 a2ui-eval-test 评测框架调用。

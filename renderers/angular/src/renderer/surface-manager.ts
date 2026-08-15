@@ -1,9 +1,9 @@
 import { signal, type Signal } from '@angular/core';
 import { effect as preactEffect } from '@preact/signals-core';
-import { SurfaceManager as CoreSurfaceManager, findRootComponent as coreFindRootComponent } from '@a2ui/web-core';
-import type { Surface, A2UIDescriptor } from '@a2ui/web-core';
+import { SurfaceManager as CoreSurfaceManager, findRootComponent as coreFindRootComponent } from '@a2ui-ts/web-core';
+import type { Surface, A2UIDescriptor } from '@a2ui-ts/web-core';
 
-export type { Surface, A2UIDescriptor } from '@a2ui/web-core';
+export type { Surface, A2UIDescriptor } from '@a2ui-ts/web-core';
 export const findRootComponent = coreFindRootComponent;
 
 export class SurfaceManager {

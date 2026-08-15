@@ -4,7 +4,7 @@ import {
   isUpdateComponentsMessage,
   isUpdateDataModelMessage,
   isDeleteSurfaceMessage,
-} from '@a2ui/sdk';
+} from '@a2ui-ts/sdk';
 import { loadTestData } from '../../src/harness/loader';
 import { SchemaValidator } from '../../src/harness/schema-validator';
 import { PACKAGE_ROOT } from '../../src/harness/package-root';

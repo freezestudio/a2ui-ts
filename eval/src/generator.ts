@@ -3,15 +3,15 @@
  * 负责调用 LLM 生成 A2UI 消息
  *
  * 架构：
- * - Generator 抽象基类 — 定义生成流程（已下沉到 @a2ui/agent，此处 re-export）
+ * - Generator 抽象基类 — 定义生成流程（已下沉到 @a2ui-ts/agent，此处 re-export）
  * - MockGenerator — 返回预定义 JSON，用于测试
  * - 实际的 LLM 生成器需继承 Generator 实现 callLLM 方法
  */
 
-import { Generator } from '@a2ui/agent';
-import type { GeneratedResult, ModelConfig } from '@a2ui/agent';
+import { Generator } from '@a2ui-ts/agent';
+import type { GeneratedResult, ModelConfig } from '@a2ui-ts/agent';
 
-export { Generator } from '@a2ui/agent';
+export { Generator } from '@a2ui-ts/agent';
 
 // ============================================================================
 // MockGenerator — 预定义 JSON，用于测试

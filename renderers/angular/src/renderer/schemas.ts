@@ -39,5 +39,12 @@ export {
   validateComponentByType,
   COMPONENT_SCHEMA_BY_TYPE,
   registerComponentSchemas,
-} from '@a2ui/web-core';
-export type { A2uiMessage, DataBinding, FunctionCall, ComponentId, TextComponent, AnyComponent } from '@a2ui/web-core';
+} from '@a2ui-ts/web-core';
+export type {
+  A2uiMessage,
+  DataBinding,
+  FunctionCall,
+  ComponentId,
+  TextComponent,
+  AnyComponent,
+} from '@a2ui-ts/web-core';

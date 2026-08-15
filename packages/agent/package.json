@@ -1,5 +1,5 @@
 {
-  "name": "@a2ui/agent",
+  "name": "@a2ui-ts/agent",
   "version": "1.1.0",
   "description": "A2UI LLM client — DeepSeek Generator for eval framework",
   "license": "Apache-2.0",
@@ -22,7 +22,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@a2ui/sdk": "workspace:*",
+    "@a2ui-ts/sdk": "workspace:*",
     "@ai-sdk/deepseek": "^3.0.22",
     "ai": "^7.0.52",
     "ai-sdk-ollama": "^4.1.0"

@@ -3,7 +3,7 @@ import { SchemaValidator } from '../../src/harness/schema-validator';
 import { loadTestData } from '../../src/harness/loader';
 import { PACKAGE_ROOT } from '../../src/harness/package-root';
 import { join } from 'node:path';
-import { createFullCatalog } from '@a2ui/sdk';
+import { createFullCatalog } from '@a2ui-ts/sdk';
 
 /** 对齐上游 basic catalog 的函数定义结构（allOf 形式，引用 FunctionCommon） */
 function functionDef(overrides: Record<string, unknown>): Record<string, unknown> {

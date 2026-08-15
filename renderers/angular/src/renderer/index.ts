@@ -34,7 +34,7 @@ import {
   isKnownFunction,
   type FunctionCall,
 } from './function-call.js';
-import { A2uiClientActionMessageSchema, A2uiClientErrorMessageSchema } from '@a2ui/web-core';
+import { A2uiClientActionMessageSchema, A2uiClientErrorMessageSchema } from '@a2ui-ts/web-core';
 import { createRendererLogger } from './logger.js';
 const logger = createRendererLogger('renderer');
 

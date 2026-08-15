@@ -1,5 +1,5 @@
 /**
- * @a2ui/angular — A2UI v1.0 Angular 渲染器公共入口
+ * @a2ui-ts/angular — A2UI v1.0 Angular 渲染器公共入口
  *
  * 自 geo-scout（apps/web/src/app/a2ui 非 geo 部分）迁移：
  * 渲染适配层（renderer/）+ basic catalog 组件 + 目录注册/分发基础设施。

@@ -13,7 +13,7 @@
 import { A2uiMessageSchema, type A2uiMessage } from '../schema/agent-to-renderer.js';
 import type { A2uiValidator, ValidationError } from '../schema/validator.js';
 import { A2uiValidator as ValidatorImpl } from '../schema/validator.js';
-import { fixPartialJsonFragment } from '@a2ui/shared';
+import { fixPartialJsonFragment } from '@a2ui-ts/shared';
 import { z } from 'zod';
 
 // ============================================================================

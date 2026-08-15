@@ -1,4 +1,4 @@
-import { normalizeSmartQuotes as _nSQ, removeTrailingCommas as _rTC } from '@a2ui/shared';
+import { normalizeSmartQuotes as _nSQ, removeTrailingCommas as _rTC } from '@a2ui-ts/shared';
 
 export const normalizeSmartQuotes = _nSQ;
 export const removeTrailingCommas = _rTC;

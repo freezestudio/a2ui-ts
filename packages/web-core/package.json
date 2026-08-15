@@ -1,5 +1,5 @@
 {
-  "name": "@a2ui/web-core",
+  "name": "@a2ui-ts/web-core",
   "version": "1.1.0",
   "description": "A2UI 框架无关渲染核心 - 消息处理、状态管理、数据绑定、函数调用",
   "files": [
@@ -23,7 +23,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@a2ui/shared": "workspace:*",
+    "@a2ui-ts/shared": "workspace:*",
     "@preact/signals-core": "^1.14.2"
   },
   "devDependencies": {

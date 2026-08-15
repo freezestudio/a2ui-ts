@@ -7,7 +7,7 @@ import {
   isCallRendererFunctionMessage,
   isAgentFunctionResponseMessage,
   isCreateSurfaceMessage,
-} from '@a2ui/sdk';
+} from '@a2ui-ts/sdk';
 
 function runOfficialSpecTests(filterSchema?: string) {
   const validator = new SchemaValidator();

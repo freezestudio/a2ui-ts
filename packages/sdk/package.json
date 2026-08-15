@@ -1,5 +1,5 @@
 {
-  "name": "@a2ui/sdk",
+  "name": "@a2ui-ts/sdk",
   "version": "1.1.0",
   "description": "A2UI v1.0 TypeScript SDK - Schema 管理、流式解析、校验",
   "files": [
@@ -24,7 +24,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@a2ui/shared": "workspace:*",
+    "@a2ui-ts/shared": "workspace:*",
     "pino": "^10.3.1",
     "pino-pretty": "^13.0.0",
     "zod": "catalog:zod4"

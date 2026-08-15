@@ -1,6 +1,6 @@
 import type { DataBinding, FunctionCall } from './data-binding.js';
 import { isDataBinding, isFunctionCall, resolvePath } from './data-binding.js';
-import { evaluateExpression } from '@a2ui/shared';
+import { evaluateExpression } from '@a2ui-ts/shared';
 import { A2uiSecurityError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('function-call');
