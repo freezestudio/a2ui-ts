@@ -10,7 +10,7 @@
 - **Phase 1（仓库拆分）✅ 已完成**：
   - ✅ 6 个核心包迁入并改名 @freezestudio/a2ui-*；@freezestudio/a2ui-angular 渲染器库（ng-packagr）
   - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
-  - ✅ 已发布到本地 verdaccio registry（@freezestudio/a2ui-shared|web-core|sdk|agent@1.1.0、@freezestudio/a2ui-angular@0.1.1）；
+  - ✅ 已发布公网 npm（@freezestudio/a2ui-shared|web-core|sdk|agent@1.1.1、@freezestudio/a2ui-angular@0.1.2）；
     geo-scout 已切换为版本依赖消费
 - **Phase 2（独立演进治理）起步 ✅**：
   - ✅ GitHub Actions CI（.github/workflows/ci.yml：build/test/check）

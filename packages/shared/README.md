@@ -10,7 +10,7 @@ npm install @freezestudio/a2ui-shared
 
 ## 模块
 
-- `expression-parser` — A2UI 表达式解析（与 `@a2ui/web-core` 的 DataBinding/FunctionCall 语义配套）
+- `expression-parser` — A2UI 表达式解析（与 `@freezestudio/a2ui-web-core` 的 DataBinding/FunctionCall 语义配套）
 - `path-utils` — JSON Pointer 解析/序列化/路径操作
 - `type-utils` — `toStr`/`toFloat` 等类型转换
 - `json-healer` — LLM 输出 JSON 修复（智能引号/尾逗号/残缺片段）
