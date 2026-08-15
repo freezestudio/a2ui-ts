@@ -1,0 +1,44 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r build
+
+      - name: Run tests
+        run: pnpm -r test
+
+      # 发布全部非 private 包（@freezestudio/a2ui-*）
+      # 版本取自各包 package.json；触发方式：打 tag vX.Y.Z 前先提交对应版本号
+      - name: Publish to npm
+        run: pnpm -r publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_OTP: ${{ secrets.NPM_OTP }}

@@ -1,6 +1,6 @@
 {
   "name": "@freezestudio/a2ui-sdk",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A2UI v1.0 TypeScript SDK - Schema 管理、流式解析、校验",
   "files": [
     "dist",

@@ -1,6 +1,6 @@
 {
   "name": "@freezestudio/a2ui-shared",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A2UI 共享工具包 - ExpressionParser、路径工具、类型转换",
   "files": [
     "dist"
