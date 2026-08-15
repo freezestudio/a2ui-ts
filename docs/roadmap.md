@@ -16,7 +16,9 @@
   - ✅ GitHub Actions CI（.github/workflows/ci.yml：build/test/check）
   - ✅ @freezestudio/a2ui-angular 单元测试接线（96 测试恢复，全仓 1234 测试全绿）
   - ✅ samples/client/angular 演示壳（ng serve/build 验证 @freezestudio/a2ui-angular 可消费）
-  - ⏳ 后续：切公网 npm 发布、协议版本化/SDD 治理、spec 同步流程迁入
+  - ✅ 公网 npm 发布（@freezestudio/a2ui-*，README + publish CI）
+  - ✅ 协议版本化策略（docs/protocol-versioning.md）、AGENTS.md 治理文档
+  - ⏳ 后续：SDD 蓝图（可选）、geo-scout 侧跟随协议演进
 
 | 任务                          | 提交                                                        | 说明                                                                         |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
