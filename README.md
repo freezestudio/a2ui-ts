@@ -54,7 +54,7 @@ v1.0 协议一致性核查套件（561 用例）：`harness` + `tests/`（schema
 
 ## TODO：与官方对齐
 
-> 对齐基准：官方仓库 `~/github/ai-tools/a2ui` 的 `renderers/` 与 `samples/` 布局（官方多语言实现范本）。当前仅对齐了 Angular 渲染器与最小演示壳，以下为待办清单。
+> 对齐基准：官方仓库 `https://github.com/a2ui-project/a2ui` 的 `renderers/` 与 `samples/` 布局（官方多语言实现范本）。当前仅对齐了 Angular 渲染器与最小演示壳，以下为待办清单。
 
 ### renderers/（框架适配器）
 
