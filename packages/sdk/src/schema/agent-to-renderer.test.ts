@@ -327,6 +327,72 @@ describe('agent-to-renderer', () => {
   });
 
   // ==========================================================================
+  // 组件信封校验（v1.0 #2166 ComponentCommon + #2155 Surface 保留名）
+  // ==========================================================================
+  describe('组件信封校验（ComponentPayloadSchema / ComponentsListSchema）', () => {
+    it('应拒绝组件名为 Surface（createSurface）', () => {
+      const msg = makeCreateSurface({
+        createSurface: { surfaceId: 's1', components: [{ id: 'root', component: 'Surface' }] },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg), /Surface/);
+    });
+
+    it('应拒绝组件名为 Surface（updateComponents）', () => {
+      const msg = makeUpdateComponents({
+        updateComponents: { surfaceId: 's1', components: [{ id: 'root', component: 'Surface' }] },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg), /Surface/);
+    });
+
+    it('应拒绝组件缺少 id（ComponentCommon 必填）', () => {
+      const msg = makeUpdateComponents({
+        updateComponents: { surfaceId: 's1', components: [{ component: 'Text', text: 'hi' }] },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg));
+    });
+
+    it('应拒绝组件 metadata 包含未知属性', () => {
+      const msg = makeUpdateComponents({
+        updateComponents: {
+          surfaceId: 's1',
+          components: [{ id: 'root', component: 'Text', metadata: { unknownProp: true } }],
+        },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg));
+    });
+
+    it('应拒绝组件 metadata.extensions 非法键名（UAX #31）', () => {
+      const msg = makeUpdateComponents({
+        updateComponents: {
+          surfaceId: 's1',
+          components: [{ id: 'root', component: 'Text', metadata: { extensions: { '123bad': true } } }],
+        },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg));
+    });
+
+    it('应拒绝 createSurface.metadata 包含未知属性', () => {
+      const msg = makeCreateSurface({
+        createSurface: { surfaceId: 's1', metadata: { unknownProp: true } },
+      });
+      assert.throws(() => A2uiMessageSchema.parse(msg));
+    });
+
+    it('应接受合法组件信封（id + component + metadata.extensions）', () => {
+      const msg = makeUpdateComponents({
+        updateComponents: {
+          surfaceId: 's1',
+          components: [
+            { id: 'root', component: 'Text', text: 'hi', metadata: { extensions: { custom_theme: { dark: true } } } },
+          ],
+        },
+      });
+      const result = A2uiMessageSchema.parse(msg);
+      assert.ok('updateComponents' in result);
+    });
+  });
+
+  // ==========================================================================
   // 类型判断函数
   // ==========================================================================
   describe('isCreateSurfaceMessage', () => {

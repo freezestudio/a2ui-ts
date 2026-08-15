@@ -383,11 +383,29 @@ describe('Parser (parse_full) 一致性', () => {
 
 describe('组合约束校验（Surface 容器 + allowedParents/allowedChildren）', () => {
   function catalogWithConstraints(
-    constraints: Record<string, { allowedParents?: string[]; allowedChildren?: string[] }>,
+    constraints: Record<
+      string,
+      {
+        allowedParents?: string[];
+        allowedChildren?: string[];
+        /** 组件 schema 额外属性（组合校验通过 validateComponentsWithCatalog 走属性校验） */
+        properties?: Record<string, unknown>;
+      }
+    >,
   ): Catalog {
     const components: Array<{ name: string; schema: Record<string, unknown> }> = [];
     for (const [name, constraint] of Object.entries(constraints)) {
-      components.push({ name, schema: { ...constraint, properties: { component: { const: name } } } });
+      components.push({
+        name,
+        schema: {
+          ...constraint,
+          properties: {
+            component: { const: name },
+            children: { type: 'array', items: { type: 'string' } },
+            ...constraint.properties,
+          },
+        },
+      });
     }
     return new Catalog({
       catalogId: 'https://example.com/composition-catalog',

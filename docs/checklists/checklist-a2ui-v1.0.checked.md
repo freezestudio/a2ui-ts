@@ -2,9 +2,13 @@
 
 > ⚠ **本文件为核查副本，原文件 `docs/checklist-a2ui-v1.0.md` 视为只读规范副本，请勿修改原文件。**
 >
-> **核查快照**：2026-08-15，基于代码审查 + 测试证据（SDK 513 / conformance 561 / server 149 / data-source 106 / web 235 全部通过）。
+> **核查快照**：2026-08-15，基于代码审查 + 测试证据（SDK 538 / conformance 568 / server 149 / data-source 106 / web 235 全部通过）。
 > **协议同步**：2026-08-15 同步上游 a2ui HEAD（44a420b6），覆盖 #2210 双向函数调用、
 > #2220 ValidationResult、#2228 action.userMessage、#2229 DynamicValue object 等破坏性变更。
+> **对齐修复（2026-08-15）**：消息信封拒绝 `component: "Surface"` / 组件缺 `id`；metadata 严格化
+> （`additionalProperties: false`）；FunctionCall 严格化 + `@index` 系统函数规则；错误码枚举补
+> `UNALLOWED_PARENT`/`UNALLOWED_CHILD`；`resolveComponentCatalog` + `validateComponentsWithCatalogs`
+> 实现 mixable catalog 解析顺序（#2079）；conformance 信封级硬断言 + accessibility 套件 + a2a inline 用例。
 >
 > - ✅ = 已实现且验证通过
 > - ❌ = 未实现（附说明）
@@ -293,17 +297,17 @@ interface ErrorMessage {
 
 ### 核查项
 
-| #   | 核查项                                                                                                                                   | ✓                                                                                                                                       |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.1 | 客户端发出的 `action` 是否通过 DataPart（`mimeType: "application/a2ui+json"`）包装后发送？                                               | ✅                                                                                                                                      |
-| 7.2 | renderer 需要 agent 端函数执行结果时，是否改用 `callAgentFunction` 消息（v1.0 #2210，替代旧 `action.wantResponse` 机制）？               | ✅                                                                                                                                      |
-| 7.3 | Server 端的 `agentFunctionResponse` 是否符合 `value` 和 `error` 互斥的规则（FunctionResponse）？                                         | ✅                                                                                                                                      |
-| 7.4 | 客户端 `rendererFunctionResponse` 消息中 `value` 或 `error` 是否必填其一？                                                               | ✅                                                                                                                                      |
-| 7.5 | `rendererOnly` 函数被 agent 端调用时，是否返回 `error { code: "INVALID_FUNCTION_CALL" }`？                                               | ✅                                                                                                                                      |
-| 7.6 | 函数调用查找流程是否正确：①查询 catalog 中的 `callableFrom` → ②未注册或 `rendererOnly` 则拒绝？                                          | ✅                                                                                                                                      |
-| 7.7 | `sendDataModel: true` 时，每次 action 是否在 transport metadata 中包含当前 surface 的 data model？                                       | ✅                                                                                                                                      |
-| 7.8 | `a2uiClientDataModel` 是否只定向投递给创建该 surface 的 server（防止数据泄漏）？                                                         | ✅                                                                                                                                      |
-| 7.9 | 渲染端校验失败时，error `code` 是否使用规范枚举（`VALIDATION_FAILED` / `UNALLOWED_PARENT` / `UNALLOWED_CHILD`，后两者上游 #2155 新增）？ | **⚠ 部分：服务端校验使用 VALIDATION_FAILED；UNALLOWED_PARENT/UNALLOWED_CHILD 仅由 SDK 组合约束校验产生，渲染端 message-handler 未使用** |
+| #   | 核查项                                                                                                                                   | ✓                                                                                                                                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.1 | 客户端发出的 `action` 是否通过 DataPart（`mimeType: "application/a2ui+json"`）包装后发送？                                               | ✅                                                                                                                                                                               |
+| 7.2 | renderer 需要 agent 端函数执行结果时，是否改用 `callAgentFunction` 消息（v1.0 #2210，替代旧 `action.wantResponse` 机制）？               | ✅                                                                                                                                                                               |
+| 7.3 | Server 端的 `agentFunctionResponse` 是否符合 `value` 和 `error` 互斥的规则（FunctionResponse）？                                         | ✅                                                                                                                                                                               |
+| 7.4 | 客户端 `rendererFunctionResponse` 消息中 `value` 或 `error` 是否必填其一？                                                               | ✅                                                                                                                                                                               |
+| 7.5 | `rendererOnly` 函数被 agent 端调用时，是否返回 `error { code: "INVALID_FUNCTION_CALL" }`？                                               | ✅                                                                                                                                                                               |
+| 7.6 | 函数调用查找流程是否正确：①查询 catalog 中的 `callableFrom` → ②未注册或 `rendererOnly` 则拒绝？                                          | ✅                                                                                                                                                                               |
+| 7.7 | `sendDataModel: true` 时，每次 action 是否在 transport metadata 中包含当前 surface 的 data model？                                       | ✅                                                                                                                                                                               |
+| 7.8 | `a2uiClientDataModel` 是否只定向投递给创建该 surface 的 server（防止数据泄漏）？                                                         | ✅                                                                                                                                                                               |
+| 7.9 | 渲染端校验失败时，error `code` 是否使用规范枚举（`VALIDATION_FAILED` / `UNALLOWED_PARENT` / `UNALLOWED_CHILD`，后两者上游 #2155 新增）？ | **⚠ 部分：SDK `ValidationFailedErrorSchema` 已接受三枚举（2026-08 修复）；渲染端 message-handler 尚未主动产生 UNALLOWED_PARENT/UNALLOWED_CHILD 错误（仅 SDK 组合约束校验产生）** |
 
 ### 常见误用
 
@@ -754,6 +758,10 @@ interface CatalogDefinition {
 
 ### Mixable Catalog / 组件级 catalogId 解析（上游 706ed4d0 新增）
 
+> ✅ SDK 实现（2026-08 更新）：`resolveComponentCatalog` + `A2uiValidator.validateComponentsWithCatalogs`
+> 实现规范解析顺序 —— ①组件级 `catalogId` → ②surface 默认 `catalogId` → ③两者皆缺报错（不回退 capabilities）。
+> 渲染端（web-core/angular）多 catalog 注册仍为宿主应用层能力。
+
 | #     | 核查项                                                                                          | ✓   |
 | ----- | ----------------------------------------------------------------------------------------------- | --- |
 | 25.33 | `createSurface.catalogId` 是否为**可选**（surface 级默认 catalog，`required` 仅 `surfaceId`）？ | ✅  |
@@ -764,7 +772,10 @@ interface CatalogDefinition {
 
 ### 组合约束 allowedParents/allowedChildren + Surface 容器（上游 d849f485 新增）
 
-> ⚠ 本项目实现状态：SDK/渲染器**尚未实现**组合约束校验与 `Surface` 容器（待办，规范副本已同步）。
+> ✅ 本项目实现状态（2026-08 更新）：SDK `composition-checker` 已实现（`checkCompositionConstraints` +
+> `Catalog.getCompositionConstraints`，经 `validateComponentsWithCatalog` / `validateComponentsWithCatalogs`
+> 生效，错误码 `UNALLOWED_PARENT` / `UNALLOWED_CHILD`）；消息信封已拒绝 `component: "Surface"`
+> （`ComponentPayloadSchema`，2026-08 修复）；`Surface` 容器对象建模仍为渲染器待办（见 25.39）。
 
 | #     | 核查项                                                                                                                                                        | ✓                                                                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |

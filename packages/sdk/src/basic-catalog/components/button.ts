@@ -26,9 +26,8 @@ export const ButtonComponentSchema: ComponentApi = {
                 type: 'object',
                 properties: {
                   name: { type: 'string', description: '事件名称' },
+                  userMessage: { type: 'string', description: '人类可读的动作描述（v1.0 #2228）' },
                   context: { type: 'object', additionalProperties: true },
-                  wantResponse: { type: 'boolean' },
-                  responsePath: { type: 'string' },
                 },
                 required: ['name'],
               },

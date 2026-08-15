@@ -32,9 +32,10 @@ export type Extensions = z.infer<typeof ExtensionsSchema>;
 /**
  * 元数据 — 非渲染属性通道（遥测标识、厂商扩展等）。
  * 规范强制：合规渲染器 MUST NOT reject 含 extensions 的载荷。
+ * 规范 common_types.json：metadata 仅允许 extensions（additionalProperties: false）。
  */
 export const MetadataSchema = z
-  .object({
+  .strictObject({
     extensions: ExtensionsSchema.optional(),
   })
   .optional();
@@ -99,12 +100,39 @@ export type DataBinding = z.infer<typeof DataBindingSchema>;
  * 注意：JSON Schema 中 FunctionCall 定义含 oneOf 约束
  * （匹配 catalog 函数或 @index 系统函数），此处保留宽松版本以兼容运行时动态函数名。
  * 运行时需配合 catalog 校验函数名的合法性。
+ *
+ * 严格性（对齐规范 common_types.json#/$defs/FunctionCall）：
+ * - strictObject：拒绝未知属性（unevaluatedProperties: false 语义）
+ * - @index 系统函数（IndexSystemFunction）：不允许 catalogId，args 仅允许 offset
  */
-export const FunctionCallSchema = z.object({
-  call: z.string().min(1, '函数名不能为空'),
-  catalogId: z.string().optional(),
-  args: z.record(z.string(), z.unknown()).optional(),
-}) satisfies z.ZodType<{ call: string; catalogId?: string; args?: Record<string, unknown> }>;
+export const FunctionCallSchema = z
+  .strictObject({
+    call: z.string().min(1, '函数名不能为空'),
+    catalogId: z.string().optional(),
+    args: z.record(z.string(), z.unknown()).optional(),
+  })
+  .superRefine((fc, ctx) => {
+    if (fc.call === '@index') {
+      if (fc.catalogId !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message: '@index 系统函数不允许携带 catalogId',
+          path: ['catalogId'],
+        });
+      }
+      if (fc.args) {
+        for (const key of Object.keys(fc.args)) {
+          if (key !== 'offset') {
+            ctx.addIssue({
+              code: 'custom',
+              message: `@index 系统函数不允许参数 "${key}"（仅允许 offset）`,
+              path: ['args', key],
+            });
+          }
+        }
+      }
+    }
+  }) satisfies z.ZodType<{ call: string; catalogId?: string; args?: Record<string, unknown> }>;
 export type FunctionCall = z.infer<typeof FunctionCallSchema>;
 
 /**

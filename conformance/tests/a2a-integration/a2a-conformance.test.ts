@@ -97,10 +97,17 @@ describe('Extension 一致性', () => {
     }
     if (tc.action === 'get_extension') {
       const supportedCatalogIds = tc.args?.supported_catalog_ids as string[] | undefined;
-      const ext = createA2uiExtension({ supportedCatalogIds });
+      const acceptsInlineCatalogs = tc.args?.accepts_inline_catalogs as boolean | undefined;
+      const ext = createA2uiExtension({
+        ...(supportedCatalogIds !== undefined ? { supportedCatalogIds } : {}),
+        ...(acceptsInlineCatalogs !== undefined ? { acceptsInlineCatalogs } : {}),
+      });
+      const params: Record<string, unknown> = {};
+      if (supportedCatalogIds) params['supportedCatalogIds'] = supportedCatalogIds;
+      if (acceptsInlineCatalogs) params['acceptsInlineCatalogs'] = true;
       return {
         uri: ext.uri,
-        params: supportedCatalogIds ? { supportedCatalogIds } : null,
+        params: Object.keys(params).length > 0 ? params : null,
       };
     }
     if (tc.action === 'try_activate') {

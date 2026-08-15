@@ -250,6 +250,70 @@ export class A2uiValidator {
   }
 
   /**
+   * 多 Catalog 校验（v1.0 #2079 mixable catalogs）
+   *
+   * 组件/函数调用所属 catalog 的解析顺序（对齐规范 evolution_guide.md）：
+   *   1. 组件（或函数调用）显式声明的 catalogId
+   *   2. surface 默认 catalogId（createSurface.catalogId）
+   *   3. 两者皆缺 → 报错（不渲染该组件 / 拒绝该函数调用），不回退到 capabilities
+   *
+   * 组合约束（allowedParents/allowedChildren）按组件解析出的 catalog 提供。
+   *
+   * @param message - UpdateComponents 消息
+   * @param catalogs - 可用 Catalog 列表（surface 混合目录）
+   * @param options - surface 默认 catalogId 与校验配置
+   * @returns 校验结果
+   */
+  validateComponentsWithCatalogs(
+    message: UpdateComponentsMessage,
+    catalogs: Catalog[],
+    options: { surfaceDefaultCatalogId?: string; config?: ValidationConfig } = {},
+  ): ValidationResult {
+    const baseResult = this.validateComponents(message, options.config ?? STRICT_VALIDATION);
+    const errors: ValidationError[] = [...baseResult.errors];
+
+    const components = message.updateComponents.components as unknown as Array<Record<string, unknown>>;
+
+    // 组件 id → 解析出的 Catalog（按组件级 catalogId → surface 默认）
+    const catalogByComponent = new Map<string, Catalog>();
+    for (const comp of components) {
+      const compId = typeof comp['id'] === 'string' ? (comp['id'] as string) : '';
+      const { catalog, error } = resolveComponentCatalog(comp, catalogs, options.surfaceDefaultCatalogId);
+      if (error) {
+        errors.push({ path: compId, message: error });
+        continue;
+      }
+      if (catalog) catalogByComponent.set(compId, catalog);
+    }
+
+    // 组件属性校验（按组件解析出的 catalog）
+    for (const comp of components) {
+      const compId = typeof comp['id'] === 'string' ? (comp['id'] as string) : '';
+      const catalog = catalogByComponent.get(compId);
+      if (!catalog) continue; // 已在上一步报 catalog 解析错误
+      const issues = catalog.validateComponent(comp);
+      for (const issue of issues) {
+        errors.push({ path: issue.path, message: issue.message });
+      }
+    }
+
+    // 组合约束校验：组件类型 → 声明该类型的组件解析出的 catalog 的约束
+    const compErrors = checkCompositionConstraints(components, (type) => {
+      for (const comp of components) {
+        if (comp['component'] === type) {
+          const compId = typeof comp['id'] === 'string' ? (comp['id'] as string) : '';
+          const catalog = catalogByComponent.get(compId);
+          if (catalog) return catalog.getCompositionConstraints(type);
+        }
+      }
+      return undefined;
+    });
+    errors.push(...compErrors);
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
    * 校验单条消息（自动检测消息方向）
    * 兼容旧 API
    */
@@ -275,6 +339,44 @@ export class A2uiValidator {
 // ============================================================================
 // 工具函数
 // ============================================================================
+
+/**
+ * 解析组件所属 Catalog（v1.0 #2079 mixable catalogs）
+ *
+ * 解析顺序（对齐规范 evolution_guide.md）：
+ *   1. 组件显式 catalogId（ComponentCommon.catalogId）
+ *   2. surface 默认 catalogId（createSurface.catalogId）
+ *   3. 两者皆缺 → 返回 error（不回退到 capabilities 声明的 catalogs）
+ *
+ * @param comp - 组件对象
+ * @param catalogs - 可用 Catalog 列表
+ * @param surfaceDefaultCatalogId - surface 默认 catalogId（可选）
+ * @returns 解析到的 Catalog；未解析时返回 error 说明
+ */
+export function resolveComponentCatalog(
+  comp: Record<string, unknown>,
+  catalogs: Catalog[],
+  surfaceDefaultCatalogId?: string,
+): { catalog: Catalog | undefined; error?: string } {
+  const explicit = typeof comp['catalogId'] === 'string' ? (comp['catalogId'] as string) : undefined;
+  const catalogId = explicit ?? surfaceDefaultCatalogId;
+
+  if (!catalogId) {
+    return {
+      catalog: undefined,
+      error: '组件未声明 catalogId，且 surface 未提供默认 catalogId（解析顺序：组件级 → surface 默认 → 报错）',
+    };
+  }
+
+  const catalog = catalogs.find((c) => c.catalogId === catalogId);
+  if (!catalog) {
+    return {
+      catalog: undefined,
+      error: `catalog "${catalogId}" 不在可用 catalogs 中（surface 混合目录必须显式提供）`,
+    };
+  }
+  return { catalog };
+}
 
 /** 格式化 Zod 错误为 ValidationError 数组 */
 function formatZodErrors(error: z.ZodError): ValidationError[] {

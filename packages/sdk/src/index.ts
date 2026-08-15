@@ -24,6 +24,7 @@ export {
   validationErrorSchema,
   validationResultSchema,
   validationConfigSchema,
+  resolveComponentCatalog,
   type ValidationError,
   type ValidationResult,
   type ValidationConfig,

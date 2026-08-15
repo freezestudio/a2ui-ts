@@ -258,5 +258,18 @@ export function validateComponentProps(
     }
   }
 
+  // 协议信封 unevaluatedProperties: false 语义（对齐 agent_to_renderer.json#/$defs/Component）：
+  // 组件属性必须是 ComponentCommon 公共字段或该 catalog 组件 schema 声明的属性，
+  // 其余一律视为未知属性拒绝（不等同 schema 级 additionalProperties，此处无条件执行）。
+  for (const key of Object.keys(comp)) {
+    if (COMMON_FIELDS.has(key)) continue;
+    if (!(key in props)) {
+      issues.push({
+        path: `/${key}`,
+        message: `未知属性 ${key}（组件信封 unevaluatedProperties: false）`,
+      });
+    }
+  }
+
   return issues;
 }

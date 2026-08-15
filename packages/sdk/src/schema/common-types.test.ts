@@ -62,6 +62,23 @@ describe('common-types', () => {
       });
       assert.deepEqual(result.args, { ref: { path: '/data' } });
     });
+
+    it('应拒绝未知属性（对齐规范 unevaluatedProperties: false）', () => {
+      assert.throws(() => FunctionCallSchema.parse({ call: 'openUrl', args: { url: 'x' }, extra: 'field' }));
+    });
+
+    it('应拒绝 @index 携带 catalogId（系统函数）', () => {
+      assert.throws(() => FunctionCallSchema.parse({ call: '@index', catalogId: 'some-catalog' }));
+    });
+
+    it('应拒绝 @index 携带 offset 之外的参数', () => {
+      assert.throws(() => FunctionCallSchema.parse({ call: '@index', args: { offset: 1, other: 2 } }));
+    });
+
+    it('应接受 @index 仅携带 offset', () => {
+      const result = FunctionCallSchema.parse({ call: '@index', args: { offset: 1 } });
+      assert.equal((result as { call: string }).call, '@index');
+    });
   });
 
   // ==========================================================================
@@ -108,6 +125,14 @@ describe('common-types', () => {
     it('应接受 FunctionCall', () => {
       const result = DynamicValueSchema.parse({ call: 'fn', args: { x: 1 } });
       assert.equal((result as { call: string }).call, 'fn');
+    });
+
+    it('应拒绝 FunctionCall 携带额外属性（规范 oneOf 严格性）', () => {
+      assert.throws(() => DynamicValueSchema.parse({ call: 'openUrl', args: { url: 'x' }, extra: 'field' }));
+    });
+
+    it('应拒绝 DataBinding 携带额外属性（规范 oneOf 严格性）', () => {
+      assert.throws(() => DynamicValueSchema.parse({ path: '/my/data', extra: 'field' }));
     });
   });
 

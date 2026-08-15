@@ -16,7 +16,7 @@ a2ui-ts/
 │   └── agent/       # @freezestudio/a2ui-agent   LLM 生成器（DeepSeek/Ollama）
 ├── renderers/
 │   └── angular/     # @freezestudio/a2ui-angular Angular 渲染器（basic 组件/渲染适配/CatalogRegistry）
-├── conformance/     # @freezestudio/a2ui-conformance v1.0 一致性测试（561 用例，PRIVATE 不发布）
+├── conformance/     # @freezestudio/a2ui-conformance v1.0 一致性测试（568 用例，PRIVATE 不发布）
 ├── eval/            # @freezestudio/a2ui-eval    LLM 评估框架（PRIVATE 不发布）
 ├── samples/client/angular/  # @freezestudio/a2ui-angular-demo 演示壳
 └── .github/workflows/       # ci.yml（build/test/check）+ publish.yml（v* tag 自动发布）
@@ -36,7 +36,7 @@ a2ui-ts/
 ```bash
 pnpm install
 pnpm -r build          # 全部构建（拓扑序，含 angular/demo）
-pnpm -r test           # 全部测试（1234：shared 53 / web-core 11 / sdk 513 / angular 96 / conformance 561）
+pnpm -r test           # 全部测试（1266：shared 53 / web-core 11 / sdk 538 / angular 96 / conformance 568）
 pnpm check             # 格式 + lint + 类型（根 vite.config.ts 配置）
 ```
 

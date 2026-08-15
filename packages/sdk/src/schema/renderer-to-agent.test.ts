@@ -130,6 +130,32 @@ describe('renderer-to-agent', () => {
       };
       assert.throws(() => ValidationFailedErrorSchema.parse(err));
     });
+
+    it('应解析 UNALLOWED_PARENT 校验失败错误（v1.0 #2155）', () => {
+      const err = { code: 'UNALLOWED_PARENT', surfaceId: 'main', path: '/components/1', message: 'x' };
+      const result = ValidationFailedErrorSchema.parse(err);
+      assert.equal(result.code, 'UNALLOWED_PARENT');
+    });
+
+    it('应解析 UNALLOWED_CHILD 校验失败错误（v1.0 #2155）', () => {
+      const err = { code: 'UNALLOWED_CHILD', surfaceId: 'main', path: '/components/0', message: 'x' };
+      const result = ValidationFailedErrorSchema.parse(err);
+      assert.equal(result.code, 'UNALLOWED_CHILD');
+    });
+
+    it('应拒绝非校验码进入 ValidationFailed 分支（strict 枚举）', () => {
+      const err = { code: 'FUNCTION_FAILED', surfaceId: 's1', path: '/x', message: 'x' };
+      assert.throws(() => ValidationFailedErrorSchema.parse(err));
+    });
+
+    it('UNALLOWED_PARENT 错误消息应通过 A2uiClientErrorMessageSchema', () => {
+      const msg = {
+        version: SPEC_VERSION,
+        error: { code: 'UNALLOWED_PARENT', surfaceId: 'main', path: '/c', message: 'x' },
+      };
+      const result = A2uiClientErrorMessageSchema.parse(msg);
+      assert.equal(result.error.code, 'UNALLOWED_PARENT');
+    });
   });
 
   // ==========================================================================

@@ -1,0 +1,119 @@
+# Accessibility 一致性测试（对齐上游 conformance/core/accessibility.yaml，v1.0）
+# 迁移自 ../a2ui/conformance/core/accessibility.yaml
+# 版本更新：0.8/0.9 → 1.0（仅 v1.0；组件类型对齐 basic catalog 18 组件）
+
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: test_accessibility_attributes_plumbing
+  description: AccessibilityAttributes（label/description/live/hidden）属性应正确进入无障碍树
+  catalog:
+    version: '1.0'
+  action: accessibility_check
+  args:
+    components:
+      - id: root
+        component: Column
+        children: [btn1, status_text]
+      - id: btn1
+        component: Button
+        title: 'Mute'
+        accessibility:
+          label: 'Mute Notifications'
+          description: 'Silences notifications about this conversation'
+      - id: status_text
+        component: Text
+        text: 'Status: Active'
+        accessibility:
+          live: 'polite'
+  expect_accessibility:
+    btn1:
+      label: 'Mute Notifications'
+      description: 'Silences notifications about this conversation'
+    status_text:
+      live: 'polite'
+  expect_axe_rules:
+    - button-name
+    - aria-valid-attr-value
+    - aria-allowed-attr
+
+- name: test_accessibility_live_region_assertive
+  description: assertive live region 应用于关键告警横幅更新
+  catalog:
+    version: '1.0'
+  action: accessibility_check
+  args:
+    components:
+      - id: root
+        component: Column
+        children: [alert_box]
+      - id: alert_box
+        component: Text
+        text: 'Connection Lost!'
+        accessibility:
+          label: 'Critical Alert'
+          live: 'assertive'
+  expect_accessibility:
+    alert_box:
+      label: 'Critical Alert'
+      live: 'assertive'
+  expect_axe_rules:
+    - aria-valid-attr-value
+
+- name: test_accessibility_hidden_subtree
+  description: hidden=true 时组件及其子树应从辅助技术隐藏（递归传播）
+  catalog:
+    version: '1.0'
+  action: accessibility_check
+  args:
+    components:
+      - id: root
+        component: Column
+        accessibility:
+          hidden: true
+        children: [visible_text, decorative_icon]
+      - id: visible_text
+        component: Text
+        text: 'Visible Content'
+      - id: decorative_icon
+        component: Icon
+        name: 'star'
+  expect_accessibility:
+    root:
+      hidden: true
+    visible_text:
+      hidden: true
+    decorative_icon:
+      hidden: true
+  expect_axe_rules:
+    - aria-hidden-focus
+
+- name: test_accessibility_implicit_label_inference
+  description: 未显式声明 accessibility 时，从可见文本/标题推断可访问名称
+  catalog:
+    version: '1.0'
+  action: accessibility_check
+  args:
+    components:
+      - id: root
+        component: Column
+        children: [submit_btn]
+      - id: submit_btn
+        component: Button
+        title: 'Submit Form'
+  expect_accessibility:
+    submit_btn:
+      label: 'Submit Form'
+  expect_axe_rules:
+    - button-name

@@ -45,7 +45,9 @@ A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent
 
 ### 一致性测试（`conformance` — `@freezestudio/a2ui-conformance`，PRIVATE）
 
-v1.0 协议一致性核查套件（561 用例）：`harness` + `tests/`（schema-validation / sdk-behavior / v1-protocol / a2a-integration），以 `packages/sdk/resources/specification/v1_0/` 官方规范副本（只读）为基准。
+v1.0 协议一致性核查套件（568 用例）：`harness` + `tests/`（schema-validation / sdk-behavior / v1-protocol / a2a-integration），以 `packages/sdk/resources/specification/v1_0/` 官方规范副本（只读）为基准。
+
+> 📋 仓库变更记录见 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)；v1.0 协议核查表见 [`docs/checklists/`](docs/checklists/)。
 
 ### 评估与演示
 
@@ -75,7 +77,7 @@ v1.0 协议一致性核查套件（561 用例）：`harness` + `tests/`（schema
 
 ```bash
 pnpm install
-pnpm -r test    # 全仓测试：1234 用例全绿（shared 53 / web-core 11 / sdk 513 / angular 96 / conformance 561）
+pnpm -r test    # 全仓测试：1266 用例全绿（shared 53 / web-core 11 / sdk 538 / angular 96 / conformance 568）
 ```
 
 按包：

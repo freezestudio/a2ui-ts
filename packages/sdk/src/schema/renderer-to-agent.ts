@@ -88,9 +88,11 @@ export type A2uiRendererFunctionResponseMessage = z.infer<typeof A2uiRendererFun
 
 /**
  * 校验失败错误
+ * v1.0 #2155：code 枚举含 UNALLOWED_PARENT / UNALLOWED_CHILD（组合约束违规）
+ * 对齐规范 renderer_to_agent.json error oneOf 分支一（additionalProperties: false）
  */
 export const ValidationFailedErrorSchema = z.strictObject({
-  code: z.literal('VALIDATION_FAILED'),
+  code: z.enum(['VALIDATION_FAILED', 'UNALLOWED_PARENT', 'UNALLOWED_CHILD']),
   surfaceId: z.string(),
   path: z.string(),
   message: z.string(),
@@ -100,10 +102,11 @@ export type ValidationFailedError = z.infer<typeof ValidationFailedErrorSchema>;
 /**
  * 通用错误
  * v1.0: surfaceId 和 functionCallId 互斥
+ * code 必须避开三个保留校验码（VALIDATION_FAILED / UNALLOWED_PARENT / UNALLOWED_CHILD）
  */
 export const GenericErrorSchema = z
   .looseObject({
-    code: z.string().refine((c) => c !== 'VALIDATION_FAILED'),
+    code: z.string().refine((c) => c !== 'VALIDATION_FAILED' && c !== 'UNALLOWED_PARENT' && c !== 'UNALLOWED_CHILD'),
     message: z.string(),
     surfaceId: z.string().optional(),
     functionCallId: CallIdSchema.optional(),

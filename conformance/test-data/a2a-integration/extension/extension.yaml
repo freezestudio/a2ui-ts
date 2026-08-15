@@ -67,3 +67,14 @@
       - 'https://a2ui.org/a2a-extension/a2ui/v2.0.0'
   expect:
     newest: 'https://a2ui.org/a2a-extension/a2ui/v1.10.0'
+
+- name: test_get_extension_with_inline
+  description: 带内联目录配置获取扩展 URI
+  action: get_extension
+  args:
+    version: '1.0'
+    accepts_inline_catalogs: true
+  expect:
+    uri: 'https://a2ui.org/a2a-extension/a2ui/v1.0'
+    params:
+      acceptsInlineCatalogs: true

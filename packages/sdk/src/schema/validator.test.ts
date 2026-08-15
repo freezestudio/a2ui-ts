@@ -1,7 +1,8 @@
 import { describe, it } from 'vite-plus/test';
 import assert from 'node:assert/strict';
-import { A2uiValidator, STRICT_VALIDATION, RELAXED_VALIDATION } from './validator.js';
+import { A2uiValidator, STRICT_VALIDATION, RELAXED_VALIDATION, resolveComponentCatalog } from './validator.js';
 import type { UpdateComponentsMessage } from './index.js';
+import { Catalog } from '../catalog/catalog.js';
 
 // 构造合法的 CreateSurface 消息
 function makeCreateSurfaceMessage(overrides?: Record<string, unknown>): Record<string, unknown> {
@@ -36,6 +37,42 @@ function makeValidComponents(): Array<Record<string, unknown>> {
     { id: 'root', component: 'Column', children: ['child-1'] },
     { id: 'child-1', component: 'Text' },
   ];
+}
+
+// 构造测试 Catalog
+function makeTestCatalog(catalogId: string): Catalog {
+  return new Catalog({
+    catalogId,
+    version: 'v1.0',
+    components: [
+      {
+        name: 'Text',
+        description: '文本',
+        schema: {
+          type: 'object',
+          properties: {
+            component: { const: 'Text' },
+            text: { type: 'string' },
+            variant: { type: 'string', enum: ['caption', 'body'] },
+          },
+          required: ['component', 'text'],
+        },
+      },
+      {
+        name: 'Column',
+        description: '列',
+        schema: {
+          type: 'object',
+          properties: {
+            component: { const: 'Column' },
+            children: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['component'],
+        },
+      },
+    ],
+    functions: [],
+  });
 }
 
 describe('A2uiValidator', () => {
@@ -148,6 +185,86 @@ describe('A2uiValidator', () => {
     it('空消息列表 → valid', () => {
       const result = validator.validateMessageList([], STRICT_VALIDATION);
       assert.equal(result.valid, true);
+    });
+  });
+
+  describe('多 Catalog 解析与校验（v1.0 #2079 mixable catalogs）', () => {
+    const catA = makeTestCatalog('https://example.com/catalogs/a/catalog.json');
+    const catB = makeTestCatalog('https://example.com/catalogs/b/catalog.json');
+
+    it('resolveComponentCatalog：组件级 catalogId 优先于 surface 默认', () => {
+      const comp = { id: 'root', component: 'Text', catalogId: catB.catalogId };
+      const { catalog, error } = resolveComponentCatalog(comp, [catA, catB], catA.catalogId);
+      assert.equal(error, undefined);
+      assert.equal(catalog?.catalogId, catB.catalogId);
+    });
+
+    it('resolveComponentCatalog：无组件级 catalogId 时回退 surface 默认', () => {
+      const comp = { id: 'root', component: 'Text' };
+      const { catalog, error } = resolveComponentCatalog(comp, [catA, catB], catA.catalogId);
+      assert.equal(error, undefined);
+      assert.equal(catalog?.catalogId, catA.catalogId);
+    });
+
+    it('resolveComponentCatalog：两者皆缺 → 报错（不回退 capabilities）', () => {
+      const comp = { id: 'root', component: 'Text' };
+      const { catalog, error } = resolveComponentCatalog(comp, [catA, catB]);
+      assert.equal(catalog, undefined);
+      assert.ok(error && error.includes('catalogId'));
+    });
+
+    it('resolveComponentCatalog：catalogId 未注册 → 报错', () => {
+      const comp = { id: 'root', component: 'Text', catalogId: 'https://example.com/unknown/catalog.json' };
+      const { catalog, error } = resolveComponentCatalog(comp, [catA, catB], catA.catalogId);
+      assert.equal(catalog, undefined);
+      assert.ok(error && error.includes('不在可用 catalogs'));
+    });
+
+    it('validateComponentsWithCatalogs：混合目录合法消息 → valid', () => {
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        { id: 't1', component: 'Text', text: 'hello', catalogId: catB.catalogId },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, true, `期望 valid，但得到错误: ${JSON.stringify(result.errors)}`);
+    });
+
+    it('validateComponentsWithCatalogs：组件 catalog 未注册 → invalid', () => {
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'] },
+        { id: 't1', component: 'Text', text: 'hi', catalogId: 'https://example.com/unknown/catalog.json' },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.errors.some((e) => e.message.includes('不在可用 catalogs')));
+    });
+
+    it('validateComponentsWithCatalogs：无 surface 默认且组件未声明 → invalid', () => {
+      const components = [{ id: 'root', component: 'Column', children: ['t1'] }];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catA, catB]);
+      assert.equal(result.valid, false);
+      assert.ok(result.errors.some((e) => e.message.includes('未声明 catalogId')));
+    });
+
+    it('validateComponentsWithCatalogs：按解析出的 catalog 校验组件属性', () => {
+      // Text 组件声明 catalogId=catB，但 text 缺失（catB 的 Text 必填 text）→ invalid
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        { id: 't1', component: 'Text', catalogId: catB.catalogId },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.errors.some((e) => e.message.includes('缺少必填属性 text')));
     });
   });
 });

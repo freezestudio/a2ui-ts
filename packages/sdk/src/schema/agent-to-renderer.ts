@@ -7,7 +7,14 @@
 
 import { z } from 'zod';
 import { SPEC_VERSION } from './constants.js';
-import { ComponentIdSchema, CallIdSchema, MetadataSchema, FunctionResponseSchema } from './common-types.js';
+import {
+  ComponentIdSchema,
+  CallIdSchema,
+  MetadataSchema,
+  FunctionResponseSchema,
+  AccessibilityAttributesSchema,
+} from './common-types.js';
+import { SURFACE_COMPONENT } from './composition-checker.js';
 
 // ============================================================================
 // 组件 Payload Schema
@@ -15,16 +22,32 @@ import { ComponentIdSchema, CallIdSchema, MetadataSchema, FunctionResponseSchema
 
 /**
  * 组件 Payload — 从 catalog 的 anyComponent 验证
+ *
+ * 信封级校验（对齐规范 agent_to_renderer.json#/$defs/Component）：
+ * - ComponentCommon：id 必填，catalogId / accessibility / metadata 可选
+ * - `component` 出现时禁止为协议保留的 "Surface"（component.not.const: "Surface"）；
+ *   组件类型本身由 catalog 校验（anyComponent），信封层不强制
+ * - 其余组件特定属性（text / children / action 等）依赖 catalog 校验，此处宽松透传
  */
-export const ComponentPayloadSchema = z.object({
+export const ComponentPayloadSchema = z.looseObject({
   id: ComponentIdSchema,
+  component: z
+    .string()
+    .refine((c) => c !== SURFACE_COMPONENT, {
+      message: `协议保留组件名 "${SURFACE_COMPONENT}" 禁止出现在消息组件中（仅作为隐式 surface 根容器）`,
+    })
+    .optional(),
+  catalogId: z.string().optional(),
+  accessibility: AccessibilityAttributesSchema.optional(),
+  metadata: MetadataSchema,
 });
 export type ComponentPayload = z.infer<typeof ComponentPayloadSchema>;
 
 /**
  * 组件列表（v1.0 提取为独立定义）
+ * 每个组件先做信封级校验（id/component/metadata 等），再交由 catalog 校验组件特定属性。
  */
-export const ComponentsListSchema = z.array(z.record(z.string(), z.unknown())).min(1);
+export const ComponentsListSchema = z.array(ComponentPayloadSchema).min(1);
 export type ComponentsList = z.infer<typeof ComponentsListSchema>;
 
 // ============================================================================
