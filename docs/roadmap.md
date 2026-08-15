@@ -12,7 +12,11 @@
   - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
   - ✅ 已发布到本地 verdaccio registry（@a2ui/shared|web-core|sdk|agent@1.1.0、@a2ui/angular@0.1.1）；
     geo-scout 已切换为版本依赖消费
-  - ⏳ 后续：切公网 npm、samples/client/angular 演示壳、@a2ui/angular 单元测试接线
+- **Phase 2（独立演进治理）起步 ✅**：
+  - ✅ GitHub Actions CI（.github/workflows/ci.yml：build/test/check）
+  - ✅ @a2ui/angular 单元测试接线（96 测试恢复，全仓 1234 测试全绿）
+  - ✅ samples/client/angular 演示壳（ng serve/build 验证 @a2ui/angular 可消费）
+  - ⏳ 后续：切公网 npm 发布、协议版本化/SDD 治理、spec 同步流程迁入
 
 | 任务                          | 提交                                                        | 说明                                                                         |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
