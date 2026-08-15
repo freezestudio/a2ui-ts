@@ -1,0 +1,41 @@
+{
+  "name": "@a2ui/web-core",
+  "version": "1.1.0",
+  "description": "A2UI 框架无关渲染核心 - 消息处理、状态管理、数据绑定、函数调用",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "lint": "tsc --noEmit",
+    "test": "vp test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@a2ui/shared": "workspace:*",
+    "@preact/signals-core": "^1.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "catalog:tsx",
+    "typescript": "catalog:typescript7",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:zod4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

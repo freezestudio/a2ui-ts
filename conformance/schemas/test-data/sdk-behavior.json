@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "test-data/sdk-behavior.json",
+  "title": "SDK 行为测试数据",
+  "type": "array",
+  "items": {
+    "allOf": [
+      { "$ref": "common.json" },
+      {
+        "type": "object",
+        "properties": {
+          "catalog": {
+            "type": "object",
+            "properties": {
+              "version": { "type": "string", "const": "1.0" },
+              "s2c_schema": { "type": "string" },
+              "catalog_schema": { "type": ["object", "string"] },
+              "common_types_schema": { "type": "string" }
+            },
+            "required": ["version"]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "process_chunk",
+              "validate",
+              "prune",
+              "render",
+              "load",
+              "parse_full",
+              "select_catalog",
+              "load_catalog",
+              "generate_prompt"
+            ]
+          },
+          "steps": { "type": "array" },
+          "payload": {},
+          "args": { "type": "object" },
+          "input": {},
+          "expect": {},
+          "expect_error": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "message": { "type": "string" }
+            }
+          },
+          "expect_selected": { "type": "string" },
+          "expect_empty": { "type": "boolean" }
+        },
+        "required": ["action"]
+      }
+    ]
+  }
+}

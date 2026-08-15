@@ -1,0 +1,47 @@
+- name: test_converter_emits_failed_event
+  description: 错误事件转换为 TaskStatusUpdateEvent FAILED
+  action: convert_event
+  args:
+    error_code: 'some_error'
+    error_message: 'Server crash'
+    has_catalog: true
+  expect:
+    type: TaskStatusUpdateEvent
+    state: FAILED
+    message: 'Server crash'
+
+- name: test_converter_emits_working_event
+  description: 工作状态转换为 TaskStatusUpdateEvent WORKING
+  action: convert_event
+  args:
+    content_text: 'Regular text response'
+    has_catalog: true
+  expect:
+    type: TaskStatusUpdateEvent
+    state: WORKING
+    message: 'Regular text response'
+
+- name: test_converter_returns_empty_when_no_catalog
+  description: 无 catalog 时返回空
+  action: convert_event
+  args:
+    has_catalog: false
+  expect_empty: true
+
+- name: test_toolset_execute_valid_payload
+  description: 有效 payload 执行成功
+  action: execute_tool
+  args:
+    a2ui_json: '{"createSurface": {"surfaceId": "dummy-surface", "catalogId": "test-catalog", "root": {"component": "TestComp", "id": "1"}}}'
+  expect:
+    success: true
+    contains_validated_json: true
+
+- name: test_toolset_execute_invalid_payload
+  description: 无效 payload 执行失败
+  action: execute_tool
+  args:
+    wrong_arg: 'b'
+  expect:
+    success: false
+    error_contains: 'missing required arg a2ui_json'

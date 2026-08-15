@@ -1,0 +1,21 @@
+- name: test_client_data_model
+  description: 验证客户端数据模型格式
+  action: validate_data_model
+  args:
+    data_model:
+      version: 'v1.0'
+      surfaces:
+        surface_123: { user: { name: 'Alice' } }
+  expect:
+    valid: true
+
+- name: test_surface_with_user_data
+  description: surface 支持 user 字段
+  action: validate_data_model
+  args:
+    data_model:
+      version: 'v1.0'
+      surfaces:
+        s1: { user: { name: 'Test User' } }
+  expect:
+    valid: true

@@ -1,0 +1,43 @@
+{
+  "name": "@a2ui/sdk",
+  "version": "1.1.0",
+  "description": "A2UI v1.0 TypeScript SDK - Schema 管理、流式解析、校验",
+  "files": [
+    "dist",
+    "resources"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack && cp -r resources dist/",
+    "dev": "vp pack --watch",
+    "lint": "tsc --noEmit",
+    "test": "vp test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@a2ui/shared": "workspace:*",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.0.0",
+    "zod": "catalog:zod4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "catalog:tsx",
+    "typescript": "catalog:typescript7",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

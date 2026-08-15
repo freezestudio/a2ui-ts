@@ -1,0 +1,28 @@
+- name: test_server_to_client_list
+  description: 验证服务端到客户端消息列表
+  action: validate_message_list
+  args:
+    direction: server_to_client
+    messages:
+      - version: 'v1.0'
+        createSurface:
+          surfaceId: 's1'
+          catalogId: 'c1'
+  expect:
+    valid: true
+
+- name: test_client_to_server_list
+  description: 验证客户端到服务端消息列表
+  action: validate_message_list
+  args:
+    direction: client_to_server
+    messages:
+      - version: 'v1.0'
+        action:
+          actionId: 'a1'
+          surfaceId: 's1'
+          sourceComponentId: 'btn1'
+          timestamp: '2026-07-09T00:00:00Z'
+          context: {}
+  expect:
+    valid: true

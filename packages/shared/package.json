@@ -1,0 +1,36 @@
+{
+  "name": "@a2ui/shared",
+  "version": "1.1.0",
+  "description": "A2UI 共享工具包 - ExpressionParser、路径工具、类型转换",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "lint": "tsc --noEmit",
+    "test": "vp test",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "catalog:tsx",
+    "typescript": "catalog:typescript7",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "zod": "catalog:zod4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "test-data/a2a-integration.json",
+  "title": "A2A 集成测试数据",
+  "type": "array",
+  "items": {
+    "allOf": [
+      { "$ref": "common.json" },
+      {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string" },
+          "args": { "type": "object" },
+          "expect": {},
+          "expect_empty": { "type": "boolean" }
+        },
+        "required": ["action"]
+      }
+    ]
+  }
+}

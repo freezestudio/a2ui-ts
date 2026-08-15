@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "test-data/common.json",
+  "title": "通用测试用例定义",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "测试用例唯一标识"
+    },
+    "description": {
+      "type": "string",
+      "description": "测试目的描述"
+    }
+  },
+  "required": ["name", "description"]
+}

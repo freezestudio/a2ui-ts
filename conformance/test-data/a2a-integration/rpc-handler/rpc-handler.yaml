@@ -1,0 +1,55 @@
+- name: test_handler_replaces_smart_quotes
+  description: handler 替换智能引号为标准引号
+  action: handle_rpc
+  args:
+    request:
+      jsonrpc: '2.0'
+      method: 'message/send'
+      id: 1
+      params:
+        message:
+          contextId: 'test-context'
+          parts: []
+          metadata:
+            a2uiClientCapabilities:
+              v1.0:
+                supportedCatalogIds: []
+                inlineCatalogs: []
+  expect:
+    smart_quotes_replaced: true
+
+- name: test_handler_passes_regular_text
+  description: 纯文本消息直接传递
+  action: handle_rpc
+  args:
+    request:
+      jsonrpc: '2.0'
+      method: 'message/send'
+      id: 1
+      params:
+        message:
+          contextId: 'test-context'
+          parts: []
+    runner_output: 'This is a normal conversational turn.'
+  expect:
+    parts:
+      - kind: 'text'
+        text: 'This is a normal conversational turn.'
+
+- name: test_handler_gracefully_handles_invalid_json
+  description: 无效 JSON 不崩溃，按文本传递
+  action: handle_rpc
+  args:
+    request:
+      jsonrpc: '2.0'
+      method: 'message/send'
+      id: 1
+      params:
+        message:
+          contextId: 'test-context'
+          parts: []
+    runner_output: "Here is an invalid chart:\n<a2ui-json>\n[\n  {\n    \"beginRendering\": {  MISSING CLOSING BRACKETS...\n</a2ui-json>\nOops."
+  expect:
+    parts:
+      - kind: 'text'
+        text: "Here is an invalid chart:\n<a2ui-json>\n[\n  {\n    \"beginRendering\": {  MISSING CLOSING BRACKETS...\n</a2ui-json>\nOops."

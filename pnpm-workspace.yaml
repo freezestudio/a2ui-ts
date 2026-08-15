@@ -4,3 +4,33 @@ packages:
   - conformance
   - eval
   - samples/*
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  rolldown: true
+catalogs:
+  typescript6:
+    typescript: ^6.0.3
+  typescript7:
+    typescript: ^7.0.0
+  zod4:
+    zod: ^4.0.0
+  tsx:
+    tsx: ^4.23.6
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.8
+  vitest: 4.1.10
+  vite-plus: 0.2.8
+  '@vitest/coverage-v8': 4.1.10
+overrides:
+  vite: 'catalog:'
+  vitest: 'catalog:'
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: '*'
+    vitest: '*'

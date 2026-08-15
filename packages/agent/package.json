@@ -1,0 +1,41 @@
+{
+  "name": "@a2ui/agent",
+  "version": "1.1.0",
+  "private": true,
+  "description": "A2UI LLM client — DeepSeek Generator for eval framework",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@a2ui/sdk": "workspace:*",
+    "@ai-sdk/deepseek": "^3.0.22",
+    "ai": "^7.0.52",
+    "ai-sdk-ollama": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "catalog:tsx",
+    "typescript": "catalog:typescript7",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

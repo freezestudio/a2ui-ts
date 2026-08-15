@@ -1,0 +1,35 @@
+- name: test_client_capabilities
+  description: 验证客户端能力声明格式
+  action: validate_capabilities
+  args:
+    type: client
+    capabilities:
+      v1.0:
+        supportedCatalogIds: ['catalog-1']
+        inlineCatalogs: []
+  expect:
+    valid: true
+
+- name: test_server_capabilities
+  description: 验证服务端能力声明格式
+  action: validate_capabilities
+  args:
+    type: server
+    capabilities:
+      v1.0:
+        supportedCatalogIds: ['catalog-1']
+        acceptsInlineCatalogs: true
+  expect:
+    valid: true
+
+- name: test_v1_namespace
+  description: v1.0 命名空间版本键验证
+  action: validate_capabilities
+  args:
+    type: client
+    capabilities:
+      v1.0:
+        supportedCatalogIds: []
+        inlineCatalogs: []
+  expect:
+    valid: true

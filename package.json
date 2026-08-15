@@ -3,15 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "description": "A2UI v1.0 TypeScript reference implementation — protocol SDK, framework-agnostic renderer core, Angular renderer, conformance & eval",
-  "packageManager": "pnpm@11.18.0",
+  "license": "Apache-2.0",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.8",
+    "vite-plus": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"
   },
-  "license": "Apache-2.0"
+  "packageManager": "pnpm@11.18.0"
 }

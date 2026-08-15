@@ -1,0 +1,69 @@
+- name: test_try_activate_extension_success
+  description: 有效 extension URI 激活
+  action: try_activate_extension
+  args:
+    uris: ['https://a2ui.org/a2a-extension/a2ui/v1.0']
+  expect: true
+
+- name: test_try_activate_extension_failure
+  description: 无效 extension URI 激活失败
+  action: try_activate_extension
+  args:
+    uris: ['other']
+  expect: false
+
+- name: test_get_extension_minimal
+  description: 最小配置获取扩展 URI
+  action: get_extension
+  args:
+    version: '1.0'
+  expect:
+    uri: 'https://a2ui.org/a2a-extension/a2ui/v1.0'
+    params: null
+
+- name: test_get_extension_with_catalogs
+  description: 带目录配置获取扩展 URI
+  action: get_extension
+  args:
+    version: '1.0'
+    supported_catalog_ids: ['a', 'b', 'c']
+  expect:
+    uri: 'https://a2ui.org/a2a-extension/a2ui/v1.0'
+    params:
+      supportedCatalogIds: ['a', 'b', 'c']
+
+- name: test_try_activate_success
+  description: 请求的扩展在广告列表中被激活
+  action: try_activate
+  args:
+    requested: ['https://a2ui.org/a2a-extension/a2ui/v1.0']
+    advertised: ['https://a2ui.org/a2a-extension/a2ui/v1.0']
+  expect:
+    activated: 'https://a2ui.org/a2a-extension/a2ui/v1.0'
+    version: '1.0'
+
+- name: test_try_activate_not_requested
+  description: 无请求扩展时返回 null
+  action: try_activate
+  args:
+    requested: []
+    advertised: ['https://a2ui.org/a2a-extension/a2ui/v1.0']
+  expect:
+    activated: null
+
+- name: test_select_newest
+  description: 从请求和广告的版本中选择最新兼容版本
+  action: select_newest
+  args:
+    requested:
+      - 'https://a2ui.org/a2a-extension/a2ui/v0.1.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v1.2.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v0.8.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v1.10.0'
+    advertised:
+      - 'https://a2ui.org/a2a-extension/a2ui/v0.1.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v1.2.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v1.10.0'
+      - 'https://a2ui.org/a2a-extension/a2ui/v2.0.0'
+  expect:
+    newest: 'https://a2ui.org/a2a-extension/a2ui/v1.10.0'
