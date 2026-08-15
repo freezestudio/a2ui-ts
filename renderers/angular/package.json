@@ -3,11 +3,18 @@
   "version": "0.1.1",
   "description": "A2UI v1.0 Angular renderer — basic catalog components, renderer adapters, catalog registry",
   "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/fesm2022/a2ui-angular.mjs",
+  "module": "./dist/fesm2022/a2ui-angular.mjs",
+  "types": "./dist/types/a2ui-angular.d.ts",
   "scripts": {
-    "build": "ng-packagr -p ng-package.json",
+    "build": "ng build",
     "lint": "tsc --noEmit -p tsconfig.lib.json",
-    "clean": "rm -rf dist out-tsc"
+    "clean": "rm -rf dist out-tsc",
+    "test": "ng test --watch=false"
   },
   "dependencies": {
     "@a2ui/shared": "workspace:*",
@@ -18,17 +25,21 @@
   },
   "devDependencies": {
     "@angular/build": "^22.1.2",
+    "@angular/cli": "^22.1.2",
     "@angular/common": "^22.1.2",
     "@angular/compiler": "^22.1.2",
     "@angular/compiler-cli": "^22.1.2",
     "@angular/core": "^22.1.2",
     "@angular/platform-browser": "^22.1.2",
     "@types/node": "^26.1.2",
+    "@vitest/coverage-v8": "catalog:",
+    "jsdom": "^30.0.1",
     "ng-packagr": "^22.0.0",
     "rxjs": "~7.8.0",
     "typescript": "catalog:typescript6",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@angular/common": "^22.1.0",
@@ -37,11 +48,5 @@
   },
   "engines": {
     "node": ">=24.0.0"
-  },
-  "main": "./dist/fesm2022/a2ui-angular.mjs",
-  "module": "./dist/fesm2022/a2ui-angular.mjs",
-  "types": "./dist/types/a2ui-angular.d.ts",
-  "files": [
-    "dist"
-  ]
+  }
 }
