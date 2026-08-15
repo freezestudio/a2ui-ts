@@ -4,7 +4,14 @@
 > 目标：把 geo-scout 中的 A2UI 实现（协议核心 + 渲染 + 治理资产）拆分为独立演进的项目，geo-scout 收缩为行业应用消费方
 > 依据：官方 a2ui 仓库 `~/github/ai-tools/a2ui`（组织范本）、`docs/references.md`、`AGENTS.md` 规范同步流程
 
-## 进度（Phase 0 已全部完成 ✅）
+## 进度
+
+- **Phase 0（geo-scout 内解耦）✅ 已完成** —— 见 geo-scout docs/a2ui-split-plan.md
+- **Phase 1（仓库拆分）进行中**：
+  - ✅ 6 个核心包已迁入本仓库并改名 @a2ui/*（shared/web-core/sdk/agent/conformance/eval）
+  - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
+  - ⏳ 待办：@a2ui/angular 渲染器迁移、geo-scout 消费切换、发布
+
 
 | 任务                          | 提交                                                        | 说明                                                                         |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
