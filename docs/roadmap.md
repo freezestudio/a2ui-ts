@@ -7,11 +7,12 @@
 ## 进度
 
 - **Phase 0（geo-scout 内解耦）✅ 已完成** —— 见 geo-scout docs/a2ui-split-plan.md
-- **Phase 1（仓库拆分）进行中**：
-  - ✅ 6 个核心包已迁入本仓库并改名 @a2ui/*（shared/web-core/sdk/agent/conformance/eval）
-  - ✅ @a2ui/angular 渲染器库（renderers/angular，ng-packagr 构建，46 文件）
+- **Phase 1（仓库拆分）✅ 已完成**：
+  - ✅ 6 个核心包迁入并改名 @a2ui/*；@a2ui/angular 渲染器库（ng-packagr）
   - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
-  - ⏳ 待办：geo-scout 消费切换（发布/registry 决策）、samples/client/angular 演示壳、@a2ui/angular 单元测试接线
+  - ✅ 已发布到本地 verdaccio registry（@a2ui/shared|web-core|sdk|agent@1.1.0、@a2ui/angular@0.1.1）；
+    geo-scout 已切换为版本依赖消费
+  - ⏳ 后续：切公网 npm、samples/client/angular 演示壳、@a2ui/angular 单元测试接线
 
 | 任务                          | 提交                                                        | 说明                                                                         |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |

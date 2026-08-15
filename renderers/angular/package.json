@@ -1,6 +1,6 @@
 {
   "name": "@a2ui/angular",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A2UI v1.0 Angular renderer — basic catalog components, renderer adapters, catalog registry",
   "license": "Apache-2.0",
   "type": "module",
@@ -37,5 +37,11 @@
   },
   "engines": {
     "node": ">=24.0.0"
-  }
+  },
+  "main": "./dist/fesm2022/a2ui-angular.mjs",
+  "module": "./dist/fesm2022/a2ui-angular.mjs",
+  "types": "./dist/types/a2ui-angular.d.ts",
+  "files": [
+    "dist"
+  ]
 }

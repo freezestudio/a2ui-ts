@@ -1,7 +1,6 @@
 {
   "name": "@a2ui/agent",
   "version": "1.1.0",
-  "private": true,
   "description": "A2UI LLM client — DeepSeek Generator for eval framework",
   "files": [
     "dist"
@@ -37,5 +36,6 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "license": "Apache-2.0"
 }
