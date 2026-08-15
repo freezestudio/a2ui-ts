@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpmfile.cjs
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.out-tsc/
+.angular/
+coverage/
+
+# Vite & Vite-plus
+.vite/
+.vp/
+
+# Logs
+logs/
+*.log
+
+# Environment（本地密钥，禁止提交）
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+vitest-cache/
+
+# Node
+*.node
+.node_repl_history
+
+# Temp
+tmp/
+temp/
+*.tmp
