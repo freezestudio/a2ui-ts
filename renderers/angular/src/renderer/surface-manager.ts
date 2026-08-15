@@ -1,6 +1,9 @@
 import { signal, type Signal } from '@angular/core';
 import { effect as preactEffect } from '@preact/signals-core';
-import { SurfaceManager as CoreSurfaceManager, findRootComponent as coreFindRootComponent } from '@freezestudio/a2ui-web-core';
+import {
+  SurfaceManager as CoreSurfaceManager,
+  findRootComponent as coreFindRootComponent,
+} from '@freezestudio/a2ui-web-core';
 import type { Surface, A2UIDescriptor } from '@freezestudio/a2ui-web-core';
 
 export type { Surface, A2UIDescriptor } from '@freezestudio/a2ui-web-core';

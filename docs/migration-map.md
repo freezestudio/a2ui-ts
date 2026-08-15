@@ -5,24 +5,24 @@
 
 ## 一、包名映射
 
-| 现名（geo-scout）            | 新名（a2ui 项目）        | 目标目录                | 说明                                             |
-| ---------------------------- | ------------------------ | ----------------------- | ------------------------------------------------ |
-| `@geo/a2ui-shared`           | `@freezestudio/a2ui-shared`        | `packages/shared/`      | 零依赖；工具已下沉，P0-3 已反转 @geo/shared 依赖 |
-| `@geo/a2ui-web-core`         | `@freezestudio/a2ui-web-core`      | `renderers/web_core/`   | P0-1 已移出 geo schema                           |
-| `@geo/a2ui-sdk`              | `@freezestudio/a2ui-sdk`           | `packages/sdk/`         | P0-2 已移出 geo-catalog                          |
-| `@geo/a2ui-agent`            | `@freezestudio/a2ui-agent`         | `packages/agent/`       | LLM 生成器（DeepSeek/Ollama）                    |
-| `@geo/a2ui-conformance-test` | `@freezestudio/a2ui-conformance`   | `conformance/`          | v1.0 一致性测试套件                              |
-| `@geo/a2ui-eval-test`        | `@freezestudio/a2ui-eval`          | `eval/`                 | LLM 评估框架                                     |
-| `@geo/geo-catalog`           | **不变**（留 geo-scout） | `packages/geo-catalog/` | 行业应用层，P0-2 新包                            |
+| 现名（geo-scout）            | 新名（a2ui 项目）                | 目标目录                | 说明                                             |
+| ---------------------------- | -------------------------------- | ----------------------- | ------------------------------------------------ |
+| `@geo/a2ui-shared`           | `@freezestudio/a2ui-shared`      | `packages/shared/`      | 零依赖；工具已下沉，P0-3 已反转 @geo/shared 依赖 |
+| `@geo/a2ui-web-core`         | `@freezestudio/a2ui-web-core`    | `renderers/web_core/`   | P0-1 已移出 geo schema                           |
+| `@geo/a2ui-sdk`              | `@freezestudio/a2ui-sdk`         | `packages/sdk/`         | P0-2 已移出 geo-catalog                          |
+| `@geo/a2ui-agent`            | `@freezestudio/a2ui-agent`       | `packages/agent/`       | LLM 生成器（DeepSeek/Ollama）                    |
+| `@geo/a2ui-conformance-test` | `@freezestudio/a2ui-conformance` | `conformance/`          | v1.0 一致性测试套件                              |
+| `@geo/a2ui-eval-test`        | `@freezestudio/a2ui-eval`        | `eval/`                 | LLM 评估框架                                     |
+| `@geo/geo-catalog`           | **不变**（留 geo-scout）         | `packages/geo-catalog/` | 行业应用层，P0-2 新包                            |
 
 ## 二、package.json 依赖改动
 
-| 包                     | 现依赖                                   | 改后依赖                                               |
-| ---------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| 包                     | 现依赖                                   | 改后依赖                                                                   |
+| ---------------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
 | `apps/server`          | `@geo/a2ui-sdk`、`@geo/a2ui-shared`      | `@freezestudio/a2ui-sdk`、`@freezestudio/a2ui-shared`（外部 registry/git） |
 | `apps/web`             | `@geo/a2ui-shared`、`@geo/a2ui-web-core` | `@freezestudio/a2ui-shared`、`@freezestudio/a2ui-web-core`                 |
-| `packages/geo-catalog` | （无 a2ui 依赖）                         | 不变                                                   |
-| a2ui 包内部            | `@geo/a2ui-*` workspace 互依             | `@freezestudio/a2ui-*` workspace 互依                            |
+| `packages/geo-catalog` | （无 a2ui 依赖）                         | 不变                                                                       |
+| a2ui 包内部            | `@geo/a2ui-*` workspace 互依             | `@freezestudio/a2ui-*` workspace 互依                                      |
 
 ## 三、apps/ 内引用文件清单（33 个，Phase 1 需批量替换 import）
 

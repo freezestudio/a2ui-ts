@@ -4,5 +4,10 @@
   "lib": {
     "entryFile": "src/public-api.ts"
   },
-  "allowedNonPeerDependencies": ["@freezestudio/a2ui-web-core", "@freezestudio/a2ui-shared", "@preact/signals-core", "zod"]
+  "allowedNonPeerDependencies": [
+    "@freezestudio/a2ui-web-core",
+    "@freezestudio/a2ui-shared",
+    "@preact/signals-core",
+    "zod"
+  ]
 }

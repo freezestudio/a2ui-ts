@@ -35,10 +35,17 @@ export class DemoComponent {
   constructor() {
     this.registry.register(BASIC_CATALOG_ID, getBasicComponentRegistrations());
     this.renderer.processMessages([
-      { version: 'v1.0', createSurface: { surfaceId: 'demo', catalogId: BASIC_CATALOG_ID, components: [
-        { id: 'root', component: 'Column', children: ['t1'] },
-        { id: 't1', component: 'Text', text: 'Hello A2UI' },
-      ] } },
+      {
+        version: 'v1.0',
+        createSurface: {
+          surfaceId: 'demo',
+          catalogId: BASIC_CATALOG_ID,
+          components: [
+            { id: 'root', component: 'Column', children: ['t1'] },
+            { id: 't1', component: 'Text', text: 'Hello A2UI' },
+          ],
+        },
+      },
     ]);
   }
 }

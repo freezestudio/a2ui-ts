@@ -8,11 +8,11 @@
     "build": "ng build"
   },
   "dependencies": {
-    "@freezestudio/a2ui-angular": "workspace:*",
-    "@freezestudio/a2ui-web-core": "workspace:*",
     "@angular/common": "^22.1.2",
     "@angular/core": "^22.1.2",
     "@angular/platform-browser": "^22.1.2",
+    "@freezestudio/a2ui-angular": "workspace:*",
+    "@freezestudio/a2ui-web-core": "workspace:*",
     "rxjs": "~7.8.0",
     "tslib": "^2.8.1"
   },

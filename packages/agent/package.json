@@ -22,8 +22,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@freezestudio/a2ui-sdk": "workspace:*",
     "@ai-sdk/deepseek": "^3.0.22",
+    "@freezestudio/a2ui-sdk": "workspace:*",
     "ai": "^7.0.52",
     "ai-sdk-ollama": "^4.1.0"
   },

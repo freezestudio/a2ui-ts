@@ -1,5 +1,10 @@
 import { Component, inject } from '@angular/core';
-import { A2UIRendererService, A2UISurface, CatalogRegistry, getBasicComponentRegistrations } from '@freezestudio/a2ui-angular';
+import {
+  A2UIRendererService,
+  A2UISurface,
+  CatalogRegistry,
+  getBasicComponentRegistrations,
+} from '@freezestudio/a2ui-angular';
 
 const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
 
@@ -50,7 +55,11 @@ export class DemoApp {
           components: [
             { id: 'root', component: 'Column', children: ['title', 'body', 'btn'] },
             { id: 'title', component: 'Text', text: 'A2UI v1.0 Angular 渲染器演示', variant: 'caption' },
-            { id: 'body', component: 'Text', text: '本界面由 @freezestudio/a2ui-angular 渲染器驱动，组件由 A2UI 消息声明。' },
+            {
+              id: 'body',
+              component: 'Text',
+              text: '本界面由 @freezestudio/a2ui-angular 渲染器驱动，组件由 A2UI 消息声明。',
+            },
             {
               id: 'btn',
               component: 'Button',
