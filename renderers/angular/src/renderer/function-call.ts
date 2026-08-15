@@ -5,5 +5,5 @@ export {
   getFunctionCallableFrom,
   getFunctionRequiresActivation,
   isKnownFunction,
-} from '@a2ui-ts/web-core';
-export type { FunctionCall } from '@a2ui-ts/web-core';
+} from '@freezestudio/a2ui-web-core';
+export type { FunctionCall } from '@freezestudio/a2ui-web-core';

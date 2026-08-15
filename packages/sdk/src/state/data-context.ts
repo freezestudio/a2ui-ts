@@ -14,7 +14,7 @@ import { DataModel } from './data-model.js';
 import { Catalog } from '../catalog/catalog.js';
 import { SurfaceModel } from './surface-model.js';
 import { isDataBinding, isFunctionCall } from '../schema/common-types.js';
-import { ExpressionParser, toStr } from '@a2ui-ts/shared';
+import { ExpressionParser, toStr } from '@freezestudio/a2ui-shared';
 import type { DataBinding, FunctionCall } from '../schema/common-types.js';
 
 // ============================================================================

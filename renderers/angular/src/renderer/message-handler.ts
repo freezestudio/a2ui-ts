@@ -1,2 +1,2 @@
-export { processMessage, isValidMessage, validateComponents, resolveCatalog, clearAllPending } from '@a2ui-ts/web-core';
-export type { A2UIMessage } from '@a2ui-ts/web-core';
+export { processMessage, isValidMessage, validateComponents, resolveCatalog, clearAllPending } from '@freezestudio/a2ui-web-core';
+export type { A2UIMessage } from '@freezestudio/a2ui-web-core';

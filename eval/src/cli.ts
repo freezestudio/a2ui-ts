@@ -114,14 +114,14 @@ async function main(): Promise<void> {
   console.log('[1/3] 生成阶段...');
   let generator;
   if (args.provider === 'deepseek') {
-    const { DeepSeekGenerator } = await import('@a2ui-ts/agent');
+    const { DeepSeekGenerator } = await import('@freezestudio/a2ui-agent');
     generator = new DeepSeekGenerator({
       models: filteredModels,
       prompts: filteredPrompts,
       runsPerPrompt: args.runs,
     });
   } else if (args.provider === 'ollama') {
-    const { OllamaGenerator } = await import('@a2ui-ts/agent');
+    const { OllamaGenerator } = await import('@freezestudio/a2ui-agent');
     generator = new OllamaGenerator({
       models: filteredModels,
       prompts: filteredPrompts,

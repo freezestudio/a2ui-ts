@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vite-plus/test';
 import { SchemaValidator } from '../../src/harness/schema-validator';
 import { listOfficialCases } from '../../src/harness/official-cases';
-import { A2uiMessageSchema, A2uiClientMessageSchema } from '@a2ui-ts/sdk';
+import { A2uiMessageSchema, A2uiClientMessageSchema } from '@freezestudio/a2ui-sdk';
 
 /** 按官方 schema 方向选择对应的 SDK Zod 校验器 */
 function sdkSchemaFor(schema: string) {

@@ -4,7 +4,7 @@ import { PACKAGE_ROOT } from './package-root';
 import type { SchemaValidationTestFile } from './types';
 
 /**
- * 官方规范 test/cases 目录（@a2ui-ts/sdk 的只读规范副本，单一事实来源）。
+ * 官方规范 test/cases 目录（@freezestudio/a2ui-sdk 的只读规范副本，单一事实来源）。
  * 与官方 run_tests.py 消费同一份数据：{ schema, tests: [{ description, valid, data }] }
  */
 export const OFFICIAL_CASES_DIR = join(

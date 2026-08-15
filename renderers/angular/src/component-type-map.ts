@@ -1,5 +1,5 @@
 import { Type } from '@angular/core';
-import { COMPONENT_SCHEMA_BY_TYPE } from '@a2ui-ts/web-core';
+import { COMPONENT_SCHEMA_BY_TYPE } from '@freezestudio/a2ui-web-core';
 import type { ComponentSchemaLike } from './catalog-registry.js';
 import { A2UIText } from './basic/text.js';
 import { A2UIButton } from './basic/button.js';

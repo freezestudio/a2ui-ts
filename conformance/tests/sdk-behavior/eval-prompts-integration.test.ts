@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vite-plus/test';
-import { createSchemaManager } from '@a2ui-ts/sdk';
+import { createSchemaManager } from '@freezestudio/a2ui-sdk';
 
 const EVAL_PROMPTS: Array<{ name: string; description: string; promptText: string }> = [
   {

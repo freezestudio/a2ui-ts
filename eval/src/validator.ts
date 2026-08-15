@@ -1,6 +1,6 @@
 /**
  * A2UI Eval 校验器
- * 基于 @a2ui-ts/sdk 的消息校验 + 自定义业务规则
+ * 基于 @freezestudio/a2ui-sdk 的消息校验 + 自定义业务规则
  *
  * 校验层次：
  * 1. 原始文本解析（提取 <a2ui-json> 标签中的 JSON）
@@ -13,9 +13,9 @@
 
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { A2uiValidator, A2uiMessageSchema, BasicCatalog } from '@a2ui-ts/sdk';
+import { A2uiValidator, A2uiMessageSchema, BasicCatalog } from '@freezestudio/a2ui-sdk';
 import type { GeneratedResult, ValidatedResult, ValidationResultError } from './types.js';
-import type { A2uiMessage } from '@a2ui-ts/sdk';
+import type { A2uiMessage } from '@freezestudio/a2ui-sdk';
 
 // ============================================================================
 // 内部工具

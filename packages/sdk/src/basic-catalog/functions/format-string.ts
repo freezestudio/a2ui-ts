@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { evaluateExpression } from '@a2ui-ts/shared';
+import { evaluateExpression } from '@freezestudio/a2ui-shared';
 import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
 

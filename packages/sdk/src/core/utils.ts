@@ -1,1 +1,1 @@
-export { deepMerge, parseJsonPointer } from '@a2ui-ts/shared';
+export { deepMerge, parseJsonPointer } from '@freezestudio/a2ui-shared';

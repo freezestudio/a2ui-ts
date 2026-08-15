@@ -39,7 +39,7 @@ export {
   validateComponentByType,
   COMPONENT_SCHEMA_BY_TYPE,
   registerComponentSchemas,
-} from '@a2ui-ts/web-core';
+} from '@freezestudio/a2ui-web-core';
 export type {
   A2uiMessage,
   DataBinding,
@@ -47,4 +47,4 @@ export type {
   ComponentId,
   TextComponent,
   AnyComponent,
-} from '@a2ui-ts/web-core';
+} from '@freezestudio/a2ui-web-core';

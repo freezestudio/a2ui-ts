@@ -8,7 +8,7 @@ import {
   Catalog,
   createFullCatalog,
   createSchemaManager,
-} from '@a2ui-ts/sdk';
+} from '@freezestudio/a2ui-sdk';
 import { loadTestData } from '../../src/harness/loader';
 import { PACKAGE_ROOT } from '../../src/harness/package-root';
 import { readdirSync } from 'node:fs';

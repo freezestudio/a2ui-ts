@@ -8,14 +8,14 @@
 
 - **Phase 0（geo-scout 内解耦）✅ 已完成** —— 见 geo-scout docs/a2ui-split-plan.md
 - **Phase 1（仓库拆分）✅ 已完成**：
-  - ✅ 6 个核心包迁入并改名 @a2ui-ts/*；@a2ui-ts/angular 渲染器库（ng-packagr）
+  - ✅ 6 个核心包迁入并改名 @freezestudio/a2ui-*；@freezestudio/a2ui-angular 渲染器库（ng-packagr）
   - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
-  - ✅ 已发布到本地 verdaccio registry（@a2ui-ts/shared|web-core|sdk|agent@1.1.0、@a2ui-ts/angular@0.1.1）；
+  - ✅ 已发布到本地 verdaccio registry（@freezestudio/a2ui-shared|web-core|sdk|agent@1.1.0、@freezestudio/a2ui-angular@0.1.1）；
     geo-scout 已切换为版本依赖消费
 - **Phase 2（独立演进治理）起步 ✅**：
   - ✅ GitHub Actions CI（.github/workflows/ci.yml：build/test/check）
-  - ✅ @a2ui-ts/angular 单元测试接线（96 测试恢复，全仓 1234 测试全绿）
-  - ✅ samples/client/angular 演示壳（ng serve/build 验证 @a2ui-ts/angular 可消费）
+  - ✅ @freezestudio/a2ui-angular 单元测试接线（96 测试恢复，全仓 1234 测试全绿）
+  - ✅ samples/client/angular 演示壳（ng serve/build 验证 @freezestudio/a2ui-angular 可消费）
   - ⏳ 后续：切公网 npm 发布、协议版本化/SDD 治理、spec 同步流程迁入
 
 | 任务                          | 提交                                                        | 说明                                                                         |
@@ -35,7 +35,7 @@
 ### 0.1 现状
 
 - geo-scout 内 A2UI 相关代码约 **35K LOC**，分布在：6 个 `@geo/a2ui-*` 包（~28K）、web 渲染适配层（~6K）、server 协议工具（~1.3K）
-- **官方仓库是现成范本**：yarn workspace 单仓、`renderers/{web_core,angular,...}`、`agent_sdks/python`、`specification/{v0_8..v1_0}/test+eval`、`samples/`、`tools/`、`conformance/`，命名 `@a2ui-ts/*`
+- **官方仓库是现成范本**：yarn workspace 单仓、`renderers/{web_core,angular,...}`、`agent_sdks/python`、`specification/{v0_8..v1_0}/test+eval`、`samples/`、`tools/`、`conformance/`，命名 `@freezestudio/a2ui-*`
 - **geo-scout 是官方 v1.0 的先行 TS 实现**：官方 web_core 仅实现到 v0_8/v0_9，v1.0 为候选；geo-scout 的 conformance 已全量通过 v1.0 核查
 - 官方 `specification/v1_0` 与 geo-scout 副本**完全同步**（diff 仅 .DS_Store）
 - **铺垫已完成大半**：`@geo/a2ui-shared` 已从 `@geo/shared` 下沉通用工具（object-utils/json-healer/path-utils），注释明示"使 A2UI 协议 SDK 可独立复用"
@@ -46,7 +46,7 @@
 官方规范（external, a2ui.org / ~/github/ai-tools/a2ui）
    │  specification/v1_0 同步
    ▼
-a2ui 独立项目（本计划产出, @a2ui-ts/* scope）
+a2ui 独立项目（本计划产出, @freezestudio/a2ui-* scope）
    │  npm/git 依赖
    ▼
 geo-scout（收缩为行业应用：geo-catalog + 引擎接线 + data-source + 应用壳）
@@ -60,10 +60,10 @@ geo-scout（收缩为行业应用：geo-catalog + 引擎接线 + data-source + �
 
 | 资产             | 位置                                                                                | 规模     | 独立性                           | 去向                      |
 | ---------------- | ----------------------------------------------------------------------------------- | -------- | -------------------------------- | ------------------------- |
-| a2ui-shared      | `packages/a2ui/shared`                                                              | 1.3K 行  | ✅ 零依赖，已下沉工具            | → `@a2ui-ts/shared`       |
-| a2ui-web-core    | `packages/a2ui/web-core`                                                            | 2.1K 行  | ⚠️ 含 geo schema（见 4.1）       | → `@a2ui-ts/web-core`     |
-| a2ui-sdk         | `packages/a2ui/sdk`                                                                 | 20.6K 行 | ⚠️ 含 geo-catalog 资源           | → `@a2ui-ts/sdk`          |
-| a2ui-agent       | `packages/a2ui/agent`                                                               | 268 行   | ✅ LLM 生成器（DeepSeek/Ollama） | → `@a2ui-ts/agent`        |
+| a2ui-shared      | `packages/a2ui/shared`                                                              | 1.3K 行  | ✅ 零依赖，已下沉工具            | → `@freezestudio/a2ui-shared`       |
+| a2ui-web-core    | `packages/a2ui/web-core`                                                            | 2.1K 行  | ⚠️ 含 geo schema（见 4.1）       | → `@freezestudio/a2ui-web-core`     |
+| a2ui-sdk         | `packages/a2ui/sdk`                                                                 | 20.6K 行 | ⚠️ 含 geo-catalog 资源           | → `@freezestudio/a2ui-sdk`          |
+| a2ui-agent       | `packages/a2ui/agent`                                                               | 268 行   | ✅ LLM 生成器（DeepSeek/Ollama） | → `@freezestudio/a2ui-agent`        |
 | conformance-test | `packages/a2ui/conformance-test`                                                    | 1.8K 行  | ✅ v1.0 核查套件                 | → `conformance/`          |
 | eval-test        | `packages/a2ui/eval-test`                                                           | 1.9K 行  | ✅ LLM 评估框架                  | → `eval/`                 |
 | web 渲染适配层   | `apps/web/src/app/a2ui/`（renderer/basic/catalog 等 43 个非 geo 文件）              | ~3.5K 行 | ✅ 仅依赖 web-core + Angular     | → `renderers/angular/src` |
@@ -130,19 +130,19 @@ a2ui/
 ├── specification/
 │   └── v1_0/                    # 官方规范副本（从 sdk/resources/specification 迁入，只读）
 ├── packages/
-│   ├── shared/                  # @a2ui-ts/shared   （← geo-scout packages/a2ui/shared）
-│   ├── web-core/                # @a2ui-ts/web-core （← 同上，已 P0-1 净化）
-│   ├── sdk/                     # @a2ui-ts/sdk      （← 同上，已 P0-2 净化）
-│   └── agent/                   # @a2ui-ts/agent    （← 同上）
+│   ├── shared/                  # @freezestudio/a2ui-shared   （← geo-scout packages/a2ui/shared）
+│   ├── web-core/                # @freezestudio/a2ui-web-core （← 同上，已 P0-1 净化）
+│   ├── sdk/                     # @freezestudio/a2ui-sdk      （← 同上，已 P0-2 净化）
+│   └── agent/                   # @freezestudio/a2ui-agent    （← 同上）
 ├── renderers/
-│   └── angular/                 # @a2ui-ts/angular  （← web a2ui 非 geo 部分）
+│   └── angular/                 # @freezestudio/a2ui-angular  （← web a2ui 非 geo 部分）
 │       ├── src/                 #   库代码（renderer 适配 + basic 组件 + catalog 注册）
 │       ├── testing/             #   测试基座（echarts mock 等 geo 无关部分）
 │       └── explorer/            #   演示壳（决策点 D7）
-├── conformance/                 # @a2ui-ts/conformance（← conformance-test）
-├── eval/                        # @a2ui-ts/eval     （← eval-test）
+├── conformance/                 # @freezestudio/a2ui-conformance（← conformance-test）
+├── eval/                        # @freezestudio/a2ui-eval     （← eval-test）
 ├── samples/
-│   └── client/angular/          # 消费 @a2ui-ts/angular 的最小演示（决策点 D7）
+│   └── client/angular/          # 消费 @freezestudio/a2ui-angular 的最小演示（决策点 D7）
 ├── tools/                       # 占位（对齐官方 editor/composer/inspector，可选）
 ├── docs/                        # 迁移 developing-custom-a2ui-components.md、checklist 等
 └── CHANGELOG.md                 # 独立版本基线（对齐官方 0.10.x 风格）
@@ -152,25 +152,25 @@ a2ui/
 
 | 来源（geo-scout）                                                                                                                                                                       | 目标（a2ui）                                    | 依赖改动                                              |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------- |
-| `packages/a2ui/shared/src/**`                                                                                                                                                           | `packages/shared/src/**`                        | `@geo/a2ui-shared` → `@a2ui-ts/shared`                |
+| `packages/a2ui/shared/src/**`                                                                                                                                                           | `packages/shared/src/**`                        | `@geo/a2ui-shared` → `@freezestudio/a2ui-shared`                |
 | `packages/a2ui/web-core/src/**`（净化后）                                                                                                                                               | `packages/web-core/src/**`                      | 同上；`@preact/signals-core` 保留                     |
 | `packages/a2ui/sdk/src/**`（净化后）+ `resources/specification/v1_0/**`                                                                                                                 | `packages/sdk/src/**` + `specification/v1_0/**` | `pino`/`zod` 保留                                     |
 | `packages/a2ui/agent/src/**`                                                                                                                                                            | `packages/agent/src/**`                         | `@ai-sdk/deepseek`/`ai`/`ai-sdk-ollama` 保留          |
-| `packages/a2ui/conformance-test/src/**`                                                                                                                                                 | `conformance/src/**`                            | 引用 `@a2ui-ts/sdk`                                   |
-| `packages/a2ui/eval-test/src/**`                                                                                                                                                        | `eval/src/**`                                   | 引用 `@a2ui-ts/agent`/`@a2ui-ts/sdk`                  |
-| `apps/web/src/app/a2ui/renderer/**`（非 geo）                                                                                                                                           | `renderers/angular/src/renderer/**`             | `@geo/a2ui-web-core` → `@a2ui-ts/web-core`            |
+| `packages/a2ui/conformance-test/src/**`                                                                                                                                                 | `conformance/src/**`                            | 引用 `@freezestudio/a2ui-sdk`                                   |
+| `packages/a2ui/eval-test/src/**`                                                                                                                                                        | `eval/src/**`                                   | 引用 `@freezestudio/a2ui-agent`/`@freezestudio/a2ui-sdk`                  |
+| `apps/web/src/app/a2ui/renderer/**`（非 geo）                                                                                                                                           | `renderers/angular/src/renderer/**`             | `@geo/a2ui-web-core` → `@freezestudio/a2ui-web-core`            |
 | `apps/web/src/app/a2ui/basic/**`                                                                                                                                                        | `renderers/angular/src/basic/**`                | 同上                                                  |
 | `apps/web/src/app/a2ui/catalog/**`、`component.ts`、`surface.ts`、`spacer.ts`、`fallback.ts`、`component-type-map.ts`、`catalog-registry.ts`、`export-mode.ts`、`dynamic-binding.ts` 等 | `renderers/angular/src/**`                      | 同上 + Angular 库打包（ng-packagr/`ng-package.json`） |
 | 相关 spec 文件（`*.spec.ts` 非 geo）                                                                                                                                                    | 对应目标目录                                    | 随迁                                                  |
-| **geo 组件** `apps/web/src/app/a2ui/geo/**`                                                                                                                                             | **留在 geo-scout**（决策点 D1）                 | 引用 `@a2ui-ts/web-core`/`@a2ui-ts/angular` 外部依赖  |
+| **geo 组件** `apps/web/src/app/a2ui/geo/**`                                                                                                                                             | **留在 geo-scout**（决策点 D1）                 | 引用 `@freezestudio/a2ui-web-core`/`@freezestudio/a2ui-angular` 外部依赖  |
 
 ### 4.3 geo-scout 侧改动
 
 | 文件                                              | 改动                                                                                   |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `package.json`/`pnpm-workspace.yaml`              | 删除 a2ui 6 包；新增 `@a2ui-ts/*` 外部依赖（registry 或 git）                          |
+| `package.json`/`pnpm-workspace.yaml`              | 删除 a2ui 6 包；新增 `@freezestudio/a2ui-*` 外部依赖（registry 或 git）                          |
 | `apps/web/src/app/a2ui/geo/**` + `geo-catalog.ts` | 保留；import 改外部包；geo schema 就地管理（P0-1 产物）                                |
-| `apps/server/**`                                  | 引擎/工具保留；`@geo/a2ui-sdk` → `@a2ui-ts/sdk`                                        |
+| `apps/server/**`                                  | 引擎/工具保留；`@geo/a2ui-sdk` → `@freezestudio/a2ui-sdk`                                        |
 | `@geo/shared`                                     | 移除对 a2ui-shared 的 re-export（P0-3）；如 geo-scout 仍需部分工具，内聚回 @geo/shared |
 | `scripts/dev-tmux.sh`、AGENTS.md、README.md       | 更新依赖图与验证命令                                                                   |
 
@@ -224,7 +224,7 @@ a2ui/
 | #      | 决策                                | 选项                                                               | 建议                                                            |
 | ------ | ----------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- |
 | **D1** | geo 组件归属                        | A. 留在 geo-scout（推荐）B. 随拆作 `samples/community/geo-sensor`  | **A**：a2ui 项目保持通用；geo 组件作为行业扩展由 geo-scout 维护 |
-| **D2** | 命名空间                            | A. `@a2ui-ts/*`（对齐官方，推荐）B. 保留 `@geo/a2ui-*`             | **A**                                                           |
+| **D2** | 命名空间                            | A. `@freezestudio/a2ui-*`（对齐官方，推荐）B. 保留 `@geo/a2ui-*`             | **A**                                                           |
 | **D3** | monorepo 工具                       | A. pnpm（延续）B. yarn（对齐官方）                                 | **A**：团队已熟，标准脚本语义一致                               |
 | **D4** | 消费方式                            | A. npm registry（私有/公共）B. git 依赖 C. 本地 workspace 桥接过渡 | **C→A**：Phase 1 用 git 依赖快速打通，稳定后发 registry         |
 | **D5** | v1.0 定位                           | A. 独立 TS 参考实现 B. 向官方上游贡献/对齐                         | **A 起步，B 可选**：先独立演进，再评估是否 upstream             |

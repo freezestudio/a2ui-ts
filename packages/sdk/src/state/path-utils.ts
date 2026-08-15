@@ -1,1 +1,1 @@
-export { parsePointer, serializePointer, normalizePath, getParentPath, isAncestorPath } from '@a2ui-ts/shared';
+export { parsePointer, serializePointer, normalizePath, getParentPath, isAncestorPath } from '@freezestudio/a2ui-shared';

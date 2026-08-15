@@ -3,12 +3,12 @@
  * 适配 A2UI 规范评测系统的核心类型
  *
  * 核心抽象类型（TestPrompt / GeneratedResult / ModelConfig / Generator）
- * 已下沉到 @a2ui-ts/agent，此处 re-export 保持公共 API 兼容。
+ * 已下沉到 @freezestudio/a2ui-agent，此处 re-export 保持公共 API 兼容。
  */
 
-import type { TestPrompt, GeneratedResult, ModelConfig } from '@a2ui-ts/agent';
+import type { TestPrompt, GeneratedResult, ModelConfig } from '@freezestudio/a2ui-agent';
 
-export type { TestPrompt, GeneratedResult, ModelConfig } from '@a2ui-ts/agent';
+export type { TestPrompt, GeneratedResult, ModelConfig } from '@freezestudio/a2ui-agent';
 
 // ============================================================================
 // 结果类型（流水线三阶段）

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { A2UIRendererService, A2UISurface, CatalogRegistry, getBasicComponentRegistrations } from '@a2ui-ts/angular';
+import { A2UIRendererService, A2UISurface, CatalogRegistry, getBasicComponentRegistrations } from '@freezestudio/a2ui-angular';
 
 const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
 
@@ -7,7 +7,7 @@ const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/cat
  * A2UI v1.0 Angular 渲染器演示应用
  *
  * 演示：通过 A2UI createSurface 消息声明界面（Column/Text/Button），
- * 由 @a2ui-ts/angular 渲染器 + basic catalog 组件渲染；按钮触发 renderer→agent action。
+ * 由 @freezestudio/a2ui-angular 渲染器 + basic catalog 组件渲染；按钮触发 renderer→agent action。
  */
 @Component({
   selector: 'app-root',
@@ -50,7 +50,7 @@ export class DemoApp {
           components: [
             { id: 'root', component: 'Column', children: ['title', 'body', 'btn'] },
             { id: 'title', component: 'Text', text: 'A2UI v1.0 Angular 渲染器演示', variant: 'caption' },
-            { id: 'body', component: 'Text', text: '本界面由 @a2ui-ts/angular 渲染器驱动，组件由 A2UI 消息声明。' },
+            { id: 'body', component: 'Text', text: '本界面由 @freezestudio/a2ui-angular 渲染器驱动，组件由 A2UI 消息声明。' },
             {
               id: 'btn',
               component: 'Button',

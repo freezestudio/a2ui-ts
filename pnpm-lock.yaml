@@ -46,7 +46,7 @@ importers:
 
   conformance:
     dependencies:
-      '@a2ui-ts/sdk':
+      '@freezestudio/a2ui-sdk':
         specifier: workspace:*
         version: link:../packages/sdk
     devDependencies:
@@ -74,10 +74,10 @@ importers:
 
   eval:
     dependencies:
-      '@a2ui-ts/agent':
+      '@freezestudio/a2ui-agent':
         specifier: workspace:*
         version: link:../packages/agent
-      '@a2ui-ts/sdk':
+      '@freezestudio/a2ui-sdk':
         specifier: workspace:*
         version: link:../packages/sdk
       ajv:
@@ -114,12 +114,12 @@ importers:
 
   packages/agent:
     dependencies:
-      '@a2ui-ts/sdk':
-        specifier: workspace:*
-        version: link:../sdk
       '@ai-sdk/deepseek':
         specifier: ^3.0.22
         version: 3.0.28(zod@4.4.3)
+      '@freezestudio/a2ui-sdk':
+        specifier: workspace:*
+        version: link:../sdk
       ai:
         specifier: ^7.0.52
         version: 7.0.65(zod@4.4.3)
@@ -148,7 +148,7 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@a2ui-ts/shared':
+      '@freezestudio/a2ui-shared':
         specifier: workspace:*
         version: link:../shared
       pino:
@@ -203,7 +203,7 @@ importers:
 
   packages/web-core:
     dependencies:
-      '@a2ui-ts/shared':
+      '@freezestudio/a2ui-shared':
         specifier: workspace:*
         version: link:../shared
       '@preact/signals-core':
@@ -234,10 +234,10 @@ importers:
 
   renderers/angular:
     dependencies:
-      '@a2ui-ts/shared':
+      '@freezestudio/a2ui-shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@a2ui-ts/web-core':
+      '@freezestudio/a2ui-web-core':
         specifier: workspace:*
         version: link:../../packages/web-core
       '@preact/signals-core':
@@ -301,12 +301,6 @@ importers:
 
   samples/client/angular:
     dependencies:
-      '@a2ui-ts/angular':
-        specifier: workspace:*
-        version: link:../../../renderers/angular
-      '@a2ui-ts/web-core':
-        specifier: workspace:*
-        version: link:../../../packages/web-core
       '@angular/common':
         specifier: ^22.1.2
         version: 22.1.2(@angular/core@22.1.2(@angular/compiler@22.1.2)(rxjs@7.8.2))(rxjs@7.8.2)
@@ -316,6 +310,12 @@ importers:
       '@angular/platform-browser':
         specifier: ^22.1.2
         version: 22.1.2(@angular/common@22.1.2(@angular/core@22.1.2(@angular/compiler@22.1.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.2(@angular/compiler@22.1.2)(rxjs@7.8.2))
+      '@freezestudio/a2ui-angular':
+        specifier: workspace:*
+        version: link:../../../renderers/angular
+      '@freezestudio/a2ui-web-core':
+        specifier: workspace:*
+        version: link:../../../packages/web-core
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2

@@ -18,12 +18,12 @@ A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent
 a2ui-ts/
 ├── specification/v1_0/     # 官方协议规范副本（只读，从官方仓库同步）
 ├── packages/
-│   ├── shared/             # @a2ui-ts/shared    通用工具（路径/JSON 修复/国际化）
-│   ├── web-core/           # @a2ui-ts/web-core  框架无关渲染核心（Zod schema、SurfaceManager、消息处理）
-│   ├── sdk/                # @a2ui-ts/sdk       协议 SDK（校验器、流式 JSON 解析、catalog）
-│   └── agent/              # @a2ui-ts/agent     LLM 生成器（DeepSeek / Ollama）
+│   ├── shared/             # @freezestudio/a2ui-shared    通用工具（路径/JSON 修复/国际化）
+│   ├── web-core/           # @freezestudio/a2ui-web-core  框架无关渲染核心（Zod schema、SurfaceManager、消息处理）
+│   ├── sdk/                # @freezestudio/a2ui-sdk       协议 SDK（校验器、流式 JSON 解析、catalog）
+│   └── agent/              # @freezestudio/a2ui-agent     LLM 生成器（DeepSeek / Ollama）
 ├── renderers/
-│   └── angular/            # @a2ui-ts/angular   Angular 渲染器（basic 组件 + catalog 注册 + explorer 演示）
+│   └── angular/            # @freezestudio/a2ui-angular   Angular 渲染器（basic 组件 + catalog 注册 + explorer 演示）
 ├── conformance/            # 协议一致性测试（v1.0 核查）
 ├── eval/                   # LLM 评估框架
 ├── samples/client/angular/ # 最小可运行演示客户端

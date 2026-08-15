@@ -1,5 +1,5 @@
 {
-  "name": "@a2ui-ts/angular-demo",
+  "name": "@freezestudio/a2ui-angular-demo",
   "version": "0.1.0",
   "private": true,
   "description": "A2UI v1.0 Angular 渲染器演示客户端",
@@ -8,8 +8,8 @@
     "build": "ng build"
   },
   "dependencies": {
-    "@a2ui-ts/angular": "workspace:*",
-    "@a2ui-ts/web-core": "workspace:*",
+    "@freezestudio/a2ui-angular": "workspace:*",
+    "@freezestudio/a2ui-web-core": "workspace:*",
     "@angular/common": "^22.1.2",
     "@angular/core": "^22.1.2",
     "@angular/platform-browser": "^22.1.2",

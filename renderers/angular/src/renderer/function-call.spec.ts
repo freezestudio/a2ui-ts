@@ -6,7 +6,7 @@ import {
   isKnownFunction,
   resolveDynamicValue,
 } from './function-call.js';
-import { A2uiSecurityError } from '@a2ui-ts/web-core';
+import { A2uiSecurityError } from '@freezestudio/a2ui-web-core';
 import { resolvePath, isDataBinding, isFunctionCall, setAtPath } from './data-binding.js';
 
 /** 解包 ValidationResult（v1.0 #2220 校验函数返回 {valid} 对象） */
