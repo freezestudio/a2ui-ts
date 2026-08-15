@@ -9,7 +9,7 @@ A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent
 ## 定位
 
 - 官方协议：<https://a2ui.org/>（规范副本见 `specification/v1_0/`，只读）
-- 官方多语言实现参考：<https://github.com/ai-tools/a2ui>（python / angular / lit / react）
+- 官方多语言实现参考：<https://github.com/a2ui-project/a2ui>（python / angular / lit / react）
 - **本项目是官方 v1.0 协议的 TypeScript 先行实现**（官方核心实现当前以 v0.9.1 为主版本）
 
 ## 仓库结构（规划）
