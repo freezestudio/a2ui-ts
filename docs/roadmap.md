@@ -12,7 +12,6 @@
   - ✅ 构建全过；测试 1138 全过（shared 53 / web-core 11 / sdk 513 / conformance 561）；vp check 全绿
   - ⏳ 待办：@a2ui/angular 渲染器迁移、geo-scout 消费切换、发布
 
-
 | 任务                          | 提交                                                        | 说明                                                                         |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | P0-1 web-core geo schema 外移 | `refactor(a2ui): web-core 移出 geo 组件 schema...`          | 新增 `registerComponentSchemas` 扩展注册机制 + `geo-schemas.ts` + 5 用例测试 |
