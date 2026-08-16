@@ -57,7 +57,7 @@ pnpm --filter @freezestudio/a2ui-angular-demo build
 
 ```bash
 pnpm changeset                 # 本地声明变更包与 semver bump（major/minor/patch）
-pnpm changeset status --since=origin/main   # 检查当前变更是否已有 changeset
+pnpm release:check   # 检查当前 PR 中变更的 public 包是否已有 changeset
 ```
 
 - 带 changeset 的提交合并到 main 后，`.github/workflows/release.yml` 自动创建/更新 “Version Packages” PR。

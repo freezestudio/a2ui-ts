@@ -29,7 +29,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate changesets
-        run: pnpm changeset status --since=origin/main
+        if: github.event_name == 'pull_request'
+        run: pnpm release:check
 
       - name: Build all packages
         run: pnpm -r build

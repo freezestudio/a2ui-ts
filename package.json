@@ -11,7 +11,7 @@
     "clean": "pnpm -r clean",
     "check": "vp check",
     "changeset": "changeset",
-    "release:check": "changeset status --since=origin/main",
+    "release:check": "node scripts/release-check.mjs",
     "release:version": "changeset version",
     "release:publish": "changeset publish"
   },
