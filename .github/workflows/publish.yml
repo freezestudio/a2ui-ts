@@ -1,9 +1,16 @@
-name: Publish to npm
+name: Publish single package (manual fallback)
+
+# 正常发布路径：合并 Changesets 生成的 Version Packages PR 后，
+# release.yml 会自动按包发布并创建 tag。
+# 本 workflow 仅在需要人工补发某个 workspace 包时使用。
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Workspace package name, e.g. @freezestudio/a2ui-sdk'
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -32,12 +39,10 @@ jobs:
       - name: Build all packages
         run: pnpm -r build
 
-      - name: Run tests
+      - name: Run all tests
         run: pnpm -r test
 
-      # 发布全部非 private 包（@freezestudio/a2ui-*）
-      # 版本取自各包 package.json；触发方式：打 tag vX.Y.Z 前先提交对应版本号
-      - name: Publish to npm
-        run: pnpm -r publish --access public --no-git-checks
+      - name: Publish selected package
+        run: pnpm --filter "${{ inputs.package }}" publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

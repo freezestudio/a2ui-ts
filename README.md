@@ -102,13 +102,17 @@ pnpm check    # vp check：format + lint + type（根 vite.config.ts 配置）
 
 ## 发布（公网 npm）
 
+使用 Changesets 自动管理版本、CHANGELOG、tag 与 npm 发布：
+
 ```bash
-pnpm -r publish --access public    # 发布全部非 private 包（scope @freezestudio/a2ui-*）
+pnpm changeset                        # 声明本次变更影响的包和 bump 类型
+pnpm release:check                    # 检查变更是否已登记 changeset
 ```
 
-- 手工发布：先在对应包 `package.json` 更新版本号并提交，再执行 `pnpm publish --access public`
-- CI 自动发布：打 tag 触发 `.github/workflows/publish.yml`：`git tag v1.2.0 && git push origin v1.2.0`
-- conformance / eval / demo 为 private，不发布
+- 变更合并到 `main` 后，`release.yml` 自动创建 “Version Packages” PR。
+- 合并该 PR 后，Changesets 只发布实际变更的 public 包，并自动创建包级 git tag。
+- `publish.yml` 仅作为人工补发单个 workspace 包的 fallback。
+- conformance / eval / demo 为 private，在 Changesets 配置中 ignore，不发布
 
 ## 免责声明
 

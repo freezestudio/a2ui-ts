@@ -9,9 +9,14 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean",
-    "check": "vp check"
+    "check": "vp check",
+    "changeset": "changeset",
+    "release:check": "changeset status --since=origin/main",
+    "release:version": "changeset version",
+    "release:publish": "changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.8",
     "vite-plus": "catalog:"
   },

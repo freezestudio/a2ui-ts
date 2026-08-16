@@ -10,6 +10,17 @@
 
 ---
 
+## [2026-08-16] 接入 Changesets 发布自动化
+
+- 新增 `@changesets/cli` 与 `.changeset/config.json`
+- 新增 `.github/workflows/release.yml`：合并 main 后自动创建 Version Packages PR，合并后按包发布并创建包级 tag
+- `ci.yml` 增加 `pnpm changeset status --since=origin/main` 门禁：public 包源码变更必须附带 changeset
+- `publish.yml` 改为 `workflow_dispatch` 单包人工补发 fallback，移除 `pnpm -r publish` 全量发布
+- 根 `package.json` 增加 `changeset` / `release:check` / `release:version` / `release:publish` 快捷命令
+- 为本次 v1.0 破坏性修复登记 changeset：sdk/web-core major，angular minor
+
+---
+
 ## [2026-08-16] v1.0 协议深度审查修复
 
 > 依据 `packages/sdk/resources/specification/v1_0` 官方协议副本逐项审查并修复。

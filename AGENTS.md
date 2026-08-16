@@ -19,7 +19,7 @@ a2ui-ts/
 ├── conformance/     # @freezestudio/a2ui-conformance v1.0 一致性测试（568 用例，PRIVATE 不发布）
 ├── eval/            # @freezestudio/a2ui-eval    LLM 评估框架（PRIVATE 不发布）
 ├── samples/client/angular/  # @freezestudio/a2ui-angular-demo 演示壳
-└── .github/workflows/       # ci.yml（build/test/check）+ publish.yml（v* tag 自动发布）
+└── .github/workflows/       # ci.yml（build/test/check/changeset 门禁）+ release.yml（Changesets 自动发版）+ publish.yml（单包人工补发）
 ```
 
 ## 工具链
@@ -53,19 +53,22 @@ pnpm --filter @freezestudio/a2ui-angular-demo build
 
 ## 发布流程（公网 npm）
 
-**手工发布**（改版本号后）：
+使用 **Changesets** 管理版本、CHANGELOG、tag 与 npm 发布：
 
 ```bash
-pnpm --filter @freezestudio/a2ui-sdk publish --access public
-pnpm -r publish --access public    # 发布全部非 private 包
+pnpm changeset                 # 本地声明变更包与 semver bump（major/minor/patch）
+pnpm changeset status --since=origin/main   # 检查当前变更是否已有 changeset
 ```
 
-- 凭据：`~/.npmrc` 的 `//registry.npmjs.org/:_authToken`（bypass-2FA granular token，本地与 CI 共用）
-- CI 自动发布：打 tag 触发 `.github/workflows/publish.yml`：
-  ```bash
-  git tag v1.2.0 && git push origin v1.2.0
-  ```
-- 版本号先在各包 `package.json` 更新并提交；conformance/eval/demo 为 private，不发布
+- 带 changeset 的提交合并到 main 后，`.github/workflows/release.yml` 自动创建/更新 “Version Packages” PR。
+- 合并该 PR 后，Changesets 自动：
+  - 更新各包 `package.json` 版本
+  - 生成/更新各包 `CHANGELOG.md`
+  - 创建包级 git tag（如 `@freezestudio/a2ui-sdk@2.0.0`）
+  - 只发布实际变更的 public 包到 npm
+- `pnpm release:check` / `release:version` / `release:publish` 为对应快捷命令。
+- 仅人工补发某个包时才使用 `publish.yml` 的 `workflow_dispatch`，并选择目标 workspace 包。
+- conformance/eval/demo 为 private，在 Changesets 配置中 ignore，不发布
 
 ## 规范副本同步
 
