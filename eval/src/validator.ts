@@ -416,10 +416,12 @@ export class Validator {
       const crf = msg.callRendererFunction as Record<string, unknown> | undefined;
       const callFn = crf?.callFunction as Record<string, unknown> | undefined;
       const fnName = callFn?.call as string | undefined;
-      if (fnName && !validFunctions.has(fnName.toLowerCase())) {
+      const callCatalogId = callFn?.catalogId as string | undefined;
+      const isBasicCatalog = callCatalogId === 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
+      if (fnName && isBasicCatalog && !validFunctions.has(fnName)) {
         errors.push({
           path: `[${i}].callRendererFunction.callFunction.call`,
-          message: `callRendererFunction 调用了未知函数: "${fnName}"`,
+          message: `callRendererFunction 调用了未知 basic catalog 函数: "${fnName}"`,
         });
       }
     }

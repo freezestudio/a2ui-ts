@@ -1,12 +1,14 @@
 import type { DataBinding, FunctionCall } from './data-binding.js';
 import { isDataBinding, isFunctionCall, resolvePath } from './data-binding.js';
 import { evaluateExpression } from '@freezestudio/a2ui-shared';
-import { A2uiSecurityError } from '../common/errors.js';
+import { A2uiFunctionError, A2uiSecurityError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('function-call');
 
+export const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
+
+/** 官方 basic catalog 的 renderer 函数（v1.0） */
 const KNOWN_FUNCTIONS = new Set([
-  'capitalize',
   'required',
   'regex',
   'length',
@@ -21,17 +23,6 @@ const KNOWN_FUNCTIONS = new Set([
   'and',
   'or',
   'not',
-  'add',
-  'subtract',
-  'multiply',
-  'divide',
-  'equals',
-  'notEquals',
-  'greaterThan',
-  'lessThan',
-  'contains',
-  'startsWith',
-  'endsWith',
   '@index',
 ]);
 
@@ -42,6 +33,33 @@ const FUNCTION_CALLABLE_FROM: Record<string, 'rendererOnly' | 'agentOnly' | 'ren
 
 /** 需要用户激活上下文（requiresUserActivation）才能执行的函数 */
 const FUNCTION_REQUIRES_ACTIVATION = new Set<string>(['openUrl']);
+
+interface RegisteredRendererFunction {
+  callableFrom: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
+  requiresUserActivation?: boolean;
+  execute?: (args: Record<string, unknown>, context: Record<string, unknown>) => unknown;
+}
+
+const FUNCTION_REGISTRY = new Map<string, Map<string, RegisteredRendererFunction>>();
+
+/** 注册宿主应用/自定义 catalog 的 renderer 函数 */
+export function registerRendererFunction(
+  catalogId: string,
+  name: string,
+  definition: RegisteredRendererFunction,
+): void {
+  let catalog = FUNCTION_REGISTRY.get(catalogId);
+  if (!catalog) {
+    catalog = new Map();
+    FUNCTION_REGISTRY.set(catalogId, catalog);
+  }
+  catalog.set(name, definition);
+}
+
+function findRegisteredFunction(catalogId: string | undefined, name: string): RegisteredRendererFunction | undefined {
+  if (!catalogId) return undefined;
+  return FUNCTION_REGISTRY.get(catalogId)?.get(name);
+}
 
 /**
  * Action 意图分类（对齐上游 user_initiated_functions 提案）：
@@ -57,7 +75,9 @@ export const ACTION_CONTEXT_KEYS = {
 } as const;
 
 /** 函数是否声明 requiresUserActivation */
-export function getFunctionRequiresActivation(name: string): boolean {
+export function getFunctionRequiresActivation(name: string, catalogId?: string): boolean {
+  const registered = findRegisteredFunction(catalogId, name);
+  if (registered) return registered.requiresUserActivation === true;
   return FUNCTION_REQUIRES_ACTIVATION.has(name);
 }
 
@@ -66,8 +86,8 @@ export function getFunctionRequiresActivation(name: string): boolean {
  *
  * 非交互触发（布局渲染、字符串插值、被动事件、agent 远程调用）一律拒绝。
  */
-function assertUserActivation(name: string, context?: Record<string, unknown>): void {
-  if (!FUNCTION_REQUIRES_ACTIVATION.has(name)) return;
+function assertUserActivation(name: string, catalogId: string | undefined, context?: Record<string, unknown>): void {
+  if (!getFunctionRequiresActivation(name, catalogId)) return;
   const isActivated = context?.[ACTION_CONTEXT_KEYS.isExecutingAction] === true;
   const intent = context?.[ACTION_CONTEXT_KEYS.actionIntent];
   if (!isActivated || intent !== 'activation') {
@@ -78,12 +98,20 @@ function assertUserActivation(name: string, context?: Record<string, unknown>): 
   }
 }
 
-export function getFunctionCallableFrom(name: string): 'rendererOnly' | 'agentOnly' | 'rendererOrAgent' | undefined {
+export function getFunctionCallableFrom(
+  name: string,
+  catalogId?: string,
+): 'rendererOnly' | 'agentOnly' | 'rendererOrAgent' | undefined {
+  const registered = findRegisteredFunction(catalogId, name);
+  if (registered) return registered.callableFrom;
+  if (catalogId && catalogId !== BASIC_CATALOG_ID) return undefined;
   if (FUNCTION_CALLABLE_FROM[name]) return FUNCTION_CALLABLE_FROM[name];
   return KNOWN_FUNCTIONS.has(name) ? 'rendererOnly' : undefined;
 }
 
-export function isKnownFunction(name: string): boolean {
+export function isKnownFunction(name: string, catalogId?: string): boolean {
+  if (findRegisteredFunction(catalogId, name)) return true;
+  if (catalogId && catalogId !== BASIC_CATALOG_ID) return false;
   return KNOWN_FUNCTIONS.has(name);
 }
 
@@ -178,18 +206,25 @@ export function callFunction(
   depth = 0,
   context?: Record<string, unknown>,
 ): unknown {
-  assertUserActivation(fn.call, context);
+  assertUserActivation(fn.call, fn.catalogId, context);
   const args = fn.args || {};
   const resolvedArgs: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(args)) {
     resolvedArgs[key] = resolveDynamicValue(val, dataModel, context, depth + 1);
   }
 
+  const registered = findRegisteredFunction(fn.catalogId, fn.call);
+  if (registered?.execute) {
+    return registered.execute(resolvedArgs, context ?? {});
+  }
+  if (fn.catalogId && fn.catalogId !== BASIC_CATALOG_ID && !registered) {
+    throw new A2uiFunctionError(`Function '${fn.call}' is not registered in catalog '${fn.catalogId}'.`, {
+      code: 'UNKNOWN_FUNCTION',
+    });
+  }
+
   let result: unknown;
   switch (fn.call) {
-    case 'capitalize':
-      result = fnCapitalize(resolvedArgs);
-      break;
     case 'required':
       result = fnRequired(resolvedArgs);
       break;
@@ -232,46 +267,13 @@ export function callFunction(
     case 'not':
       result = fnNot(resolvedArgs);
       break;
-    case 'add':
-      result = fnAdd(resolvedArgs);
-      break;
-    case 'subtract':
-      result = fnSubtract(resolvedArgs);
-      break;
-    case 'multiply':
-      result = fnMultiply(resolvedArgs);
-      break;
-    case 'divide':
-      result = fnDivide(resolvedArgs);
-      break;
-    case 'equals':
-      result = fnEquals(resolvedArgs);
-      break;
-    case 'notEquals':
-      result = fnNotEquals(resolvedArgs);
-      break;
-    case 'greaterThan':
-      result = fnGreaterThan(resolvedArgs);
-      break;
-    case 'lessThan':
-      result = fnLessThan(resolvedArgs);
-      break;
-    case 'contains':
-      result = fnContains(resolvedArgs);
-      break;
-    case 'startsWith':
-      result = fnStartsWith(resolvedArgs);
-      break;
-    case 'endsWith':
-      result = fnEndsWith(resolvedArgs);
-      break;
     case '@index': {
       if (context?.['caller'] === 'agent') {
-        throw new Error('系统函数 @index 不允许 agent 调用');
+        throw new A2uiFunctionError('系统函数 @index 不允许 agent 调用', { code: 'INVALID_FUNCTION_CALL' });
       }
       const index = context?.['@index'];
       if (index === undefined) {
-        throw new Error('@index 只能在列表模板渲染中使用');
+        throw new A2uiFunctionError('@index 只能在列表模板渲染中使用', { code: 'INVALID_FUNCTION_CALL' });
       }
       const indexArgs = fn.args ?? {};
       const offset = typeof indexArgs['offset'] === 'number' ? indexArgs['offset'] : 0;
@@ -279,7 +281,7 @@ export function callFunction(
       break;
     }
     default:
-      result = `[未知函数: ${fn.call}]`;
+      throw new A2uiFunctionError(`Unknown renderer function '${fn.call}'.`, { code: 'UNKNOWN_FUNCTION' });
   }
 
   return result;
@@ -513,4 +515,29 @@ function fnStartsWith(args: Record<string, unknown>): boolean {
 }
 function fnEndsWith(args: Record<string, unknown>): boolean {
   return toStr(args['string']).endsWith(toStr(args['suffix']));
+}
+
+export const EXTENDED_CATALOG_ID = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
+
+registerRendererFunction(EXTENDED_CATALOG_ID, 'capitalize', {
+  callableFrom: 'rendererOnly',
+  execute: (args) => fnCapitalize(args),
+});
+for (const [name, execute] of [
+  ['add', fnAdd],
+  ['subtract', fnSubtract],
+  ['multiply', fnMultiply],
+  ['divide', fnDivide],
+  ['equals', fnEquals],
+  ['notEquals', fnNotEquals],
+  ['greaterThan', fnGreaterThan],
+  ['lessThan', fnLessThan],
+  ['contains', fnContains],
+  ['startsWith', fnStartsWith],
+  ['endsWith', fnEndsWith],
+] as const) {
+  registerRendererFunction(EXTENDED_CATALOG_ID, name, {
+    callableFrom: 'rendererOnly',
+    execute: (args) => execute(args),
+  });
 }

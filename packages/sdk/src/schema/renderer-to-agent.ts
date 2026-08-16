@@ -23,7 +23,9 @@ export const ClientActionPayloadSchema = z.object({
   userMessage: z.string().optional(),
   surfaceId: z.string(),
   sourceComponentId: z.string(),
-  timestamp: z.string(),
+  timestamp: z.string().refine((value) => Number.isFinite(Date.parse(value)), {
+    message: 'timestamp 必须是 ISO 8601 时间字符串',
+  }),
   context: z.record(z.string(), z.unknown()),
   metadata: MetadataSchema,
 });
@@ -162,7 +164,7 @@ export type A2uiClientMessageList = z.infer<typeof A2uiClientMessageListSchema>;
 /**
  * Renderer 到 Agent 消息列表包装器
  */
-export const A2uiClientMessageListWrapperSchema = z.object({
+export const A2uiClientMessageListWrapperSchema = z.strictObject({
   messages: A2uiClientMessageListSchema,
 });
 export type A2uiClientMessageListWrapper = z.infer<typeof A2uiClientMessageListWrapperSchema>;

@@ -182,6 +182,7 @@ export class A2uiValidator {
    */
   validateMessageList(messages: unknown[], config: ValidationConfig = STRICT_VALIDATION): ValidationResult {
     const errors: ValidationError[] = [];
+    const surfacesWithRoot = new Set<string>();
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
@@ -197,8 +198,14 @@ export class A2uiValidator {
         continue;
       }
 
-      // 如果是 UpdateComponents 消息，做组件级别校验
+      // v1.0 允许组件跨消息渐进到达：root 尚未出现时只校验信封，
+      // root 出现后的批次再执行完整拓扑/完整性检查。
       if (isUpdateComponentsMessage(msg)) {
+        const surfaceId = msg.updateComponents.surfaceId;
+        const hasRoot = msg.updateComponents.components.some((comp) => comp.id === 'root');
+        if (hasRoot) surfacesWithRoot.add(surfaceId);
+        if (!surfacesWithRoot.has(surfaceId)) continue;
+
         const compResult = this.validateComponents(msg, config);
         if (!compResult.valid) {
           for (const err of compResult.errors) {
@@ -297,6 +304,33 @@ export class A2uiValidator {
       }
     }
 
+    // 组件内嵌 FunctionCall 校验（显式 catalogId → surface 默认；@index 系统函数除外）
+    const calls = collectFunctionCalls(components);
+    for (const call of calls) {
+      if (call.call === '@index') continue;
+      const catalogId = call.explicitCatalogId ?? options.surfaceDefaultCatalogId;
+      if (!catalogId) {
+        errors.push({
+          path: `${call.componentId}.${call.path}`,
+          message:
+            '函数调用未声明 catalogId，且 surface 未提供默认 catalogId（解析顺序：函数级 → surface 默认 → 报错）',
+        });
+        continue;
+      }
+      const catalog = catalogs.find((c) => c.catalogId === catalogId);
+      if (!catalog) {
+        errors.push({
+          path: `${call.componentId}.${call.path}`,
+          message: `函数 catalog "${catalogId}" 不在可用 catalogs 中`,
+        });
+        continue;
+      }
+      const issues = catalog.validateFunctionCall(call.raw);
+      for (const issue of issues) {
+        errors.push({ path: `${call.componentId}.${call.path}${issue.path}`, message: issue.message });
+      }
+    }
+
     // 组合约束校验：组件类型 → 声明该类型的组件解析出的 catalog 的约束
     const compErrors = checkCompositionConstraints(components, (type) => {
       for (const comp of components) {
@@ -339,6 +373,48 @@ export class A2uiValidator {
 // ============================================================================
 // 工具函数
 // ============================================================================
+
+interface LocatedFunctionCall {
+  raw: Record<string, unknown>;
+  call: string;
+  explicitCatalogId?: string;
+  componentId: string;
+  path: string;
+}
+
+function collectFunctionCalls(components: Array<Record<string, unknown>>): LocatedFunctionCall[] {
+  const found: LocatedFunctionCall[] = [];
+  const walk = (value: unknown, componentId: string, path: string): void => {
+    if (typeof value !== 'object' || value === null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => walk(item, componentId, `${path}[${index}]`));
+      return;
+    }
+    const record = value as Record<string, unknown>;
+    if (typeof record['call'] === 'string') {
+      found.push({
+        raw: record,
+        call: record['call'],
+        explicitCatalogId: typeof record['catalogId'] === 'string' ? record['catalogId'] : undefined,
+        componentId,
+        path,
+      });
+    }
+    for (const [key, child] of Object.entries(record)) {
+      if (key === 'call' || key === 'args' || key === 'catalogId') continue;
+      walk(child, componentId, `${path}.${key}`);
+    }
+  };
+
+  for (const comp of components) {
+    const compId = typeof comp['id'] === 'string' ? comp['id'] : '';
+    for (const [key, value] of Object.entries(comp)) {
+      if (key === 'id' || key === 'component') continue;
+      walk(value, compId, key);
+    }
+  }
+  return found;
+}
 
 /**
  * 解析组件所属 Catalog（v1.0 #2079 mixable catalogs）

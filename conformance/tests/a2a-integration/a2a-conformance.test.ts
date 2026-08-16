@@ -49,7 +49,7 @@ describe('A2UI Part 一致性', () => {
     if (tc.action === 'create_a2ui_part') {
       const version = tc.args?.version as string | undefined;
       if (version === '1.0') {
-        const part = createA2uiPart(tc.args?.data);
+        const part = createA2uiPart(Array.isArray(tc.args?.data) ? tc.args.data : []);
         return { mime_type: part.mediaType ?? part.metadata.mimeType };
       }
       return { mime_type: 'application/json+a2ui' };
@@ -62,20 +62,20 @@ describe('A2UI Part 一致性', () => {
   });
 
   it('SDK: createA2uiPart 生成正确的 MIME 类型', () => {
-    const part = createA2uiPart({ test: true });
+    const part = createA2uiPart([{ test: true }]);
     expect(part.metadata.mimeType).toBe('application/a2ui+json');
     expect(A2UI_MIME_TYPE).toBe('application/a2ui+json');
   });
 
   it('SDK: isA2uiPart 正确识别', () => {
-    const part = createA2uiPart({ test: true });
+    const part = createA2uiPart([{ test: true }]);
     expect(isA2uiPart(part)).toBe(true);
     expect(isA2uiPart({ content: { $case: 'text', value: 'hi' } })).toBe(false);
   });
 
   it('SDK: extractA2uiParts 提取数据', () => {
-    const part1 = createA2uiPart({ a: 1 });
-    const part2 = createA2uiPart({ b: 2 });
+    const part1 = createA2uiPart([{ a: 1 }]);
+    const part2 = createA2uiPart([{ b: 2 }]);
     const textPart = { content: { $case: 'text' as const, value: 'hello' } };
     const extracted = extractA2uiParts([part1, textPart as never, part2]);
     expect(extracted).toHaveLength(2);

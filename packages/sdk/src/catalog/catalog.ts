@@ -5,7 +5,13 @@
  */
 
 import type { ComponentApi, FunctionApi, FunctionContext } from './types.js';
-import { validateComponentProps, type ComponentValidationIssue } from './component-validator.js';
+import {
+  validateComponentProps,
+  validateValue,
+  normalizeCatalogSchema,
+  extractFunctionArgsSchema,
+  type ComponentValidationIssue,
+} from './component-validator.js';
 import { SURFACE_COMPONENT, type CompositionConstraints } from '../schema/composition-checker.js';
 
 // ============================================================================
@@ -35,7 +41,7 @@ export class Catalog {
   /** 组件映射表（按名称索引） */
   private _components: Map<string, ComponentApi>;
 
-  /** 函数映射表（按名称索引，支持大小写容错） */
+  /** 函数映射表（按名称精确索引） */
   private _functions: Map<string, FunctionApi>;
 
   constructor(options: { catalogId: string; version: string; components: ComponentApi[]; functions: FunctionApi[] }) {
@@ -48,7 +54,7 @@ export class Catalog {
       this._components.set(comp.name, comp);
     }
     for (const fn of options.functions) {
-      this._functions.set(fn.name.toLowerCase(), fn);
+      this._functions.set(fn.name, fn);
     }
   }
 
@@ -80,14 +86,9 @@ export class Catalog {
   // 函数访问
   // ==========================================================================
 
-  /** 获取函数 API（支持大小写容错） */
+  /** 获取函数 API（v1.0 函数名区分大小写） */
   getFunction(name: string): FunctionApi | undefined {
-    const lowerName = name.toLowerCase();
-    const fn = this._functions.get(lowerName);
-    if (fn) return fn;
-
-    // 回退：尝试原始名称
-    return this._functions.get(name.toLowerCase());
+    return this._functions.get(name);
   }
 
   /** 获取所有函数 */
@@ -203,6 +204,31 @@ export class Catalog {
    * 返回一个新的 Catalog，仅包含指定的组件和函数
    * 对应 agent_sdk_guide.md 中的 "Prune Schemas" 功能
    */
+  /**
+   * 校验函数调用是否符合 catalog 中对应函数的 Schema。
+   *
+   * @param call - wire-level FunctionCall（{call, catalogId?, args?}）
+   * @returns 校验问题列表，空数组表示通过
+   */
+  validateFunctionCall(call: Record<string, unknown>): ComponentValidationIssue[] {
+    const issues: ComponentValidationIssue[] = [];
+    const name = call['call'];
+    if (typeof name !== 'string') {
+      return [{ path: '/call', message: '函数调用缺少 call 字段' }];
+    }
+    const fn = this.getFunction(name);
+    if (!fn) {
+      return [{ path: '/call', message: `函数 "${name}" 不在 catalog ${this.catalogId} 中` }];
+    }
+    if (call['catalogId'] !== undefined) {
+      validateValue({ type: 'string' }, call['catalogId'], '/catalogId', issues);
+    }
+    const args = call['args'];
+    if (args === undefined) return issues;
+    validateValue(normalizeCatalogSchema(fn.parameters as Record<string, unknown>), args, '/args', issues);
+    return issues;
+  }
+
   prune(options: { allowedComponents?: string[]; allowedFunctions?: string[] }): Catalog {
     const { allowedComponents, allowedFunctions } = options;
 
@@ -216,8 +242,8 @@ export class Catalog {
 
     let functions: FunctionApi[];
     if (allowedFunctions) {
-      const allowedSet = new Set(allowedFunctions.map((f) => f.toLowerCase()));
-      functions = [...this._functions.values()].filter((f) => allowedSet.has(f.name.toLowerCase()));
+      const allowedSet = new Set(allowedFunctions);
+      functions = [...this._functions.values()].filter((f) => allowedSet.has(f.name));
     } else {
       functions = [...this._functions.values()];
     }
@@ -326,30 +352,66 @@ export class Catalog {
     $defs?: Record<string, unknown>;
   }): Catalog {
     const catalogId = data.catalogId ?? data.$id ?? 'unknown';
+    const UAX31 = /^[\p{XID_Start}_][\p{XID_Continue}]*$/u;
+
+    if (data.$defs) {
+      for (const key of Object.keys(data.$defs)) {
+        if (key !== 'anyComponent' && key !== 'anyFunction') {
+          throw new Error(`Catalog "${catalogId}" 的 $defs 只允许 anyComponent/anyFunction，发现 "${key}"`);
+        }
+      }
+    }
 
     const components: ComponentApi[] = [];
     if (data.components) {
       for (const [name, schema] of Object.entries(data.components)) {
-        // 协议保留名检查（上游 #2155）：Catalog 中禁止定义名为 Surface 的组件
+        if (!UAX31.test(name)) {
+          throw new Error(`Catalog "${catalogId}" 的组件名 "${name}" 不符合 UAX #31`);
+        }
         if (name === SURFACE_COMPONENT) {
           throw new Error(`Catalog "${catalogId}" 定义了协议保留组件名 "${SURFACE_COMPONENT}"（禁止）`);
         }
         const description = schema.description as string | undefined;
-        components.push({ name, schema, description });
+        components.push({ name, schema: normalizeCatalogSchema(schema), description });
       }
     }
 
     const functions: FunctionApi[] = [];
     if (data.functions) {
       for (const [funcKey, schema] of Object.entries(data.functions)) {
+        if (!UAX31.test(funcKey)) {
+          throw new Error(`Catalog "${catalogId}" 的函数名 "${funcKey}" 不符合 UAX #31`);
+        }
         const description = schema.description as string | undefined;
-        const parameters = ((schema as Record<string, unknown>).args as Record<string, unknown>) ?? {};
+        const parameters = extractFunctionArgsSchema(schema);
+        const rawReturnType = schema['returnType'];
+        const rawCallableFrom = schema['callableFrom'];
+        const rawRequiresActivation = schema['requiresUserActivation'];
 
         functions.push({
           name: funcKey,
           parameters,
           description,
-          requiresUserActivation: (schema as Record<string, unknown>).requiresUserActivation === true,
+          returnType:
+            rawReturnType === 'string' ||
+            rawReturnType === 'number' ||
+            rawReturnType === 'boolean' ||
+            rawReturnType === 'array' ||
+            rawReturnType === 'object' ||
+            rawReturnType === 'validationResult' ||
+            rawReturnType === 'any' ||
+            rawReturnType === 'void'
+              ? rawReturnType
+              : undefined,
+          callableFrom:
+            rawCallableFrom === 'rendererOnly' ||
+            rawCallableFrom === 'agentOnly' ||
+            rawCallableFrom === 'rendererOrAgent'
+              ? rawCallableFrom
+              : rawCallableFrom === undefined
+                ? 'rendererOnly'
+                : undefined,
+          requiresUserActivation: rawRequiresActivation === true,
         });
       }
     }

@@ -11,7 +11,10 @@ export { A2UI_MIME_TYPE };
  * 创建 A2UI DataPart
  * v1.0: data 字段必须是消息数组
  */
-export function createA2uiPart(data: unknown): A2ADataPart {
+export function createA2uiPart(data: unknown[]): A2ADataPart {
+  if (!Array.isArray(data)) {
+    throw new Error('A2UI DataPart.data 必须是消息数组');
+  }
   return {
     content: {
       $case: 'data',
@@ -58,5 +61,5 @@ export function a2uiMessagesToPart(messages: unknown[]): A2ADataPart {
 export function partToA2uiMessages(part: unknown): unknown[] | null {
   if (!isA2uiPart(part)) return null;
   const data = getA2uiData(part);
-  return Array.isArray(data) ? data : [data];
+  return Array.isArray(data) ? data : null;
 }

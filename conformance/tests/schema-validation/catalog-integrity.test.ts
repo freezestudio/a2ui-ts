@@ -15,26 +15,56 @@ function checkDefs(defs: Record<string, unknown>, name: string): string[] {
 
 describe('Catalog $defs key validation', () => {
   it('testing_catalog.json $defs has only allowed keys', () => {
-    const c = loadTestData(join(PACKAGE_ROOT, 'schemas/v1_0/testing_catalog.json'));
+    const c = loadTestData(
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'test', 'testing_catalog.json'),
+    );
     const defs = (c as any).$defs || {};
     expect(checkDefs(defs, 'testing_catalog')).toEqual([]);
   });
 
   it('basic/catalog.json $defs has only allowed keys', () => {
-    const c = loadTestData(join(PACKAGE_ROOT, 'schemas/catalogs/basic/catalog.json'));
+    const c = loadTestData(
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
+    );
     const defs = (c as any).$defs || {};
     expect(checkDefs(defs, 'basic/catalog')).toEqual([]);
   });
 
   it('testing_catalog has components and functions', () => {
-    const c = loadTestData(join(PACKAGE_ROOT, 'schemas/v1_0/testing_catalog.json'));
+    const c = loadTestData(
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'test', 'testing_catalog.json'),
+    );
     expect((c as any).components).toBeDefined();
     expect((c as any).functions).toBeDefined();
     expect((c as any).catalogId).toBeDefined();
   });
 
   it('basic catalog has 18 components and functions map', () => {
-    const c = loadTestData(join(PACKAGE_ROOT, 'schemas/catalogs/basic/catalog.json'));
+    const c = loadTestData(
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
+    );
     const compCount = Object.keys((c as any).components || {}).length;
     expect(compCount).toBe(18);
     expect((c as any).functions).toBeDefined();

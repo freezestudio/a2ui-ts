@@ -47,7 +47,7 @@ export class IncrementalStreamParser {
   private catalogId: string | null = null;
   private activeMessageType: 'createSurface' | 'updateComponents' | null = null;
 
-  private dataModelBuffer: Record<string, unknown> = {};
+  private dataModelDeltas: DataModelDelta[] = [];
   private dataModelDirty = false;
 
   constructor(config: IncrementalParserConfigInput = {}) {
@@ -120,7 +120,7 @@ export class IncrementalStreamParser {
     this.surfaceId = null;
     this.catalogId = null;
     this.activeMessageType = null;
-    this.dataModelBuffer = {};
+    this.dataModelDeltas = [];
     this.dataModelDirty = false;
   }
 
@@ -217,7 +217,8 @@ export class IncrementalStreamParser {
     } else if (obj['updateDataModel']) {
       const ud = obj['updateDataModel'] as Record<string, unknown>;
       this.surfaceId = (ud['surfaceId'] as string) ?? this.surfaceId;
-      this.dataModelBuffer = { ...this.dataModelBuffer, ...ud } as Record<string, unknown>;
+      const path = typeof ud['path'] === 'string' ? ud['path'] : '';
+      this.dataModelDeltas.push({ path, value: ud['value'] });
       this.dataModelDirty = true;
     }
   }
@@ -237,10 +238,10 @@ export class IncrementalStreamParser {
 
     // 组件粒度内容变化检测：仅下发新增/内容变化的组件与未达占位
     const components = this.buildPartialComponentList();
-    const dataModelDelta = this.dataModelDirty ? this.extractDataModelDelta() : undefined;
+    const { dataModelDelta, dataModelDeltas } = this.dataModelDirty ? this.extractDataModelDelta() : {};
     this.dataModelDirty = false;
 
-    if (components.length === 0 && !dataModelDelta) return null;
+    if (components.length === 0 && dataModelDelta === undefined) return null;
 
     return {
       type: 'a2ui_partial',
@@ -250,6 +251,7 @@ export class IncrementalStreamParser {
       messageType: this.activeMessageType ?? 'updateComponents',
       components,
       dataModelDelta,
+      dataModelDeltas,
     };
   }
 
@@ -357,8 +359,13 @@ export class IncrementalStreamParser {
     return `c:${hash.toString(36)}`;
   }
 
-  private extractDataModelDelta(): DataModelDelta {
-    return { path: '', value: this.dataModelBuffer };
+  private extractDataModelDelta(): { dataModelDelta: DataModelDelta; dataModelDeltas: DataModelDelta[] } {
+    const dataModelDeltas = [...this.dataModelDeltas];
+    this.dataModelDeltas = [];
+    return {
+      dataModelDelta: dataModelDeltas[0] ?? { path: '', value: undefined },
+      dataModelDeltas,
+    };
   }
 
   // ==========================================================================

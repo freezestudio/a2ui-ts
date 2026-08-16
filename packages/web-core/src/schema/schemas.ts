@@ -11,7 +11,12 @@ export type ComponentId = z.infer<typeof ComponentIdSchema>;
  */
 export const MetadataSchema = z
   .object({
-    extensions: z.record(z.string(), z.unknown()).optional(),
+    extensions: z
+      .record(z.string(), z.unknown())
+      .refine((ext) => Object.keys(ext).every((k) => /^[\p{XID_Start}_][\p{XID_Continue}]*$/u.test(k)), {
+        message: '扩展键必须是 UAX #31 合法标识符',
+      })
+      .optional(),
   })
   .optional();
 export type Metadata = z.infer<typeof MetadataSchema>;
@@ -33,6 +38,9 @@ export const DynamicValueSchema = z.union([
   z.number(),
   z.boolean(),
   z.array(z.any()),
+  z
+    .record(z.string(), z.unknown())
+    .refine((v) => !('path' in v) && !('call' in v), { message: 'object 字面量不能包含 path/call' }),
   DataBindingSchema,
   FunctionCallSchema,
 ]);
@@ -46,16 +54,15 @@ export const DynamicNumberSchema = z.union([z.number(), DataBindingSchema, Funct
 export const CreateSurfacePayloadSchema = z.strictObject({
   surfaceId: z.string(),
   catalogId: z.string().optional(),
-  surfaceProperties: z.record(z.string(), z.any()).optional(),
   sendDataModel: z.boolean().optional(),
-  components: z.array(z.any()).optional(),
+  components: z.array(z.any()).min(1).optional(),
   dataModel: z.record(z.string(), z.any()).optional(),
   metadata: MetadataSchema,
 });
 
 export const UpdateComponentsPayloadSchema = z.strictObject({
   surfaceId: z.string(),
-  components: z.array(z.any()),
+  components: z.array(z.any()).min(1),
 });
 
 export const UpdateDataModelPayloadSchema = z.strictObject({
@@ -116,7 +123,6 @@ export const ActionEventSchema = z.strictObject({
   name: z.string(),
   userMessage: DynamicStringSchema.optional(),
   context: z.record(z.string(), DynamicValueSchema).optional(),
-  metadata: MetadataSchema,
 });
 
 export const ActionSchema = z.union([
@@ -139,8 +145,9 @@ export const ComponentBase = z
     catalogId: z.string().optional(),
     weight: z.number().optional(),
     accessibility: AccessibilityAttributesSchema.optional(),
+    metadata: MetadataSchema,
   })
-  .loose(); // 宽松：上游各组件为 unevaluatedProperties:false，拼写错误不应静默通过校验
+  .strict(); // v1.0 组件信封 unevaluatedProperties:false：拼写错误必须被拒绝
 
 export const TextComponentSchema = ComponentBase.extend({
   component: z.literal('Text'),
@@ -457,8 +464,11 @@ export const ClientActionPayloadSchema = z.object({
   userMessage: z.string().optional(),
   surfaceId: z.string(),
   sourceComponentId: z.string(),
-  timestamp: z.string(),
+  timestamp: z.string().refine((value) => Number.isFinite(Date.parse(value)), {
+    message: 'timestamp 必须是 ISO 8601 时间字符串',
+  }),
   context: z.record(z.string(), z.unknown()),
+  metadata: MetadataSchema,
 });
 export type ClientActionPayload = z.infer<typeof ClientActionPayloadSchema>;
 
@@ -515,15 +525,18 @@ export const ClientErrorPayloadSchema = z.union([
     surfaceId: z.string(),
     path: z.string(),
     message: z.string(),
-    code: z.literal('VALIDATION_FAILED'),
+    code: z.enum(['VALIDATION_FAILED', 'UNALLOWED_PARENT', 'UNALLOWED_CHILD']),
   }),
-  z.strictObject({
-    surfaceId: z.string().optional(),
-    path: z.string().optional(),
-    message: z.string(),
-    code: z.string(),
-    functionCallId: z.string().optional(),
-  }),
+  z
+    .object({
+      surfaceId: z.string().optional(),
+      message: z.string(),
+      code: z.string().refine((c) => c !== 'VALIDATION_FAILED' && c !== 'UNALLOWED_PARENT' && c !== 'UNALLOWED_CHILD'),
+      functionCallId: z.string().optional(),
+    })
+    .refine((d) => (d.surfaceId !== undefined) !== (d.functionCallId !== undefined), {
+      message: 'Either surfaceId or functionCallId must be provided, but not both',
+    }),
 ]);
 export type ClientErrorPayload = z.infer<typeof ClientErrorPayloadSchema>;
 

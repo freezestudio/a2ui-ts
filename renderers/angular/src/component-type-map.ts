@@ -9,7 +9,6 @@ import { A2UIRow } from './basic/row.js';
 import { A2UICard } from './basic/card.js';
 import { A2UITextField } from './basic/textfield.js';
 import { A2UIDivider } from './basic/divider.js';
-import { A2UISpacer } from './spacer.js';
 import { A2UIIcon } from './basic/icon.js';
 import { A2UIVideo } from './basic/video.js';
 import { A2UIAudioPlayer } from './basic/audio-player.js';
@@ -41,7 +40,6 @@ export const COMPONENT_TYPE_MAP: Record<string, Type<unknown>> = {
   Card: A2UICard,
   TextField: A2UITextField,
   Divider: A2UIDivider,
-  Spacer: A2UISpacer,
   Icon: A2UIIcon,
   Video: A2UIVideo,
   AudioPlayer: A2UIAudioPlayer,

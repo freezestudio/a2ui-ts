@@ -96,10 +96,6 @@ describe('constants', () => {
     it('Functions 应为 functions', () => {
       assert.equal(CatalogKeys.Functions, 'functions');
     });
-
-    it('SurfaceProperties 应为 surfaceProperties', () => {
-      assert.equal(CatalogKeys.SurfaceProperties, 'surfaceProperties');
-    });
   });
 
   describe('SurfaceKeys', () => {
@@ -109,10 +105,6 @@ describe('constants', () => {
 
     it('CatalogId 应为 catalogId', () => {
       assert.equal(SurfaceKeys.CatalogId, 'catalogId');
-    });
-
-    it('SurfaceProperties 应为 surfaceProperties', () => {
-      assert.equal(SurfaceKeys.SurfaceProperties, 'surfaceProperties');
     });
 
     it('SendDataModel 应为 sendDataModel', () => {

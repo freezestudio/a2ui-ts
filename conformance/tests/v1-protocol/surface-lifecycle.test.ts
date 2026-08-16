@@ -167,7 +167,9 @@ describe('Surface 生命周期校验', () => {
 
 describe('testing_catalog 下的 callRendererFunction 精确验证', () => {
   it('testing_catalog 定义了 openUrl 和 pingAgent', () => {
-    const catalog = loadTestData<Record<string, unknown>>(join(PACKAGE_ROOT, 'schemas/v1_0/testing_catalog.json'));
+    const catalog = loadTestData<Record<string, unknown>>(
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'test', 'testing_catalog.json'),
+    );
     const functions = catalog.functions as Record<string, unknown>;
     expect(functions).toHaveProperty('openUrl');
     expect(functions).toHaveProperty('pingAgent');

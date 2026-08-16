@@ -4,7 +4,13 @@ import { CatalogComponent } from '../catalog/catalog-component.js';
 @Component({
   selector: 'a2ui-slider',
   template: `
-    <div class="a2ui-slider">
+    <div
+      class="a2ui-slider"
+      [attr.aria-label]="accessibilityAttrs()['aria-label']"
+      [attr.aria-description]="accessibilityAttrs()['aria-description']"
+      [attr.aria-live]="accessibilityAttrs()['aria-live']"
+      [attr.aria-hidden]="accessibilityAttrs()['aria-hidden']"
+    >
       @if (label()) {
         <span class="a2ui-slider-label">{{ label() }}</span>
       }

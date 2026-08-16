@@ -7,9 +7,9 @@
 
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
-import { BasicCatalog } from '../basic-catalog/index.js';
+import { BasicCatalog, createBasicCatalog } from '../basic-catalog/index.js';
 import { V10CapabilitiesSchema } from './renderer-capabilities.js';
-import { getSchemaDir } from '../catalog/resource-path.js';
+import { getSchemaDir, getCatalogDir } from '../catalog/resource-path.js';
 
 /**
  * Schema Manager 配置
@@ -55,6 +55,7 @@ export type GeneratePromptConfig = z.infer<typeof generatePromptConfigSchema>;
 export class A2uiSchemaManager {
   private serverToClientSchema: string | null = null;
   private commonTypesSchema: string | null = null;
+  private catalogSchema: string | null = null;
 
   constructor() {}
 
@@ -62,23 +63,25 @@ export class A2uiSchemaManager {
    * 加载 JSON Schema
    */
   private async loadSchemas(): Promise<void> {
-    if (this.serverToClientSchema && this.commonTypesSchema) {
+    if (this.serverToClientSchema && this.commonTypesSchema && this.catalogSchema) {
       return;
     }
 
     const schemaDir = getSchemaDir();
 
     /**
-     * 加载模式文件 [agent-to-renderer, common-types]
+     * 加载模式文件 [agent-to-renderer, common-types, basic catalog]
      */
     try {
-      const [agentToRenderer, commonTypes] = await Promise.all([
+      const [agentToRenderer, commonTypes, catalog] = await Promise.all([
         readFile(`${schemaDir}/agent_to_renderer.json`, 'utf-8'),
         readFile(`${schemaDir}/common_types.json`, 'utf-8'),
+        readFile(`${getCatalogDir()}/basic/catalog.json`, 'utf-8'),
       ]);
 
       this.serverToClientSchema = agentToRenderer;
       this.commonTypesSchema = commonTypes;
+      this.catalogSchema = catalog;
     } catch (error) {
       throw new Error(`加载 JSON Schema 失败: ${String(error as string | number | bigint | symbol)}`);
     }
@@ -132,8 +135,8 @@ export class A2uiSchemaManager {
         '- `children` 数组中只能放其他组件的 ID（字符串），**绝对禁止** 放文字内容、样式名、枚举值等',
         '',
         '## 数据绑定规则',
-        '- 数据绑定路径必须是绝对 JSON Pointer（以 `/` 开头），如 `/user/name`',
-        '- ❌ 错误: `{ "path": "name" }` → ✅ 正确: `{ "path": "/name" }`',
+        '- 根作用域使用绝对 JSON Pointer（以 `/` 开头），如 `/user/name`',
+        '- ChildList 模板实例内部可使用相对路径（如 `name` 解析为当前列表项 `/items/N/name`）',
         '',
         '## 消息类型规则',
         '- `createSurface` 用于初始化表面，可以包含内联组件和 dataModel',
@@ -153,7 +156,7 @@ export class A2uiSchemaManager {
     }
 
     // 4. Catalog Schema 描述（支持裁剪）
-    let catalog = BasicCatalog.getFullCatalog();
+    let catalog = createBasicCatalog();
     if (allowedComponents || allowedFunctions) {
       catalog = catalog.prune({
         allowedComponents,
@@ -187,6 +190,11 @@ export class A2uiSchemaManager {
       sections.push('## 通用类型');
       sections.push('```json');
       sections.push(this.commonTypesSchema!);
+      sections.push('```');
+      sections.push('');
+      sections.push('## Basic Catalog');
+      sections.push('```json');
+      sections.push(this.catalogSchema!);
       sections.push('```');
       sections.push('');
     }
@@ -223,7 +231,7 @@ export class A2uiSchemaManager {
     "version": "v1.0",
     "createSurface": {
       "surfaceId": "dashboard-001",
-      "catalogId": "https://a2ui.org/specification/v1_0/catalogs/minimal/catalog.json",
+      "catalogId": "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json",
       "components": [
         { "id": "root", "component": "Column", "children": ["header", "content"] },
         { "id": "header", "component": "Text", "text": "监测面板" },
@@ -252,7 +260,7 @@ export class A2uiSchemaManager {
         {
           "id": "title-id",
           "component": "Text",
-          "variant": "h2",
+          "variant": "body",
           "text": "数据分析报告"
         },
         {
@@ -286,26 +294,27 @@ export class A2uiSchemaManager {
 \`\`\`
 注意：path 必须以 / 开头，是绝对 JSON Pointer 路径。
 
-## 示例 4：callRendererFunction — 让 Renderer 执行函数
+## 示例 4：callRendererFunction — 调用 rendererOrAgent 自定义函数
 
 \`\`\`json
 [
   {
     "version": "v1.0",
     "callRendererFunction": {
-      "functionCallId": "call-open-url-001",
+      "functionCallId": "call-screen-001",
       "callFunction": {
-        "call": "openUrl",
-        "catalogId": "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json",
+        "call": "getScreenResolution",
+        "catalogId": "https://example.com/a2ui/v1.0/device-catalog.json",
         "args": {
-          "url": "https://example.com/report"
+          "screenIndex": 0
         }
       }
     }
   }
 ]
 \`\`\`
-functionCallId 必须唯一，call 必须在 catalog 函数列表中，catalogId 必须提供。
+注意：basic catalog 的 14 个函数均为 rendererOnly，不能通过 callRendererFunction 调用；
+只有目标 catalog 中声明 callableFrom 为 agentOnly 或 rendererOrAgent 的函数才可被 Agent 调用。
 
 ## 示例 5：agentFunctionResponse — 响应 Renderer 发起的函数调用
 
@@ -345,6 +354,7 @@ functionCallId 必须与 Renderer 发送的 callAgentFunction.functionCallId 匹
   clearCache(): void {
     this.serverToClientSchema = null;
     this.commonTypesSchema = null;
+    this.catalogSchema = null;
     BasicCatalog.clearCache();
   }
 }

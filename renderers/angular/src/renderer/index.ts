@@ -62,23 +62,30 @@ export class A2UIRendererService {
 
   /** action 事件发送回调（由 App 注入，发送 renderer→agent 的 action 消息） */
   private _sendAction:
-    | ((action: {
-        name: string;
-        userMessage?: string;
-        surfaceId: string;
-        sourceComponentId: string;
-        timestamp: string;
-        context: Record<string, unknown>;
-      }) => unknown)
+    | ((
+        action: {
+          name: string;
+          userMessage?: string;
+          surfaceId: string;
+          sourceComponentId: string;
+          timestamp: string;
+          context: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+        },
+        transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+      ) => unknown)
     | null = null;
 
   /** callAgentFunction 发送回调（由 App 注入，发送 renderer→agent 的 callAgentFunction 消息） */
   private _sendCallAgentFunction:
-    | ((call: {
-        surfaceId: string;
-        functionCallId: string;
-        callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
-      }) => unknown)
+    | ((
+        call: {
+          surfaceId: string;
+          functionCallId: string;
+          callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
+        },
+        transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+      ) => unknown)
     | null = null;
 
   /** error 消息发送回调（由 App 注入，发送 renderer→agent 的 error 消息） */
@@ -99,14 +106,18 @@ export class A2UIRendererService {
    * 注册 action 事件发送回调（v1.0 renderer→agent action 消息）
    */
   setActionSender(
-    sender: (action: {
-      name: string;
-      userMessage?: string;
-      surfaceId: string;
-      sourceComponentId: string;
-      timestamp: string;
-      context: Record<string, unknown>;
-    }) => unknown,
+    sender: (
+      action: {
+        name: string;
+        userMessage?: string;
+        surfaceId: string;
+        sourceComponentId: string;
+        timestamp: string;
+        context: Record<string, unknown>;
+        metadata?: Record<string, unknown>;
+      },
+      transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+    ) => unknown,
   ): void {
     this._sendAction = sender;
   }
@@ -115,11 +126,14 @@ export class A2UIRendererService {
    * 注册 callAgentFunction 发送回调（v1.0 #2210）
    */
   setCallAgentFunctionSender(
-    sender: (call: {
-      surfaceId: string;
-      functionCallId: string;
-      callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
-    }) => unknown,
+    sender: (
+      call: {
+        surfaceId: string;
+        functionCallId: string;
+        callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
+      },
+      transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+    ) => unknown,
   ): void {
     this._sendCallAgentFunction = sender;
   }
@@ -189,11 +203,14 @@ export class A2UIRendererService {
       });
       return undefined;
     }
+    const dataModelPayload = this.getSendDataModelPayload();
+    const transportMetadata = dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
     logger.debug('sendAction', {
       name: action.name,
       surfaceId: action.surfaceId,
+      hasDataModelMetadata: transportMetadata !== undefined,
     });
-    return this._sendAction?.(payload.action) ?? undefined;
+    return this._sendAction?.(payload.action, transportMetadata) ?? undefined;
   }
 
   /**
@@ -207,12 +224,15 @@ export class A2UIRendererService {
     functionCallId: string;
     callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
   }): unknown {
+    const dataModelPayload = this.getSendDataModelPayload();
+    const transportMetadata = dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
     logger.debug('sendCallAgentFunction', {
       call: call.callFunction.call,
       surfaceId: call.surfaceId,
       functionCallId: call.functionCallId,
+      hasDataModelMetadata: transportMetadata !== undefined,
     });
-    return this._sendCallAgentFunction?.(call) ?? undefined;
+    return this._sendCallAgentFunction?.(call, transportMetadata) ?? undefined;
   }
 
   /** 内部：调用 processMessage 并传入 rendererFunctionResponse 回调 */
@@ -239,8 +259,8 @@ export class A2UIRendererService {
     if (action['functionCall']) {
       const fn = action['functionCall'] as FunctionCall;
       // agent 端函数：本地 FunctionRegistry 未注册 → callAgentFunction（如 refreshData）
-      if (!isKnownFunction(fn.call)) {
-        await this.handleAgentFunction(fn, surface, action);
+      if (!isKnownFunction(fn.call, fn.catalogId)) {
+        await this.handleAgentFunction(fn, surface);
         return;
       }
       // 本地渲染端函数（requiresUserActivation 函数仅在激活 Action 内允许）
@@ -261,7 +281,8 @@ export class A2UIRendererService {
     if (action['event']) {
       const event = action['event'] as Record<string, unknown>;
       const name = event['name'] as string;
-      const userMessage = event['userMessage'] as string | undefined;
+      const userMessage =
+        event['userMessage'] === undefined ? undefined : this.resolveDynamicString(event['userMessage'], surface);
       const rawContext = (event['context'] || {}) as Record<string, unknown>;
 
       const resolvedContext: Record<string, unknown> = {};
@@ -285,27 +306,13 @@ export class A2UIRendererService {
    * args 中声明 `responsePath`（如 '/components/stats-summary'）时，
    * 将 agentFunctionResponse 的 value 写回 dataModel 对应路径（响应式刷新）。
    */
-  private async handleAgentFunction(
-    fn: FunctionCall,
-    surface: Surface,
-    action: Record<string, unknown>,
-  ): Promise<void> {
-    const responsePath =
-      (fn.args?.['responsePath'] as string | undefined) ?? (action['responsePath'] as string | undefined);
+  private async handleAgentFunction(fn: FunctionCall, surface: Surface): Promise<void> {
     const functionCallId = `${fn.call}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const result = await this.sendCallAgentFunction({
+    await this.sendCallAgentFunction({
       surfaceId: surface.surfaceId,
       functionCallId,
       callFunction: { call: fn.call, catalogId: fn.catalogId, args: fn.args },
     });
-    const value =
-      result && typeof result === 'object' && 'value' in result ? (result as { value?: unknown }).value : result;
-    if (responsePath && value !== undefined && value !== null) {
-      this.processMessage({
-        version: 'v1.0',
-        updateDataModel: { surfaceId: surface.surfaceId, path: responsePath, value },
-      });
-    }
   }
 
   /**
@@ -366,15 +373,14 @@ export class A2UIRendererService {
       isPlaceholder: boolean;
     }>;
     dataModelDelta?: { path?: string; value?: unknown };
+    dataModelDeltas?: Array<{ path?: string; value?: unknown }>;
     surfaceId?: string;
     catalogId?: string;
   }): void {
-    const surfaceId = partial.surfaceId || 'main';
+    const surfaceId = partial.surfaceId;
+    if (!surfaceId || !this._surfaceManager.surfaces().has(surfaceId)) return;
 
     if (partial.components?.length) {
-      if (!this._surfaceManager.surfaces().has(surfaceId)) {
-        this._surfaceManager.handleCreateSurface(surfaceId, partial.catalogId);
-      }
       const comps = partial.components.map((c) => ({
         id: c.id,
         component: c.isPlaceholder ? 'placeholder' : c.type || 'Text',
@@ -383,11 +389,9 @@ export class A2UIRendererService {
       this._surfaceManager.handleUpdateComponents(surfaceId, comps);
     }
 
-    if (partial.dataModelDelta) {
-      if (!this._surfaceManager.surfaces().has(surfaceId)) {
-        this._surfaceManager.handleCreateSurface(surfaceId, partial.catalogId);
-      }
-      this._surfaceManager.handleUpdateDataModel(surfaceId, partial.dataModelDelta.path, partial.dataModelDelta.value);
+    const deltas = partial.dataModelDeltas ?? (partial.dataModelDelta ? [partial.dataModelDelta] : []);
+    for (const delta of deltas) {
+      this._surfaceManager.handleUpdateDataModel(surfaceId, delta.path, delta.value);
     }
   }
 

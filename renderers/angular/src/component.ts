@@ -4,19 +4,11 @@ import { type A2UIDescriptor, type Surface } from './renderer/index.js';
 import { CatalogRegistry } from './catalog-registry.js';
 import { A2UIFallback } from './fallback.js';
 
-/** Basic Catalog（布局/基础组件），作为 surface catalog 解析失败的兜底 */
-const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
-
 /**
  * A2UIComponent — A2UI 组件动态宿主
  *
- * 单一渲染路径：Catalog 解析（组件级 catalogId → surface 默认 catalogId → basic 兜底）→ NgComponentOutlet。
- * - placeholder 走模板占位分支（增量渲染骨架屏，不注册 Catalog）
- * - 解析不到 → a2ui-fallback 兜底
- *
- * v1.0 解析顺序：组件级 catalogId → surface 默认 catalogId → basic catalog 兜底。
- * basic 兜底支持 LLM 生成"geo surface + basic 布局（Column/Row/Tabs/Text 等）"混合场景：
- * geo 目录专注传感器图表，基础布局组件始终可用。
+ * v1.0 严格解析顺序：组件级 catalogId → surface 默认 catalogId；
+ * 两者都缺失或未注册时不做 basic 兜底，渲染 a2ui-fallback。
  */
 @Component({
   selector: 'a2ui-component',
@@ -58,13 +50,6 @@ export class A2UIComponent {
     const surfaceCatalogId = this.surface().catalogId;
     if (surfaceCatalogId) {
       const resolved = this.catalogRegistry.resolve(surfaceCatalogId, comp.component);
-      if (resolved) return resolved;
-    }
-
-    // basic 兜底：布局/基础组件（Column/Row/Tabs/Text 等）跨目录可用，
-    // 兼容 LLM 生成 geo surface + basic 布局的混合场景
-    if (surfaceCatalogId !== BASIC_CATALOG_ID) {
-      const resolved = this.catalogRegistry.resolve(BASIC_CATALOG_ID, comp.component);
       if (resolved) return resolved;
     }
 

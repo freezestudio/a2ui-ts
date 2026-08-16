@@ -99,11 +99,10 @@ describe('Catalog', () => {
       assert.equal(fn!.name, 'capitalize');
     });
 
-    it('getFunction 支持大小写容错', () => {
+    it('getFunction 严格区分大小写（v1.0）', () => {
       const catalog = createTestCatalog();
-      const fn = catalog.getFunction('CAPITALIZE');
-      assert.ok(fn);
-      assert.equal(fn!.name, 'capitalize');
+      assert.equal(catalog.getFunction('CAPITALIZE'), undefined);
+      assert.equal(catalog.getFunction('capitalize')?.name, 'capitalize');
     });
 
     it('getFunction 对未注册的函数返回 undefined', () => {
@@ -133,10 +132,9 @@ describe('Catalog', () => {
       assert.equal(result, 'hello');
     });
 
-    it('executeFunction 大小写容错调用', () => {
+    it('executeFunction 严格区分大小写（v1.0）', () => {
       const catalog = createTestCatalog();
-      const result = catalog.executeFunction('Capitalize', { value: 'test' });
-      assert.equal(result, 'test');
+      assert.throws(() => catalog.executeFunction('Capitalize', { value: 'test' }), /函数未找到/);
     });
 
     it('executeFunction 未找到时抛错', () => {

@@ -37,9 +37,11 @@ describe('function-call 函数库', () => {
   });
 
   describe('isKnownFunction', () => {
-    it('识别官方 + 扩展函数', () => {
+    it('官方 basic 函数可直接识别；扩展函数需指定扩展 catalog', () => {
+      const extended = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
       expect(isKnownFunction('formatNumber')).toBe(true);
-      expect(isKnownFunction('add')).toBe(true);
+      expect(isKnownFunction('add')).toBe(false);
+      expect(isKnownFunction('add', extended)).toBe(true);
       expect(isKnownFunction('unknown')).toBe(false);
     });
   });
@@ -128,17 +130,19 @@ describe('function-call 函数库', () => {
 
   describe('算术函数（扩展）', () => {
     it('add/subtract/multiply/divide', () => {
-      expect(callFunction({ call: 'add', args: { a: 2, b: 3 } }, {})).toBe(5);
-      expect(callFunction({ call: 'subtract', args: { a: 5, b: 2 } }, {})).toBe(3);
-      expect(callFunction({ call: 'multiply', args: { a: 4, b: 3 } }, {})).toBe(12);
-      expect(callFunction({ call: 'divide', args: { a: 10, b: 2 } }, {})).toBe(5);
+      const catalogId = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
+      expect(callFunction({ call: 'add', catalogId, args: { a: 2, b: 3 } }, {})).toBe(5);
+      expect(callFunction({ call: 'subtract', catalogId, args: { a: 5, b: 2 } }, {})).toBe(3);
+      expect(callFunction({ call: 'multiply', catalogId, args: { a: 4, b: 3 } }, {})).toBe(12);
+      expect(callFunction({ call: 'divide', catalogId, args: { a: 10, b: 2 } }, {})).toBe(5);
     });
 
     it('equals/notEquals/greaterThan/lessThan', () => {
-      expect(callFunction({ call: 'equals', args: { a: 1, b: 1 } }, {})).toBe(true);
-      expect(callFunction({ call: 'notEquals', args: { a: 1, b: 2 } }, {})).toBe(true);
-      expect(callFunction({ call: 'greaterThan', args: { a: 3, b: 2 } }, {})).toBe(true);
-      expect(callFunction({ call: 'lessThan', args: { a: 1, b: 2 } }, {})).toBe(true);
+      const catalogId = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
+      expect(callFunction({ call: 'equals', catalogId, args: { a: 1, b: 1 } }, {})).toBe(true);
+      expect(callFunction({ call: 'notEquals', catalogId, args: { a: 1, b: 2 } }, {})).toBe(true);
+      expect(callFunction({ call: 'greaterThan', catalogId, args: { a: 3, b: 2 } }, {})).toBe(true);
+      expect(callFunction({ call: 'lessThan', catalogId, args: { a: 1, b: 2 } }, {})).toBe(true);
     });
   });
 
@@ -159,7 +163,14 @@ describe('function-call 函数库', () => {
   describe('参数中嵌套 DataBinding 解析', () => {
     it('函数参数中的 {path} 先解析再执行', () => {
       const dataModel = { sensor: { value: 42 } };
-      const result = callFunction({ call: 'greaterThan', args: { a: { path: '/sensor/value' }, b: 10 } }, dataModel);
+      const result = callFunction(
+        {
+          call: 'greaterThan',
+          catalogId: 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json',
+          args: { a: { path: '/sensor/value' }, b: 10 },
+        },
+        dataModel,
+      );
       expect(result).toBe(true);
     });
   });

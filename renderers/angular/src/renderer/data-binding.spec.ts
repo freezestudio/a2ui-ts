@@ -111,7 +111,11 @@ describe('resolveComponentProp — DataBinding 支持（v1.0 dataModel 外置）
     const comp: A2UIDescriptor = {
       id: 'chart-x',
       component: 'Chart',
-      title: { call: 'capitalize', args: { value: 'hello' } },
+      title: {
+        call: 'capitalize',
+        catalogId: 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json',
+        args: { value: 'hello' },
+      },
     };
     expect(renderer.resolveComponentProp(comp, surface, 'title')).toBe('Hello');
   });
@@ -170,12 +174,14 @@ describe('响应式 dataModel 绑定（updateDataModel 驱动 UI 更新）', () 
 });
 
 describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunctionResponse → dataModel 闭环）', () => {
-  it('agent 端函数：发送 callAgentFunction，取回 value 写回 responsePath 到 dataModel', async () => {
+  it('agent 端函数：发送 callAgentFunction，不自动写回 responsePath', async () => {
     const renderer = new A2UIRendererService();
-    // refreshData 非本地注册函数 → callAgentFunction 发送器返回 agentFunctionResponse 的 value
-    renderer.setCallAgentFunctionSender(() => ({ stats: [{ label: '位移', value: '5' }] }));
+    let sent: { callFunction?: { call?: string; catalogId?: string; args?: Record<string, unknown> } } | null = null;
+    renderer.setCallAgentFunctionSender((call) => {
+      sent = call;
+      return undefined;
+    });
 
-    // 使用 renderer 自己的 surfaceManager（processMessage 写入的是同一个 core）
     const sm = renderer.surfaceManager;
     sm.handleCreateSurface('s1');
     sm.handleUpdateComponents('s1', [
@@ -186,7 +192,7 @@ describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunction
         action: {
           functionCall: {
             call: 'refreshData',
-            args: { monitoringType: 'landslide', responsePath: '/components/stats-summary' },
+            args: { monitoringType: 'landslide' },
           },
         },
       },
@@ -197,9 +203,9 @@ describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunction
     const comp = surface.components[0];
     await renderer.handleComponentAction(comp, surface);
 
-    // agentFunctionResponse value 已写回 responsePath 对应的 dataModel 路径
+    expect((sent as unknown as { callFunction?: { call?: string } }).callFunction?.call).toBe('refreshData');
     const dm = sm.surfaces().get('s1')!.dataModel;
-    expect(dm['components']).toEqual({ 'stats-summary': { stats: [{ label: '位移', value: '5' }] } });
+    expect(dm['components']).toEqual({ 'stats-summary': { stats: [] } });
   });
 
   it('本地已注册函数：本地执行，不发送 callAgentFunction', async () => {

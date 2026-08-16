@@ -32,26 +32,25 @@ import { CatalogComponent } from '../catalog/catalog-component.js';
   },
 })
 export class A2UIIcon extends CatalogComponent {
-  protected resolvedName = computed<unknown>(() => {
-    const n = this.component()['name'];
-    // name 可能是 DataBinding（{path}）→ 先解析为实际值再判断形态
-    const resolved = n !== undefined && n !== null ? this.resolveString(n) : undefined;
-    if (resolved !== undefined && resolved !== null && resolved !== '') return resolved;
-    const svg = this.component()['svgPath'];
-    return svg ?? '';
-  });
-
   protected svgPath = computed(() => {
-    const n = this.resolvedName();
-    // 1. 内置图标名字面量（已解析）
-    if (typeof n === 'string') {
-      const resolved = this.resolveString(n);
-      return ICON_PATHS[resolved] || null;
+    const rawName = this.component()['name'];
+    // 1. DataBinding/FunctionCall：保留动态值语义
+    if (rawName && typeof rawName === 'object' && !Array.isArray(rawName)) {
+      const record = rawName as Record<string, unknown>;
+      if ('svgPath' in record && record['svgPath'] !== undefined) {
+        return this.resolveString(record['svgPath']);
+      }
+      if ('path' in record || 'call' in record) {
+        const resolved = this.resolveValue(rawName);
+        if (typeof resolved === 'string') return ICON_PATHS[resolved] || resolved;
+        if (resolved && typeof resolved === 'object' && 'svgPath' in resolved) {
+          return this.resolveString((resolved as Record<string, unknown>)['svgPath']);
+        }
+      }
     }
-    // 2. 自定义 SVG path 对象 { svgPath: "M12..." }（name 或 svgPath 字段）
-    if (typeof n === 'object' && n && 'svgPath' in n) {
-      return (n as Record<string, unknown>)['svgPath'] as string;
-    }
+    // 2. 内置图标名字面量
+    const resolved = this.resolveString(rawName);
+    if (resolved) return ICON_PATHS[resolved] || resolved;
     return null;
   });
 }

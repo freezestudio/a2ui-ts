@@ -5,47 +5,8 @@ import { A2uiValidationError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('message-handler');
 
-const PENDING_MAX = 100;
-const PENDING_TIMEOUT_MS = 30000;
-const PENDING_BUFFER = new Map<string, unknown[]>();
-const PENDING_TIMERS = new Map<string, ReturnType<typeof setTimeout>>();
-
 export function clearAllPending(): void {
-  for (const timer of PENDING_TIMERS.values()) clearTimeout(timer);
-  PENDING_BUFFER.clear();
-  PENDING_TIMERS.clear();
-}
-
-function enqueuePending(surfaceId: string, message: unknown): void {
-  if (!PENDING_BUFFER.has(surfaceId)) {
-    PENDING_BUFFER.set(surfaceId, []);
-  }
-  const buffer = PENDING_BUFFER.get(surfaceId)!;
-  if (buffer.length < PENDING_MAX) buffer.push(message);
-
-  const existing = PENDING_TIMERS.get(surfaceId);
-  if (existing) clearTimeout(existing);
-  PENDING_TIMERS.set(
-    surfaceId,
-    setTimeout(() => {
-      PENDING_BUFFER.delete(surfaceId);
-      PENDING_TIMERS.delete(surfaceId);
-    }, PENDING_TIMEOUT_MS),
-  );
-}
-
-function flushPending(surfaceId: string, surfaceManager: SurfaceManager): void {
-  const timer = PENDING_TIMERS.get(surfaceId);
-  if (timer) {
-    clearTimeout(timer);
-    PENDING_TIMERS.delete(surfaceId);
-  }
-  const buffer = PENDING_BUFFER.get(surfaceId);
-  if (buffer && buffer.length > 0) {
-    logger.debug('flush pending', { surfaceId, count: buffer.length });
-    for (const msg of buffer) processMessage(msg as A2UIMessage, surfaceManager);
-    PENDING_BUFFER.delete(surfaceId);
-  }
+  // v1.0 生命周期：updateComponents 必须先于 surface 创建；不再缓存乱序消息。
 }
 
 // 仅 basic 官方 catalog；自定义 catalog（如行业扩展）由宿主应用解析
@@ -59,7 +20,6 @@ export const looseMessageSchema = z.object({
     .object({
       surfaceId: z.string(),
       catalogId: z.string().optional(),
-      surfaceProperties: z.record(z.string(), z.unknown()).optional(),
       sendDataModel: z.boolean().optional(),
       components: z.array(a2uIDescriptorSchema).optional(),
       dataModel: z.record(z.string(), z.unknown()).optional(),
@@ -89,8 +49,7 @@ export const looseMessageSchema = z.object({
 type LooseMessage = z.infer<typeof looseMessageSchema>;
 
 export function resolveCatalog(catalogId: string): string | undefined {
-  if (KNOWN_CATALOGS.includes(catalogId)) return catalogId;
-  return KNOWN_CATALOGS.find((k) => catalogId.startsWith(k));
+  return KNOWN_CATALOGS.find((k) => k === catalogId);
 }
 
 export function validateComponents(components: A2UIDescriptor[]): string[] {
@@ -165,10 +124,27 @@ export function processMessage(
   if (message.createSurface) {
     const cs = message.createSurface;
     logger.debug('createSurface', { surfaceId: cs.surfaceId, catalogId: cs.catalogId });
-    surfaceManager.handleCreateSurface(cs.surfaceId, cs.catalogId, cs.surfaceProperties, cs.sendDataModel);
-    flushPending(cs.surfaceId, surfaceManager);
+    const created = surfaceManager.handleCreateSurface(cs.surfaceId, cs.catalogId, cs.sendDataModel);
+    if (!created) {
+      renderer?.sendError({
+        code: 'SURFACE_ALREADY_EXISTS',
+        message: `Surface '${cs.surfaceId}' already exists. Delete it before recreating.`,
+        surfaceId: cs.surfaceId,
+      });
+      return;
+    }
     if (cs.components) {
-      surfaceManager.handleUpdateComponents(cs.surfaceId, cs.components);
+      const compErrors = validateComponents(cs.components);
+      if (compErrors.length > 0) {
+        renderer?.sendError(
+          new A2uiValidationError(`组件校验失败: ${compErrors.map((e) => String(e)).join('; ')}`, {
+            surfaceId: cs.surfaceId,
+            path: '/components',
+          }).toSendErrorPayload(),
+        );
+      } else {
+        surfaceManager.handleUpdateComponents(cs.surfaceId, cs.components);
+      }
     }
     if (cs.dataModel) {
       surfaceManager.handleUpdateDataModel(cs.surfaceId, undefined, cs.dataModel);
@@ -177,7 +153,11 @@ export function processMessage(
     const uc = message.updateComponents;
     const surfaceExists = surfaceManager.surfaces.value.has(uc.surfaceId);
     if (!surfaceExists) {
-      enqueuePending(uc.surfaceId, message);
+      renderer?.sendError({
+        code: 'SURFACE_NOT_FOUND',
+        message: `Cannot update components on unknown surface '${uc.surfaceId}'.`,
+        surfaceId: uc.surfaceId,
+      });
       return;
     }
     const compErrors = validateComponents(uc.components || []);
@@ -188,13 +168,29 @@ export function processMessage(
           path: '/components',
         }).toSendErrorPayload(),
       );
+      return;
     }
     surfaceManager.handleUpdateComponents(uc.surfaceId, uc.components);
   } else if (message.updateDataModel) {
     const ud = message.updateDataModel;
+    if (!surfaceManager.surfaces.value.has(ud.surfaceId)) {
+      renderer?.sendError({
+        code: 'SURFACE_NOT_FOUND',
+        message: `Cannot update data model on unknown surface '${ud.surfaceId}'.`,
+        surfaceId: ud.surfaceId,
+      });
+      return;
+    }
     surfaceManager.handleUpdateDataModel(ud.surfaceId, ud.path, ud.value);
   } else if (message.deleteSurface) {
-    surfaceManager.handleDeleteSurface(message.deleteSurface.surfaceId);
+    const removed = surfaceManager.handleDeleteSurface(message.deleteSurface.surfaceId);
+    if (!removed) {
+      renderer?.sendError({
+        code: 'SURFACE_NOT_FOUND',
+        message: `Cannot delete unknown surface '${message.deleteSurface.surfaceId}'.`,
+        surfaceId: message.deleteSurface.surfaceId,
+      });
+    }
   } else if (message.callRendererFunction) {
     const crf = message.callRendererFunction;
     const callId = crf.functionCallId;
@@ -203,6 +199,7 @@ export function processMessage(
         {
           functionCallId: callId,
           call: crf.callFunction.call,
+          catalogId: crf.callFunction.catalogId,
           args: crf.callFunction.args,
         },
         onFunctionResponse,

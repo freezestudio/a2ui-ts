@@ -79,12 +79,14 @@ export type {
 export { isDataBinding, isFunctionCall, resolvePath, setAtPath, deleteAtPath } from './processing/data-binding.js';
 
 export {
+  BASIC_CATALOG_ID,
   resolveDynamicValue,
   resolveDynamicString,
   callFunction,
   getFunctionCallableFrom,
   getFunctionRequiresActivation,
   isKnownFunction,
+  registerRendererFunction,
 } from './processing/function-call.js';
 export type { ActionIntent } from './processing/function-call.js';
 

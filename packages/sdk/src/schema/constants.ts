@@ -38,14 +38,12 @@ export const ClientMessageType = {
 export const CatalogKeys = {
   Components: 'components',
   Functions: 'functions',
-  SurfaceProperties: 'surfaceProperties',
 } as const;
 
 /** Surface 相关键名 */
 export const SurfaceKeys = {
   SurfaceId: 'surfaceId',
   CatalogId: 'catalogId',
-  SurfaceProperties: 'surfaceProperties',
   SendDataModel: 'sendDataModel',
 } as const;
 

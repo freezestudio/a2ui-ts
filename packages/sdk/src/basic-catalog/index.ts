@@ -9,17 +9,33 @@
 
 import { Catalog } from '../catalog/catalog.js';
 import { FULL_COMPONENTS } from './components/index.js';
-import { FULL_FUNCTIONS } from './functions/index.js';
+import { FULL_FUNCTIONS, OFFICIAL_FUNCTIONS } from './functions/index.js';
 
-/** Full Catalog ID */
+/** 官方 v1.0 Basic Catalog ID */
 export const BASIC_CATALOG_ID = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
 
+/** 项目扩展 Catalog ID（含官方组件 + 扩展函数） */
+export const EXTENDED_CATALOG_ID = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
+
 /**
- * 创建 Full Catalog（包含全部 18 个组件 + 26 个函数）
+ * 创建官方 v1.0 Basic Catalog（18 个组件 + 14 个官方函数）
+ */
+export function createBasicCatalog(): Catalog {
+  return new Catalog({
+    catalogId: BASIC_CATALOG_ID,
+    version: 'v1_0',
+    components: FULL_COMPONENTS,
+    functions: OFFICIAL_FUNCTIONS,
+  });
+}
+
+/**
+ * 创建项目扩展 Full Catalog（18 个组件 + 26 个函数）。
+ * 扩展函数不得挂载在官方 basic catalog ID 下。
  */
 export function createFullCatalog(): Catalog {
   return new Catalog({
-    catalogId: BASIC_CATALOG_ID,
+    catalogId: EXTENDED_CATALOG_ID,
     version: 'v1_0',
     components: FULL_COMPONENTS,
     functions: FULL_FUNCTIONS,

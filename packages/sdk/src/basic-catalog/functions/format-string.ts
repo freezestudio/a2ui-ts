@@ -28,10 +28,14 @@ export const formatStringFunction: FunctionApi = createFunctionApi(
     argsSchema: z.object({
       value: z.string(),
     }),
-    execute: (args) => {
+    execute: (args, context) => {
       const template = toStr(args.value);
       if (!template) return '';
-      return evaluateExpression(template, args, { strict: false });
+      const dataModel =
+        context.dataModel && typeof context.dataModel === 'object' && !Array.isArray(context.dataModel)
+          ? (context.dataModel as Record<string, unknown>)
+          : args;
+      return evaluateExpression(template, dataModel, { strict: false });
     },
   },
 );

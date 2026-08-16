@@ -170,7 +170,18 @@ describe('SDK Zod Schema 与官方规范 Schema 一致性对比', () => {
 
     // 用官方 basic catalog 构建 SDK Catalog
     const catalogJson = loadTestData<Record<string, unknown>>(
-      join(PACKAGE_ROOT, 'schemas', 'catalogs', 'basic', 'catalog.json'),
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
     );
     const catalog = Catalog.fromJson(catalogJson as never);
     const validator = new A2uiValidator();
@@ -213,7 +224,18 @@ describe('SDK Zod Schema 与官方规范 Schema 一致性对比', () => {
     const valid = file.tests.filter((t) => t.valid);
 
     const catalogJson = loadTestData<Record<string, unknown>>(
-      join(PACKAGE_ROOT, 'schemas', 'catalogs', 'basic', 'catalog.json'),
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
     );
     const catalog = Catalog.fromJson(catalogJson as never);
     const validator = new A2uiValidator();

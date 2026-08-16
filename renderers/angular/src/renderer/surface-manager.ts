@@ -27,13 +27,8 @@ export class SurfaceManager {
     return this._core;
   }
 
-  handleCreateSurface(
-    surfaceId: string,
-    catalogId?: string,
-    surfaceProperties?: Record<string, unknown>,
-    sendDataModel?: boolean,
-  ): boolean {
-    return this._core.handleCreateSurface(surfaceId, catalogId, surfaceProperties, sendDataModel);
+  handleCreateSurface(surfaceId: string, catalogId?: string, sendDataModel?: boolean): boolean {
+    return this._core.handleCreateSurface(surfaceId, catalogId, sendDataModel);
   }
 
   handleUpdateComponents(surfaceId: string, components: A2UIDescriptor[]): void {
@@ -44,8 +39,8 @@ export class SurfaceManager {
     this._core.handleUpdateDataModel(surfaceId, path, value);
   }
 
-  handleDeleteSurface(surfaceId: string): void {
-    this._core.handleDeleteSurface(surfaceId);
+  handleDeleteSurface(surfaceId: string): boolean {
+    return this._core.handleDeleteSurface(surfaceId);
   }
 
   clear(): void {
@@ -72,6 +67,7 @@ export class SurfaceManager {
     call: {
       functionCallId: string;
       call: string;
+      catalogId: string;
       args?: Record<string, unknown>;
     },
     onResponse?: (response: {

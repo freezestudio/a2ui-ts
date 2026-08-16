@@ -66,11 +66,10 @@ export {
 };
 
 /**
- * Full Catalog 的所有函数（14 个官方 + 12 个扩展，共 26 个）
+ * 官方 v1.0 Basic Catalog 函数（14 个）。
  * 官方来源：A2UI v1.0 Basic Catalog（https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json）
  */
-export const FULL_FUNCTIONS: FunctionApi[] = [
-  // 官方定义（14 个）
+export const OFFICIAL_FUNCTIONS: FunctionApi[] = [
   requiredFunction,
   regexFunction,
   lengthFunction,
@@ -85,7 +84,10 @@ export const FULL_FUNCTIONS: FunctionApi[] = [
   andFunction,
   orFunction,
   notFunction,
-  // 扩展函数（12 个）
+];
+
+/** 项目扩展函数（12 个，不属于官方 basic catalog） */
+export const EXTENDED_FUNCTIONS: FunctionApi[] = [
   capitalizeFunction,
   addFunction,
   subtractFunction,
@@ -99,3 +101,9 @@ export const FULL_FUNCTIONS: FunctionApi[] = [
   startsWithFunction,
   endsWithFunction,
 ];
+
+/**
+ * Full Catalog 的所有函数（14 个官方 + 12 个扩展，共 26 个）。
+ * 注意：该集合不得使用官方 basic catalog ID。
+ */
+export const FULL_FUNCTIONS: FunctionApi[] = [...OFFICIAL_FUNCTIONS, ...EXTENDED_FUNCTIONS];

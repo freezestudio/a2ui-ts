@@ -71,7 +71,6 @@ describe('Catalog 渲染路径（Phase 1 收敛）', () => {
       'Card',
       'TextField',
       'Divider',
-      'Spacer',
       'Icon',
       'Video',
       'AudioPlayer',
@@ -113,8 +112,7 @@ describe('Catalog 渲染路径（Phase 1 收敛）', () => {
     fixture.componentRef.setInput('surface', surface);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    // Column 不在 geo catalog，但应经 basic 兜底渲染出列布局，而非 fallback
-    expect(el.querySelector('a2ui-fallback')).toBeFalsy();
-    expect(el.textContent).toContain('geo surface 内嵌 basic 布局');
+    // v1.0 禁止 basic 兜底；geo catalog 未注册 Column，应渲染 fallback
+    expect(el.querySelector('a2ui-fallback')).toBeTruthy();
   });
 });

@@ -76,6 +76,7 @@ export const IncrementalResponsePartSchema = z.discriminatedUnion('type', [
     messageType: z.enum(['createSurface', 'updateComponents']),
     components: z.array(PartialComponentSchema),
     dataModelDelta: DataModelDeltaSchema.optional(),
+    dataModelDeltas: z.array(DataModelDeltaSchema).optional(),
   }),
   z.strictObject({
     type: z.literal('a2ui_json'),

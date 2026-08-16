@@ -76,46 +76,38 @@ export function checkComponentIntegrity(
   return errors;
 }
 
-/** 从组件中提取所有子组件引用 ID */
+/** 从组件中提取所有子组件引用 ID（只识别已建模的结构字段） */
 function extractChildReferences(comp: Record<string, unknown>): string[] {
   const refs: string[] = [];
 
-  for (const [key, value] of Object.entries(comp)) {
-    if (key === 'id' || key === 'component') continue;
+  const children = comp['children'];
+  if (Array.isArray(children)) {
+    for (const item of children) {
+      if (typeof item === 'string') refs.push(item);
+    }
+  } else if (typeof children === 'object' && children !== null && 'componentId' in children) {
+    const compId = (children as Record<string, unknown>).componentId;
+    if (typeof compId === 'string') refs.push(compId);
+  }
 
-    if (
-      typeof value === 'string' &&
-      key !== 'variant' &&
-      key !== 'text' &&
-      key !== 'label' &&
-      key !== 'value' &&
-      key !== 'validationRegexp'
-    ) {
-      // 可能是子组件引用（child 字段等）
-      if (isLikelyComponentId(value)) {
-        refs.push(value);
-      }
-    } else if (Array.isArray(value)) {
-      for (const item of value) {
-        if (typeof item === 'string') {
-          refs.push(item);
-        } else if (typeof item === 'object' && item !== null && 'componentId' in item) {
-          const compId = (item as Record<string, unknown>).componentId;
-          if (typeof compId === 'string') refs.push(compId);
-        }
-      }
-    } else if (typeof value === 'object' && value !== null && 'componentId' in value && 'path' in value) {
-      const compId = (value as Record<string, unknown>).componentId;
-      if (typeof compId === 'string') refs.push(compId);
+  const child = comp['child'];
+  if (typeof child === 'string') refs.push(child);
+
+  if (comp['component'] === 'Modal') {
+    for (const key of ['trigger', 'content']) {
+      const value = comp[key];
+      if (typeof value === 'string') refs.push(value);
+    }
+  }
+
+  if (comp['component'] === 'Tabs' && Array.isArray(comp['tabs'])) {
+    for (const tab of comp['tabs'] as Array<Record<string, unknown>>) {
+      const tabChild = tab?.['child'];
+      if (typeof tabChild === 'string') refs.push(tabChild);
     }
   }
 
   return refs;
-}
-
-/** 简单判断字符串是否可能是组件 ID */
-function isLikelyComponentId(value: string): boolean {
-  return /^[a-zA-Z0-9_-]+$/.test(value) && value.length < 100;
 }
 
 // ============================================================================

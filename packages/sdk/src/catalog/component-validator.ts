@@ -12,6 +12,106 @@
 
 import { z } from 'zod';
 
+const DATA_BINDING_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: { path: { type: 'string' } },
+  required: ['path'],
+  additionalProperties: false,
+};
+
+const FUNCTION_CALL_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    call: { type: 'string', minLength: 1 },
+    catalogId: { type: 'string' },
+    args: { type: 'object' },
+  },
+  required: ['call'],
+  unevaluatedProperties: false,
+};
+
+const KNOWN_EXTERNAL_DEFS: Record<string, Record<string, unknown>> = {
+  ComponentId: { type: 'string' },
+  CallId: { type: 'string' },
+  Child: { type: 'string' },
+  DataBinding: DATA_BINDING_SCHEMA,
+  FunctionCall: FUNCTION_CALL_SCHEMA,
+  DynamicString: { oneOf: [{ type: 'string' }, DATA_BINDING_SCHEMA, FUNCTION_CALL_SCHEMA] },
+  DynamicNumber: { oneOf: [{ type: 'number' }, DATA_BINDING_SCHEMA, FUNCTION_CALL_SCHEMA] },
+  DynamicBoolean: { oneOf: [{ type: 'boolean' }, DATA_BINDING_SCHEMA, FUNCTION_CALL_SCHEMA] },
+  DynamicStringList: {
+    oneOf: [{ type: 'array', items: { type: 'string' } }, DATA_BINDING_SCHEMA, FUNCTION_CALL_SCHEMA],
+  },
+  DynamicValue: {
+    oneOf: [
+      { type: 'string' },
+      { type: 'number' },
+      { type: 'boolean' },
+      { type: 'array' },
+      { type: 'object', not: { anyOf: [{ required: ['path'] }, { required: ['call'] }] } },
+      DATA_BINDING_SCHEMA,
+      FUNCTION_CALL_SCHEMA,
+    ],
+  },
+  CheckRule: {
+    type: 'object',
+    properties: {
+      condition: { oneOf: [DATA_BINDING_SCHEMA, FUNCTION_CALL_SCHEMA] },
+      message: { type: 'string' },
+    },
+    required: ['condition'],
+    additionalProperties: false,
+  },
+  Checkable: {
+    type: 'object',
+    properties: { checks: { type: 'array', items: { type: 'object' } } },
+  },
+  ComponentCommon: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      catalogId: { type: 'string' },
+      accessibility: { type: 'object' },
+      metadata: { type: 'object' },
+      weight: { type: 'number' },
+    },
+    required: ['id'],
+  },
+  FunctionCommon: {
+    type: 'object',
+    properties: { catalogId: { type: 'string' } },
+  },
+};
+
+function resolveKnownRef(ref: unknown): Record<string, unknown> | undefined {
+  if (typeof ref !== 'string') return undefined;
+  const key = ref.split('/$defs/').pop()?.split('#').pop();
+  return key ? KNOWN_EXTERNAL_DEFS[key] : undefined;
+}
+
+function validateFormat(schema: Record<string, unknown>, value: string): string | null {
+  const format = schema['format'];
+  if (typeof format !== 'string') return null;
+  if (format === 'uri') {
+    try {
+      new URL(value);
+      return null;
+    } catch {
+      return `字符串 "${value}" 不是合法 URI`;
+    }
+  }
+  if (format === 'date') return /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : `字符串 "${value}" 不是合法 date`;
+  if (format === 'time') {
+    return /^\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?$/.test(value) ? null : `字符串 "${value}" 不是合法 time`;
+  }
+  if (format === 'date-time') {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(value)
+      ? null
+      : `字符串 "${value}" 不是合法 date-time`;
+  }
+  return null;
+}
+
 /** 单条校验问题 */
 export const componentValidationIssueSchema = z.object({
   /** JSON Pointer 风格路径（如 '/text'、'/series/0/name'） */
@@ -62,11 +162,42 @@ export function validateValue(
 ): boolean {
   if (!schema) return true;
 
-  // $ref 本地引用（如 '#/$defs/DynamicBoolean'）：当前组件 schema 中动态类型
-  // 均已内联为 oneOf，此处对无法解析的引用采取宽松处理
   const ref = schema['$ref'];
-  if (typeof ref === 'string' && ref.startsWith('#')) {
-    return true;
+  if (typeof ref === 'string') {
+    const resolved = resolveKnownRef(ref);
+    if (resolved) return validateValue(resolved, value, path, issues);
+    return true; // 无法解析的引用由宿主 AJV 权威校验，不在此处阻断
+  }
+
+  let valid = true;
+
+  if ('allOf' in schema && Array.isArray(schema['allOf'])) {
+    for (const branch of schema['allOf'] as Array<Record<string, unknown>>) {
+      if (!validateValue(branch, value, path, issues)) valid = false;
+    }
+  }
+
+  if ('anyOf' in schema && Array.isArray(schema['anyOf'])) {
+    let matched = false;
+    for (const branch of schema['anyOf'] as Array<Record<string, unknown>>) {
+      const branchIssues: ComponentValidationIssue[] = [];
+      if (validateValue(branch, value, path, branchIssues)) {
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      issues.push({ path, message: `值 ${JSON.stringify(value)} 不符合 anyOf 中的任何分支` });
+      return false;
+    }
+  }
+
+  if ('not' in schema && schema['not'] && typeof schema['not'] === 'object') {
+    const notIssues: ComponentValidationIssue[] = [];
+    if (validateValue(schema['not'] as Record<string, unknown>, value, path, notIssues)) {
+      issues.push({ path, message: `值 ${JSON.stringify(value)} 违反了 not 约束` });
+      return false;
+    }
   }
 
   // const — 严格相等
@@ -140,6 +271,11 @@ export function validateValue(
         // 无效正则不阻断
       }
     }
+    const formatError = validateFormat(schema, value);
+    if (formatError) {
+      issues.push({ path, message: formatError });
+      return false;
+    }
   }
 
   // 数字约束
@@ -176,11 +312,13 @@ export function validateValue(
       // 属性递归
       for (const [key, sub] of Object.entries(propSchema)) {
         if (key in obj) {
-          validateValue(sub, obj[key], path === '' ? `/${key}` : `${path}/${key}`, issues);
+          if (!validateValue(sub, obj[key], path === '' ? `/${key}` : `${path}/${key}`, issues)) {
+            valid = false;
+          }
         }
       }
       // additionalProperties: false — 拒绝未知属性
-      if (schema['additionalProperties'] === false) {
+      if (schema['additionalProperties'] === false || schema['unevaluatedProperties'] === false) {
         const known = new Set(Object.keys(propSchema));
         for (const key of Object.keys(obj)) {
           if (!known.has(key)) {
@@ -207,18 +345,80 @@ export function validateValue(
     }
     if (items && typeof items === 'object') {
       for (let i = 0; i < value.length; i++) {
-        validateValue(items as Record<string, unknown>, value[i], `${path}/${i}`, issues);
+        if (!validateValue(items as Record<string, unknown>, value[i], `${path}/${i}`, issues)) {
+          valid = false;
+        }
       }
     }
   }
 
-  return true;
+  return valid;
+}
+
+/**
+ * 把官方 catalog 组件/函数常用的 `allOf` 结构归一化为顶层 properties/required。
+ */
+export function normalizeCatalogSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const allOf = schema['allOf'];
+  if (!Array.isArray(allOf)) return schema;
+
+  const normalized: Record<string, unknown> = { ...schema };
+  const properties: Record<string, Record<string, unknown>> = {};
+  const required = new Set<string>();
+  let sawObjectBranch = false;
+
+  for (const branch of allOf as Array<Record<string, unknown>>) {
+    const refSchema = typeof branch['$ref'] === 'string' ? resolveKnownRef(branch['$ref']) : undefined;
+    if (refSchema) {
+      if (refSchema['properties'] && typeof refSchema['properties'] === 'object') {
+        for (const [key, value] of Object.entries(refSchema['properties'] as Record<string, Record<string, unknown>>)) {
+          properties[key] = value;
+        }
+      }
+      if (Array.isArray(refSchema['required'])) {
+        for (const key of refSchema['required'] as string[]) required.add(key);
+      }
+      continue;
+    }
+
+    if (branch['properties'] && typeof branch['properties'] === 'object') {
+      sawObjectBranch = true;
+      for (const [key, value] of Object.entries(branch['properties'] as Record<string, Record<string, unknown>>)) {
+        properties[key] = value;
+      }
+    }
+    if (Array.isArray(branch['required'])) {
+      sawObjectBranch = true;
+      for (const key of branch['required'] as string[]) required.add(key);
+    }
+    if (branch['unevaluatedProperties'] === false) {
+      normalized['unevaluatedProperties'] = false;
+    }
+  }
+
+  if (sawObjectBranch || required.size > 0 || Object.keys(properties).length > 0) {
+    normalized['properties'] = { ...(properties as Record<string, unknown>) };
+  }
+  if (required.size > 0) {
+    normalized['required'] = [...required];
+  }
+  delete normalized['allOf'];
+  return normalized;
+}
+
+/**
+ * 从函数定义中提取 `args` JSON Schema（兼容 allOf 与扁平结构）。
+ */
+export function extractFunctionArgsSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const normalized = normalizeCatalogSchema(schema);
+  const props = normalized['properties'] as Record<string, Record<string, unknown>> | undefined;
+  return props?.['args'] ?? {};
 }
 
 /**
  * 校验组件属性是否符合组件 Schema
  *
- * 跳过组件公共字段（id / component / catalogId / weight / accessibility），
+ * 跳过组件公共字段（id / component / catalogId / weight / accessibility / metadata），
  * 这些字段由协议信封与完整性检查负责。
  *
  * @param comp - 组件对象（含 id / component 与特定属性）
@@ -231,7 +431,8 @@ export function validateComponentProps(
 ): ComponentValidationIssue[] {
   const issues: ComponentValidationIssue[] = [];
 
-  const props = schema['properties'] as Record<string, Record<string, unknown>> | undefined;
+  const normalized = normalizeCatalogSchema(schema);
+  const props = normalized['properties'] as Record<string, Record<string, unknown>> | undefined;
   if (!props || typeof props !== 'object') {
     return issues;
   }
@@ -240,7 +441,7 @@ export function validateComponentProps(
   const COMMON_FIELDS = new Set(['id', 'component', 'catalogId', 'weight', 'accessibility', 'metadata']);
 
   // 必填检查（跳过公共字段）
-  const required = schema['required'];
+  const required = normalized['required'];
   if (Array.isArray(required)) {
     for (const key of required) {
       if (COMMON_FIELDS.has(String(key))) continue;

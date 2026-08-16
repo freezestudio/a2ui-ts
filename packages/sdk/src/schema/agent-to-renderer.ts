@@ -56,12 +56,11 @@ export type ComponentsList = z.infer<typeof ComponentsListSchema>;
 
 /**
  * 创建表面消息体
- * v1.0: 删除 theme，新增 surfaceProperties/components/dataModel
+ * v1.0: 删除 theme/surfaceProperties，新增 components/dataModel
  */
 export const CreateSurfacePayloadSchema = z.strictObject({
   surfaceId: z.string(),
   catalogId: z.string().optional(),
-  surfaceProperties: z.record(z.string(), z.unknown()).optional(),
   sendDataModel: z.boolean().optional(),
   components: ComponentsListSchema.optional(),
   dataModel: z.record(z.string(), z.unknown()).optional(),
@@ -191,7 +190,7 @@ export type A2uiMessageList = z.infer<typeof A2uiMessageListSchema>;
 /**
  * Agent 到 Renderer 消息列表包装器
  */
-export const A2uiMessageListWrapperSchema = z.object({
+export const A2uiMessageListWrapperSchema = z.strictObject({
   messages: A2uiMessageListSchema,
 });
 export type A2uiMessageListWrapper = z.infer<typeof A2uiMessageListWrapperSchema>;

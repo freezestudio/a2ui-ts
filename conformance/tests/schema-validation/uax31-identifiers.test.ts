@@ -54,13 +54,28 @@ function validateCatalogIdentifiers(catalog: Record<string, unknown>, catalogNam
 
 describe('UAX #31 标识符合规检查', () => {
   it('testing_catalog.json 所有标识符符合 UAX #31', () => {
-    const catalog = loadTestData<Record<string, unknown>>(join(PACKAGE_ROOT, 'schemas/v1_0/testing_catalog.json'));
+    const catalog = loadTestData<Record<string, unknown>>(
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'test', 'testing_catalog.json'),
+    );
     const violations = validateCatalogIdentifiers(catalog, 'testing_catalog.json');
     expect(violations).toEqual([]);
   });
 
   it('basic/catalog.json 所有标识符符合 UAX #31', () => {
-    const catalog = loadTestData<Record<string, unknown>>(join(PACKAGE_ROOT, 'schemas/catalogs/basic/catalog.json'));
+    const catalog = loadTestData<Record<string, unknown>>(
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
+    );
     const violations = validateCatalogIdentifiers(catalog, 'basic/catalog.json');
     expect(violations).toEqual([]);
   });

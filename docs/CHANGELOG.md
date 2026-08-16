@@ -10,6 +10,63 @@
 
 ---
 
+## [2026-08-16] v1.0 协议深度审查修复
+
+> 依据 `packages/sdk/resources/specification/v1_0` 官方协议副本逐项审查并修复。
+> 全仓测试 **1263 用例全绿**（shared 53 / web-core 11 / sdk 536 / angular 95 / conformance 568），
+> `pnpm check` 与 `pnpm -r build` 通过。
+
+### 协议信封与 Schema 严格化
+
+- 移除 `createSurface.surfaceProperties`（SDK / web-core），对齐官方 v1.0 schema（官方上游 #2126 已移除）
+- 修正 web-core renderer→agent error schema：
+  - `VALIDATION_FAILED / UNALLOWED_PARENT / UNALLOWED_CHILD` 三保留码
+  - 通用错误 `surfaceId` 与 `functionCallId` 互斥
+- web-core 组件 schema 严格化：`ComponentBase.strict()`、`components.min(1)`、`DynamicValue` object 分支、`Metadata.extensions` UAX #31 校验
+- `ActionEvent` 移除越界 `metadata`；action 消息 `timestamp` 增加 ISO 8601 校验
+- SDK message list wrapper 改为 strict
+
+### Catalog 与函数调用
+
+- `Catalog.fromJson()` 支持官方 v1.0 catalog 的 `allOf` 结构，正确解析 Checkable 组件与函数 `args`
+- 读取函数元数据 `returnType / callableFrom / requiresUserActivation`；`callableFrom` 缺省 `rendererOnly`
+- 新增 `Catalog.validateFunctionCall()`，并在 `validateComponentsWithCatalogs()` 中递归校验组件内嵌 FunctionCall
+- 函数名恢复严格大小写匹配；新增 catalog UAX #31 名称与 `$defs` 白名单校验
+- SDK `formatString` 修复：从 `FunctionContext.dataModel` 解析 `${/path}`
+
+### 渲染器运行时
+
+- 移除 web-core / Angular 的 basic catalog 兜底与 `resolveCatalog` 前缀匹配，严格按组件级 → surface 默认解析
+- `findRootComponent()` 移除“第一个带 children 的 Column”启发式回退
+- Surface 生命周期错误通过 `sendError` 回传；无效组件消息不再写入状态
+- `callRendererFunction` 保留并校验 `catalogId`；新增 `registerRendererFunction()` 支持宿主 catalog 函数
+- 官方 basic catalog（18 组件 + 14 函数）与项目扩展 catalog（18 组件 + 26 函数）分离
+- 未知 renderer 函数改为抛 `UNKNOWN_FUNCTION`，不再返回占位字符串
+- Angular：修复 Icon 自定义 SVG、`userMessage` DynamicString 解析、ChoicePicker FunctionCall value
+- Angular：CheckBox / Slider / TextField / ChoicePicker 补齐 accessibility 映射；Text 增加安全 Markdown 子集渲染
+- Angular：移除 Spacer 的 basic catalog 注册；`sendDataModel` 随 action / callAgentFunction transport metadata 传出
+- Angular：移除 v1.0 已废弃的 `responsePath` 自动写回
+
+### 校验器与增量解析
+
+- 修复 `Image.description / AudioPlayer.description` 被误判为组件引用
+- 修复 `Tabs.tabs[].child` 引用漏检
+- `validateMessageList()` 支持 root 跨消息渐进到达
+- 修复 `IncrementalStreamParser.updateDataModel` delta 损坏问题，并支持多 delta 输出
+
+### A2A / Capabilities
+
+- `createA2uiPart()` 强制 data 为消息数组；`partToA2uiMessages()` 对非数组返回 null
+- `InlineCatalogSchema` 对齐官方 `catalog_definition.json`（functions 为对象映射，支持 `$defs` 等顶层键）
+
+### Prompt / Eval / Conformance
+
+- SchemaManager：允许模板相对路径；修正 minimal catalog / `variant: "h2"` / rendererOnly 函数示例；prompt 包含官方 basic catalog schema
+- eval prompts：移除非法 `h2`、修正 `callRendererFunction` 示例与模板路径说明
+- conformance 默认直接加载 `packages/sdk/resources/specification/v1_0` 官方只读副本，不再使用本地改写 schema
+
+---
+
 ## [2026-08-15] 与官方 a2ui 对齐修复（v1.0 协议，工作区未提交）
 
 > 对齐基准：官方仓库 `~/github/ai-tools/a2ui` HEAD `44a420b6`（spec HEAD `d59fb340` #2229）。

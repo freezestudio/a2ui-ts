@@ -4,7 +4,13 @@ import { CatalogComponent } from '../catalog/catalog-component.js';
 @Component({
   selector: 'a2ui-check-box',
   template: `
-    <label class="a2ui-checkbox">
+    <label
+      class="a2ui-checkbox"
+      [attr.aria-label]="accessibilityAttrs()['aria-label']"
+      [attr.aria-description]="accessibilityAttrs()['aria-description']"
+      [attr.aria-live]="accessibilityAttrs()['aria-live']"
+      [attr.aria-hidden]="accessibilityAttrs()['aria-hidden']"
+    >
       <input type="checkbox" [checked]="checked()" (change)="onChange($event)" />
       <span class="a2ui-checkbox-label">{{ label() }}</span>
     </label>

@@ -16,7 +16,12 @@ describe('message-handler', () => {
 
   it('isValidMessage 识别 6 种合法消息', () => {
     expect(isValidMessage({ version: 'v1.0', createSurface: { surfaceId: 's' } })).toBe(true);
-    expect(isValidMessage({ version: 'v1.0', updateComponents: { surfaceId: 's', components: [] } })).toBe(true);
+    expect(
+      isValidMessage({
+        version: 'v1.0',
+        updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'Text', text: 'x' }] },
+      }),
+    ).toBe(true);
     expect(isValidMessage({ version: 'v1.0', updateDataModel: { surfaceId: 's', value: 1 } })).toBe(true);
     expect(isValidMessage({ version: 'v1.0', deleteSurface: { surfaceId: 's' } })).toBe(true);
     expect(
@@ -91,34 +96,20 @@ describe('message-handler', () => {
     });
   });
 
-  describe('updateComponents pending 队列', () => {
-    it('surface 未创建时消息入队，createSurface 后 flush', () => {
-      // 先发 updateComponents（surface 不存在 → pending）
+  describe('updateComponents 生命周期错误（v1.0 不缓存乱序消息）', () => {
+    it('surface 未创建时回传 SURFACE_NOT_FOUND，且不写入组件', () => {
+      const sendError = vi.fn();
       processMessage(
-        { version: 'v1.0', updateComponents: { surfaceId: 's1', components: [{ id: 'a', component: 'Text' }] } },
+        {
+          version: 'v1.0',
+          updateComponents: { surfaceId: 's1', components: [{ id: 'a', component: 'Text', text: 'x' }] },
+        },
         sm,
+        undefined,
+        { sendError },
       );
       expect(sm.surfaces.value.size).toBe(0);
-
-      // 创建 surface → flush pending
-      processMessage({ version: 'v1.0', createSurface: { surfaceId: 's1' } }, sm);
-      expect(sm.surfaces.value.get('s1')?.components).toHaveLength(1);
-    });
-
-    it('pending 超时后丢弃', () => {
-      vi.useFakeTimers();
-      try {
-        processMessage(
-          { version: 'v1.0', updateComponents: { surfaceId: 's1', components: [{ id: 'a', component: 'Text' }] } },
-          sm,
-        );
-        // 超过 30s 超时
-        vi.advanceTimersByTime(31_000);
-        processMessage({ version: 'v1.0', createSurface: { surfaceId: 's1' } }, sm);
-        expect(sm.surfaces.value.get('s1')?.components).toHaveLength(0);
-      } finally {
-        vi.useRealTimers();
-      }
+      expect(sendError).toHaveBeenCalledWith(expect.objectContaining({ code: 'SURFACE_NOT_FOUND', surfaceId: 's1' }));
     });
   });
 

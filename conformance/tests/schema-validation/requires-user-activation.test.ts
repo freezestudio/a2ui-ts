@@ -46,7 +46,19 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
   });
 
   it('catalog_definition.json 定义 requiresUserActivation 属性', () => {
-    const def = loadTestData(join(PACKAGE_ROOT, 'schemas/v1_0/catalog_definition.json'));
+    const def = loadTestData(
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'json',
+        'catalog_definition.json',
+      ),
+    );
     const fnDef = (def as Record<string, unknown>)['$defs'] as Record<string, Record<string, unknown>>;
     const functionDefinition = fnDef['FunctionDefinition'] as Record<string, unknown>;
     expect(functionDefinition).toBeDefined();
@@ -54,7 +66,20 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
   });
 
   it('basic catalog 的 openUrl 定义符合新 schema（requiresUserActivation: true + rendererOrAgent）', () => {
-    const basicCatalog = loadTestData(join(PACKAGE_ROOT, 'schemas/catalogs/basic/catalog.json'));
+    const basicCatalog = loadTestData(
+      join(
+        PACKAGE_ROOT,
+        '..',
+        'packages',
+        'sdk',
+        'resources',
+        'specification',
+        'v1_0',
+        'catalogs',
+        'basic',
+        'catalog.json',
+      ),
+    );
     const openUrl = (basicCatalog as Record<string, Record<string, unknown>>)['functions']?.['openUrl'] as
       | Record<string, unknown>
       | undefined;

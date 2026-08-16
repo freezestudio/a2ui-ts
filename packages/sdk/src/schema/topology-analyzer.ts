@@ -53,20 +53,32 @@ export function extractRefFields(components: ComponentWithId[]): RefFieldsMap {
 
     refFields[compId] = {};
 
-    for (const [key, value] of Object.entries(comp)) {
-      if (key === 'id' || key === 'component') continue;
+    const children = comp['children'];
+    if (Array.isArray(children)) {
+      const refs = extractReferences(children);
+      if (refs.length > 0) refFields[compId]['children'] = refs;
+    } else if (typeof children === 'object' && children !== null && 'componentId' in children) {
+      const refs = extractReferences(children);
+      if (refs.length > 0) refFields[compId]['children'] = refs;
+    }
 
-      if (key === 'children' || key === 'child') {
-        const refs = extractReferences(value);
-        if (refs.length > 0) {
-          refFields[compId][key] = refs;
-        }
-      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        const nestedRefs = extractReferences(value);
-        if (nestedRefs.length > 0) {
-          refFields[compId][key] = nestedRefs;
-        }
+    const child = comp['child'];
+    if (typeof child === 'string') refFields[compId]['child'] = [child];
+
+    if (comp['component'] === 'Modal') {
+      for (const key of ['trigger', 'content']) {
+        const value = comp[key];
+        if (typeof value === 'string') refFields[compId][key] = [value];
       }
+    }
+
+    if (comp['component'] === 'Tabs' && Array.isArray(comp['tabs'])) {
+      const refs: string[] = [];
+      for (const tab of comp['tabs'] as Array<Record<string, unknown>>) {
+        const tabChild = tab?.['child'];
+        if (typeof tabChild === 'string') refs.push(tabChild);
+      }
+      if (refs.length > 0) refFields[compId]['tabs'] = refs;
     }
   }
 

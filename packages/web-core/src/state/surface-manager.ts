@@ -30,34 +30,22 @@ export type A2UIDescriptor = z.infer<typeof a2uIDescriptorSchema>;
 
 export const surfaceSchema = z.object({
   surfaceId: z.string(),
-  catalogId: z.string(),
+  catalogId: z.string().optional(),
   components: z.array(a2uIDescriptorSchema),
   dataModel: z.record(z.string(), z.unknown()),
-  surfaceProperties: z.record(z.string(), z.unknown()).optional(),
   sendDataModel: z.boolean().optional(),
 });
 export type Surface = z.infer<typeof surfaceSchema>;
 
 export function findRootComponent(components: A2UIDescriptor[]): A2UIDescriptor | null {
-  const byId = components.find((c) => c.id === 'root');
-  if (byId) return byId;
-  return (
-    components.find((c) => c.component === 'Column' && Array.isArray(c['children']) && c['children']!.length > 0) ??
-    null
-  );
+  return components.find((c) => c.id === 'root') ?? null;
 }
 
 export class SurfaceManager {
   surfaces = signal<Map<string, Surface>>(new Map());
 
-  handleCreateSurface(
-    surfaceId: string,
-    catalogId?: string,
-    surfaceProperties?: Record<string, unknown>,
-    sendDataModel?: boolean,
-  ): boolean {
-    const resolvedCatalogId = catalogId ?? 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
-    logger.debug('handleCreateSurface', { surfaceId, catalogId: resolvedCatalogId });
+  handleCreateSurface(surfaceId: string, catalogId?: string, sendDataModel?: boolean): boolean {
+    logger.debug('handleCreateSurface', { surfaceId, catalogId });
 
     const current = this.surfaces.value;
     if (current.has(surfaceId)) {
@@ -66,10 +54,9 @@ export class SurfaceManager {
     }
     const surface: Surface = {
       surfaceId,
-      catalogId: resolvedCatalogId,
+      catalogId,
       components: [],
       dataModel: {},
-      surfaceProperties,
       sendDataModel,
     };
     const newMap = new Map(current);
@@ -132,9 +119,9 @@ export class SurfaceManager {
       return;
     }
 
-    // 不可变更新：复制 dataModel 后再写入，避免原地 mutate 破坏快照语义与
+    // 不可变更新：深拷贝 dataModel 后再写入，避免原地 mutate 破坏快照语义与
     // 响应式变更检测（Surface 对象本身也新建，保证 signal 触发）
-    const nextDataModel = { ...surface.dataModel };
+    const nextDataModel = structuredClone(surface.dataModel);
     if (value === null || value === undefined) {
       if (path) {
         deleteAtPath(nextDataModel, path);
@@ -150,12 +137,14 @@ export class SurfaceManager {
     this.surfaces.value = newMap;
   }
 
-  handleDeleteSurface(surfaceId: string): void {
+  handleDeleteSurface(surfaceId: string): boolean {
     const current = this.surfaces.value;
+    if (!current.has(surfaceId)) return false;
     const newMap = new Map(current);
     newMap.delete(surfaceId);
     this.surfaces.value = newMap;
     logger.debug('Surface 已删除', { surfaceId, remainingCount: newMap.size });
+    return true;
   }
 
   clear(): void {
@@ -199,6 +188,7 @@ export class SurfaceManager {
     call: {
       functionCallId: string;
       call: string;
+      catalogId: string;
       args?: Record<string, unknown>;
     },
     onResponse?: (response: {
@@ -209,11 +199,14 @@ export class SurfaceManager {
   ): void {
     if (!onResponse) return;
 
-    const callableFrom = getFunctionCallableFrom(call.call);
+    const callableFrom = getFunctionCallableFrom(call.call, call.catalogId);
     if (!callableFrom) {
       onResponse({
         functionCallId: call.functionCallId,
-        error: { code: 'INVALID_FUNCTION_CALL', message: `Function '${call.call}' is not registered.` },
+        error: {
+          code: 'INVALID_FUNCTION_CALL',
+          message: `Function '${call.call}' is not registered in catalog '${call.catalogId}'.`,
+        },
       });
       return;
     }
@@ -226,7 +219,9 @@ export class SurfaceManager {
     }
 
     try {
-      const result = callFunction({ call: call.call, args: call.args }, {}, 0, { caller: 'agent' });
+      const result = callFunction({ call: call.call, catalogId: call.catalogId, args: call.args }, {}, 0, {
+        caller: 'agent',
+      });
       onResponse({ functionCallId: call.functionCallId, value: result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

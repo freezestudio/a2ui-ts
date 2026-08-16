@@ -29,27 +29,23 @@ export type FunctionDefinition = z.infer<typeof FunctionDefinitionSchema>;
 // ============================================================================
 
 /**
- * 内联 Catalog 定义
- * Renderer 在能力声明中提供的组件和函数集合
- * {
- *   $schema: '',
- *   $id: '',
- *   $defs: {},
- *   title: '',
- *   description: '',
- *   catalogId: '',
- *   instructions: '',
- *   components: {},
- *   functions: {},
- * }
+ * 内联 Catalog 定义（对齐官方 catalog_definition.json 顶层结构）
  */
 export const InlineCatalogSchema = z.strictObject({
+  $schema: z.string().optional(),
+  $id: z.string().optional(),
+  protocolVersion: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
   /** Catalog 唯一标识符 */
   catalogId: z.string(),
+  instructions: z.string().optional(),
   /** 组件定义（以组件类型为 key 的 JSON Schema 映射） */
   components: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
-  /** 函数定义列表 */
-  functions: z.array(FunctionDefinitionSchema).optional(),
+  /** 函数定义（以函数名为 key 的 JSON Schema 映射，v1.0） */
+  functions: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
+  /** 仅允许 anyComponent / anyFunction */
+  $defs: z.record(z.string(), z.unknown()).optional(),
 });
 export type InlineCatalog = z.infer<typeof InlineCatalogSchema>;
 

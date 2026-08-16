@@ -13,7 +13,7 @@ export const prompts: TestPrompt[] = [
 1. 创建 surface（ID: "login-page"）
 2. 使用 updateComponents 创建组件：
    - root: Column, children: ["title", "usernameField", "passwordField", "rememberRow", "buttonRow"]
-   - title: Text, variant="h2", text="用户登录"
+   - title: Text, variant="body", text="用户登录"
    - usernameField: TextField, label="用户名", placeholder="请输入用户名"
    - passwordField: TextField, label="密码", placeholder="请输入密码", variant="obscured"
    - rememberRow: Row, children: ["rememberCheck"]
@@ -115,13 +115,13 @@ export const prompts: TestPrompt[] = [
    - contentRow: Row, children: ["leftPanel", "rightPanel"]
    - leftPanel: Card, child="leftContent"
    - leftContent: Column, children: ["overviewTitle", "userStat", "orderStat", "revenueStat"]
-   - overviewTitle: Text, text="今日概览", variant="h2"
+   - overviewTitle: Text, text="今日概览", variant="body"
    - userStat: Text, text="用户数: 1,234", variant="body"
    - orderStat: Text, text="订单数: 567", variant="body"
    - revenueStat: Text, text="收入: ¥89,012", variant="body"
    - rightPanel: Card, child="rightContent"
    - rightContent: Column, children: ["activityTitle", "act1", "act2", "act3"]
-   - activityTitle: Text, text="最近活动", variant="h2"
+   - activityTitle: Text, text="最近活动", variant="body"
    - act1: Text, text="用户A完成下单", variant="body"
    - act2: Text, text="用户B修改地址", variant="body"
    - act3: Text, text="用户C提交退款", variant="body"
@@ -140,7 +140,7 @@ export const prompts: TestPrompt[] = [
    - playerCard: Card, child="playerContent"
    - playerContent: Column, children: ["songInfo", "progressSlider", "controlRow", "volumeRow"]
    - songInfo: Column, children: ["songTitle", "artistName"]
-   - songTitle: Text, text="夜曲", variant="h2"
+   - songTitle: Text, text="夜曲", variant="body"
    - artistName: Text, text="周杰伦", variant="body"
    - progressSlider: Slider, label="进度", value=95, min=0, max=240
    - controlRow: Row, children: ["prevBtn", "playBtn", "nextBtn"]
@@ -165,7 +165,7 @@ export const prompts: TestPrompt[] = [
    - root: Column, children: ["cityRow", "currentWeather", "divider", "forecastList"]
    - cityRow: Row, children: ["cityIcon", "cityName"]
    - cityIcon: Icon, name="locationOn"（name 是属性，禁止放 children 里）
-   - cityName: Text, text="杭州", variant="h2"
+   - cityName: Text, text="杭州", variant="body"
    - currentWeather: Row, children: ["tempText", "conditionText"]
    - tempText: Text, text="26°C", variant="body"
    - conditionText: Text, text="多云", variant="body"
@@ -225,7 +225,7 @@ export const prompts: TestPrompt[] = [
 1. 创建 surface（ID: "survey"）
 2. 使用 updateComponents 创建组件：
    - root: Column, children: ["header", "ratingGroup", "singleChoice", "multiChoice", "openField", "submitRow"]
-   - header: Text, text="感谢您的参与！", variant="h2"
+   - header: Text, text="感谢您的参与！", variant="body"
    - ratingGroup: Card, child="ratingContent"
    - ratingContent: Column, children: ["ratingLabel", "ratingSlider"]
    - ratingLabel: Text, text="整体满意度", variant="body"
@@ -267,7 +267,7 @@ export const prompts: TestPrompt[] = [
    - nameText: Text, text={ path: "/receiver/name" }
    - addressText: Text, text={ path: "/receiver/address" }
    - phoneText: Text, text={ path: "/receiver/phone" }
-   - itemsTitle: Text, text="商品列表", variant="h2"
+   - itemsTitle: Text, text="商品列表", variant="body"
    - itemsList: List, direction="vertical", children={ componentId: "itemTemplate", path: "/items" }
    - itemTemplate: Row, children: ["itemName", "itemQty", "itemPrice"]
    - itemName: Text, text={ path: "/name" }
@@ -310,7 +310,7 @@ export const prompts: TestPrompt[] = [
     promptText: `生成一个包含 callRendererFunction 消息的 A2UI JSON。
 1. 创建 surface（ID: "notifications"）
 2. 使用 updateComponents 创建组件：Column 根组件包含两个子组件 titleEl（Text, text="新消息通知"）和 sendBtn（Button, child 引用 buttonLabel 组件，buttonLabel 为 Text, text="发送测试通知"）
-3. 最后在同一个 JSON 数组中添加一条 callRendererFunction 消息：callRendererFunction.functionCallId="call-001", callRendererFunction.callFunction.call="formatNumber", callRendererFunction.callFunction.catalogId="https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json", callRendererFunction.callFunction.args.value=12345.6, callRendererFunction.callFunction.args.digits=2
+3. 最后在同一个 JSON 数组中添加一条 callRendererFunction 消息：callRendererFunction.functionCallId="call-001", callRendererFunction.callFunction.call="getScreenResolution", callRendererFunction.callFunction.catalogId="https://example.com/a2ui/v1.0/device-catalog.json", callRendererFunction.callFunction.args.screenIndex=0
 
 核心要求 message array 必须包含 3 条消息：[createSurface, updateComponents, callRendererFunction]`,
   },
@@ -346,10 +346,10 @@ export const prompts: TestPrompt[] = [
    - title: Text, text="商品列表"
    - productList: List, children={ componentId: "product-item", path: "/products" }
    - product-item: Row, children: ["nameText", "priceText"]
-   - nameText: Text, text={ path: "/name" }（注意：JSON Pointer 路径必须以 / 开头，所以这里用绝对路径 /name）
-   - priceText: Text, text={ path: "/price" }（同上，用 /price）
+   - nameText: Text, text={ path: "name" }（模板项内的相对路径，解析为 /products/N/name）
+   - priceText: Text, text={ path: "price" }（解析为 /products/N/price）
 
-核心要求：所有数据绑定路径必须以 / 开头，禁止使用 name 或 price 这样的相对路径`,
+核心要求：模板项内使用相对路径；模板外使用以 / 开头的绝对 JSON Pointer`,
   },
   {
     name: 'errorSurface',

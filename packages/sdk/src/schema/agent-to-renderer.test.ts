@@ -100,12 +100,11 @@ describe('agent-to-renderer', () => {
       assert.equal(result.createSurface.catalogId, 'c1');
     });
 
-    it('应允许携带 surfaceProperties', () => {
+    it('应拒绝 v1.0 已移除的 surfaceProperties', () => {
       const msg = makeCreateSurface({
         createSurface: { surfaceId: 's1', catalogId: 'c1', surfaceProperties: { color: 'red' } },
       });
-      const result = CreateSurfaceMessageSchema.parse(msg);
-      assert.deepEqual(result.createSurface.surfaceProperties, { color: 'red' });
+      assert.throws(() => CreateSurfaceMessageSchema.parse(msg));
     });
 
     it('应允许携带 components', () => {

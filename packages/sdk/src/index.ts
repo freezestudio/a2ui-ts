@@ -115,7 +115,13 @@ export { getSchemaDir, getCatalogDir, createBasicCatalogPath, getSchemaPath } fr
 // BasicCatalog — 内置组件与函数
 // ============================================================================
 
-export { BasicCatalog, createFullCatalog, BASIC_CATALOG_ID } from './basic-catalog/index.js';
+export {
+  BasicCatalog,
+  createBasicCatalog,
+  createFullCatalog,
+  BASIC_CATALOG_ID,
+  EXTENDED_CATALOG_ID,
+} from './basic-catalog/index.js';
 
 export {
   TextComponentSchema,

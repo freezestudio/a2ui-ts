@@ -271,7 +271,6 @@ export const ActionEventSchema = z.strictObject({
   name: z.string(),
   userMessage: DynamicStringSchema.optional(),
   context: z.record(z.string(), DynamicValueSchema).optional(),
-  metadata: MetadataSchema,
 });
 export type ActionEvent = z.infer<typeof ActionEventSchema>;
 

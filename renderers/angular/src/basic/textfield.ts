@@ -4,7 +4,14 @@ import { CatalogComponent } from '../catalog/catalog-component.js';
 @Component({
   selector: 'a2ui-textfield',
   template: `
-    <div class="a2ui-textfield" [style.flex-grow]="weight()">
+    <div
+      class="a2ui-textfield"
+      [style.flex-grow]="weight()"
+      [attr.aria-label]="accessibilityAttrs()['aria-label']"
+      [attr.aria-description]="accessibilityAttrs()['aria-description']"
+      [attr.aria-live]="accessibilityAttrs()['aria-live']"
+      [attr.aria-hidden]="accessibilityAttrs()['aria-hidden']"
+    >
       <label class="a2ui-textfield-label">{{ label() }}</label>
       @switch (variant()) {
         @case ('longText') {

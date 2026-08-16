@@ -114,12 +114,12 @@ describe('SurfaceManager', () => {
       expect(findRootComponent(comps)?.id).toBe('root');
     });
 
-    it('回退到第一个带 children 的 Column（root id 漂移容错）', () => {
+    it('缺少 root 时不做启发式回退（v1.0）', () => {
       const comps: A2UIDescriptor[] = [
         { id: 'main-col', component: 'Column', children: ['a'] },
         { id: 'a', component: 'Text' },
       ];
-      expect(findRootComponent(comps)?.id).toBe('main-col');
+      expect(findRootComponent(comps)).toBeNull();
     });
 
     it('找不到返回 null', () => {

@@ -29,7 +29,7 @@ export const CheckBoxComponentSchema: ComponentApi = {
             condition: { description: 'DynamicBoolean 条件' },
             message: { type: 'string' },
           },
-          required: ['condition', 'message'],
+          required: ['condition'],
         },
       },
     },

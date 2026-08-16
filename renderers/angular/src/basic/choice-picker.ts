@@ -4,7 +4,14 @@ import { CatalogComponent } from '../catalog/catalog-component.js';
 @Component({
   selector: 'a2ui-choice-picker',
   template: `
-    <div class="a2ui-choice-picker" [class.a2ui-choice-picker-chips]="displayStyle() === 'chips'">
+    <div
+      class="a2ui-choice-picker"
+      [class.a2ui-choice-picker-chips]="displayStyle() === 'chips'"
+      [attr.aria-label]="accessibilityAttrs()['aria-label']"
+      [attr.aria-description]="accessibilityAttrs()['aria-description']"
+      [attr.aria-live]="accessibilityAttrs()['aria-live']"
+      [attr.aria-hidden]="accessibilityAttrs()['aria-hidden']"
+    >
       @if (label()) {
         <label class="a2ui-choice-picker-label">{{ label() }}</label>
       }
@@ -108,7 +115,7 @@ export class A2UIChoicePicker extends CatalogComponent {
   protected selectedValues = computed(() => {
     const val = this.component()['value'];
     if (Array.isArray(val)) return val.filter((v): v is string => typeof v === 'string');
-    if (typeof val === 'object' && val && 'path' in val) {
+    if (typeof val === 'object' && val && ('path' in val || 'call' in val)) {
       const resolved = this.resolveValue(val);
       return Array.isArray(resolved) ? resolved.filter((v): v is string => typeof v === 'string') : [];
     }

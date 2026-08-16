@@ -77,8 +77,14 @@ describe('数据绑定与函数调用', () => {
   it('handleCallRendererFunction 对 rendererOnly 函数返回 INVALID_FUNCTION_CALL', () => {
     const manager = new SurfaceManager();
     const responses: Array<{ error?: { code?: string } }> = [];
-    manager.handleCallRendererFunction({ functionCallId: 'f1', call: 'capitalize', args: { value: 'abc' } }, (r) =>
-      responses.push(r),
+    manager.handleCallRendererFunction(
+      {
+        functionCallId: 'f1',
+        call: 'capitalize',
+        catalogId: 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json',
+        args: { value: 'abc' },
+      },
+      (r) => responses.push(r),
     );
     expect(responses[0]?.error?.code).toBe('INVALID_FUNCTION_CALL');
   });

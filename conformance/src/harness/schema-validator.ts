@@ -28,8 +28,9 @@ export class SchemaValidator {
     // 必须用 Ajv2020 而非默认 draft-07，否则约束会被静默忽略
     this.ajv = new Ajv2020({ strict: false, allErrors: true, validateSchema: false });
     addFormats(this.ajv);
-    // Ajv2020 已内置 draft 2020-12 meta-schema，无需手动注册
-    this.schemaDir = schemaDir ?? join(PACKAGE_ROOT, 'schemas', 'v1_0');
+    // 默认直接使用 packages/sdk/resources/specification/v1_0 的官方只读副本
+    this.schemaDir =
+      schemaDir ?? join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'json');
     this.catalogFile = catalogFile;
   }
 
@@ -39,19 +40,41 @@ export class SchemaValidator {
     const files = readdirSync(this.schemaDir).filter((f) => f.endsWith('.json'));
 
     for (const file of files) {
-      // 使用替代 catalog（如 testing_catalog.json）时跳过默认 basic catalog，
-      // 避免 $id 冲突（两者都会注册为 https://a2ui.org/specification/v1_0/catalog.json）
-      if (this.catalogFile !== 'catalog.json' && file === 'catalog.json') continue;
-
       const schema = loadTestData<Record<string, unknown>>(join(this.schemaDir, file));
       let schemaWithId = this.fixCatalogSchemaId(schema, file);
-      // 官方 run_tests.py 等价物：suite 指定的 catalog 文件（如 testing_catalog.json）
-      // 注册为 catalog.json，使 agent_to_renderer.json 的 $ref "catalog.json#/..." 可解析
-      if (file === this.catalogFile && file !== 'catalog.json') {
-        schemaWithId = { ...schemaWithId, $id: 'https://a2ui.org/specification/v1_0/catalog.json' };
-      }
       this.ajv.addSchema(schemaWithId, file);
     }
+
+    // 官方规范中 envelope 通过相对引用 catalog.json 解析 anyComponent/anyFunction；
+    // 这里按 suite 选择 official basic catalog 或 official testing_catalog，
+    // 并统一注册为 catalog.json 别名。
+    const catalogPath =
+      this.catalogFile === 'testing_catalog.json'
+        ? join(
+            PACKAGE_ROOT,
+            '..',
+            'packages',
+            'sdk',
+            'resources',
+            'specification',
+            'v1_0',
+            'test',
+            'testing_catalog.json',
+          )
+        : join(
+            PACKAGE_ROOT,
+            '..',
+            'packages',
+            'sdk',
+            'resources',
+            'specification',
+            'v1_0',
+            'catalogs',
+            'basic',
+            'catalog.json',
+          );
+    const catalog = loadTestData<Record<string, unknown>>(catalogPath);
+    this.ajv.addSchema({ ...catalog, $id: 'https://a2ui.org/specification/v1_0/catalog.json' }, 'catalog.json');
 
     this.schemasLoaded = true;
   }
