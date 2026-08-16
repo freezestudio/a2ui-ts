@@ -10,6 +10,21 @@
 
 ---
 
+## [2026-08-16] npm 发布（Changesets 首轮）
+
+发布并推送包级 tag：
+
+| 包                          | 版本  | tag                               |
+| --------------------------- | ----- | --------------------------------- |
+| @freezestudio/a2ui-sdk      | 2.0.0 | @freezestudio/a2ui-sdk@2.0.0      |
+| @freezestudio/a2ui-web-core | 2.0.0 | @freezestudio/a2ui-web-core@2.0.0 |
+| @freezestudio/a2ui-angular  | 0.2.0 | @freezestudio/a2ui-angular@0.2.0  |
+| @freezestudio/a2ui-agent    | 1.1.3 | @freezestudio/a2ui-agent@1.1.3    |
+
+- `@freezestudio/a2ui-shared` 未变更，npm 保持 1.1.1，不重复发布。
+
+---
+
 ## [2026-08-16] 接入 Changesets 发布自动化
 
 - 新增 `@changesets/cli` 与 `.changeset/config.json`
