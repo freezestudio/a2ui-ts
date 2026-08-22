@@ -23,7 +23,7 @@ export const emailFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串是否符合邮箱格式，返回 ValidationResult',
     returnType: 'validationResult',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ value: z.string() }),
     execute: (args) => {
       const value = toStr(args.value);

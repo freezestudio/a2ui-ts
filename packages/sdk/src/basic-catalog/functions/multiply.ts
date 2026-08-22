@@ -25,7 +25,7 @@ export const multiplyFunction: FunctionApi = createFunctionApi(
   {
     description: '两个数值相乘',
     returnType: 'number',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ a: z.number(), b: z.number() }),
     execute: (args) => {
       const res = toFloat(args.a) * toFloat(args.b);

@@ -2,7 +2,7 @@ export {
   resolveDynamicValue,
   resolveDynamicString,
   callFunction,
-  getFunctionCallableFrom,
+  getFunctionAllowedCallers,
   getFunctionRequiresActivation,
   isKnownFunction,
 } from '@freezestudio/a2ui-web-core';

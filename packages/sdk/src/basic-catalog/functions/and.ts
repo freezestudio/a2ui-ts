@@ -26,7 +26,7 @@ export const andFunction: FunctionApi = createFunctionApi(
   {
     description: '对所有布尔值执行逻辑与运算',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ values: z.array(DynamicBooleanSchema).min(2) }),
     execute: (args) => {
       const values = args.values as unknown[];

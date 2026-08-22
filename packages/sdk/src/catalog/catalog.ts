@@ -164,15 +164,15 @@ export class Catalog {
   }
 
   /**
-   * 校验函数是否可由 Agent 远程调用（callableFrom 执行边界）
-   * v1.0 规范：未注册或 rendererOnly 的函数必须拒绝 agent 调用
+   * 校验函数是否可由 Agent 远程调用（allowedCallers 授权调用者）
+   * v1.0 规范（上游 #2238）：未注册或 rendererOnly 的函数必须拒绝 agent 调用
    *
    * @param name - 函数名称
-   * @returns 边界类型；函数未注册时返回 undefined
+   * @returns 授权调用者类型；函数未注册时返回 undefined
    */
-  getFunctionCallableFrom(name: string): 'rendererOnly' | 'agentOnly' | 'rendererOrAgent' | undefined {
+  getFunctionAllowedCallers(name: string): 'rendererOnly' | 'agentOnly' | 'rendererOrAgent' | undefined {
     const fn = this.getFunction(name);
-    return fn?.callableFrom;
+    return fn?.allowedCallers;
   }
 
   /**
@@ -385,7 +385,7 @@ export class Catalog {
         const description = schema.description as string | undefined;
         const parameters = extractFunctionArgsSchema(schema);
         const rawReturnType = schema['returnType'];
-        const rawCallableFrom = schema['callableFrom'];
+        const rawAllowedCallers = schema['allowedCallers'];
         const rawRequiresActivation = schema['requiresUserActivation'];
 
         functions.push({
@@ -403,12 +403,12 @@ export class Catalog {
             rawReturnType === 'void'
               ? rawReturnType
               : undefined,
-          callableFrom:
-            rawCallableFrom === 'rendererOnly' ||
-            rawCallableFrom === 'agentOnly' ||
-            rawCallableFrom === 'rendererOrAgent'
-              ? rawCallableFrom
-              : rawCallableFrom === undefined
+          allowedCallers:
+            rawAllowedCallers === 'rendererOnly' ||
+            rawAllowedCallers === 'agentOnly' ||
+            rawAllowedCallers === 'rendererOrAgent'
+              ? rawAllowedCallers
+              : rawAllowedCallers === undefined
                 ? 'rendererOnly'
                 : undefined,
           requiresUserActivation: rawRequiresActivation === true,

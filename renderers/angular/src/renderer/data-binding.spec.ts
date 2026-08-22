@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { resolvePath, setAtPath, deleteAtPath } from './data-binding';
-import { getFunctionCallableFrom, isKnownFunction } from './function-call';
+import { getFunctionAllowedCallers, isKnownFunction } from './function-call';
 import { A2UIRendererService, type A2UIDescriptor, type Surface } from './index';
 import { ComponentBinder } from './component-binder';
 import { SurfaceManager } from './surface-manager';
@@ -59,22 +59,22 @@ describe('resolvePath / setAtPath / deleteAtPath — 基础路径', () => {
   });
 });
 
-describe('callableFrom 边界（v1.0）', () => {
-  it('openUrl 为 rendererOnly（未声明 callableFrom，按规范缺省 rendererOnly）', () => {
-    expect(getFunctionCallableFrom('openUrl')).toBe('rendererOnly');
+describe('allowedCallers 边界（v1.0）', () => {
+  it('openUrl 为 rendererOnly（未声明 allowedCallers，按规范缺省 rendererOnly）', () => {
+    expect(getFunctionAllowedCallers('openUrl')).toBe('rendererOnly');
   });
 
   it('已注册函数默认 rendererOnly', () => {
-    expect(getFunctionCallableFrom('required')).toBe('rendererOnly');
-    expect(getFunctionCallableFrom('formatNumber')).toBe('rendererOnly');
+    expect(getFunctionAllowedCallers('required')).toBe('rendererOnly');
+    expect(getFunctionAllowedCallers('formatNumber')).toBe('rendererOnly');
   });
 
   it('@index 系统函数仅渲染端可用', () => {
-    expect(getFunctionCallableFrom('@index')).toBe('rendererOnly');
+    expect(getFunctionAllowedCallers('@index')).toBe('rendererOnly');
   });
 
   it('未注册函数返回 undefined', () => {
-    expect(getFunctionCallableFrom('notRegisteredFn')).toBeUndefined();
+    expect(getFunctionAllowedCallers('notRegisteredFn')).toBeUndefined();
     expect(isKnownFunction('notRegisteredFn')).toBe(false);
     expect(isKnownFunction('email')).toBe(true);
   });

@@ -15,7 +15,7 @@ export const requiredFunction: FunctionApi = createFunctionApi(
   {
     description: '检查值是否非空（不为 null、undefined、空字符串或空数组），返回 ValidationResult',
     returnType: 'validationResult',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ value: z.unknown() }),
     execute: (args) => {
       const v = args.value;

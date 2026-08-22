@@ -24,7 +24,7 @@ export const regexFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串是否匹配指定的正则表达式，返回 ValidationResult',
     returnType: 'validationResult',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.string(),
       pattern: z.string(),

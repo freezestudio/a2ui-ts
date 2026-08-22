@@ -22,7 +22,7 @@ export const capitalizeFunction: FunctionApi = createFunctionApi(
   {
     description: '将输入字符串转换为大写格式（首字母大写）',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: CapitalizeArgsSchema,
     execute: (args) => {
       const value = args.value;

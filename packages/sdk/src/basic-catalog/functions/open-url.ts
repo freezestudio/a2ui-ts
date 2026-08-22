@@ -15,7 +15,7 @@ export const openUrlFunction: FunctionApi = createFunctionApi(
   {
     description: '打开指定的 URL（需要用户激活上下文：仅可在用户交互如点击/提交触发的 Action 中执行）',
     returnType: 'void',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     requiresUserActivation: true,
     argsSchema: z.object({ url: z.string() }),
     execute: () => {

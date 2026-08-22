@@ -25,7 +25,7 @@ export const divideFunction: FunctionApi = createFunctionApi(
   {
     description: '两个数值相除，除零时返回 Infinity 或 -Infinity',
     returnType: 'number',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ a: z.number(), b: z.number() }),
     execute: (args) => {
       const a = toFloat(args.a);

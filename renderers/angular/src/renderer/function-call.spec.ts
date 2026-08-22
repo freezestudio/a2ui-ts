@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vite-plus/test';
 import {
   callFunction,
-  getFunctionCallableFrom,
+  getFunctionAllowedCallers,
   getFunctionRequiresActivation,
   isKnownFunction,
   resolveDynamicValue,
@@ -17,22 +17,22 @@ function validOf(result: unknown): boolean {
 }
 
 describe('function-call 函数库', () => {
-  describe('callableFrom 边界（v1.0 执行边界）', () => {
-    it('openUrl 为 rendererOnly（未声明 callableFrom，按规范缺省 rendererOnly）', () => {
-      expect(getFunctionCallableFrom('openUrl')).toBe('rendererOnly');
+  describe('allowedCallers 边界（v1.0 执行边界）', () => {
+    it('openUrl 为 rendererOnly（未声明 allowedCallers，按规范缺省 rendererOnly）', () => {
+      expect(getFunctionAllowedCallers('openUrl')).toBe('rendererOnly');
     });
 
     it('@index 为 rendererOnly（系统函数）', () => {
-      expect(getFunctionCallableFrom('@index')).toBe('rendererOnly');
+      expect(getFunctionAllowedCallers('@index')).toBe('rendererOnly');
     });
 
     it('已注册函数默认 rendererOnly', () => {
-      expect(getFunctionCallableFrom('required')).toBe('rendererOnly');
-      expect(getFunctionCallableFrom('formatNumber')).toBe('rendererOnly');
+      expect(getFunctionAllowedCallers('required')).toBe('rendererOnly');
+      expect(getFunctionAllowedCallers('formatNumber')).toBe('rendererOnly');
     });
 
     it('未注册函数返回 undefined', () => {
-      expect(getFunctionCallableFrom('notExist')).toBeUndefined();
+      expect(getFunctionAllowedCallers('notExist')).toBeUndefined();
     });
   });
 

@@ -314,7 +314,7 @@ export class A2uiSchemaManager {
 ]
 \`\`\`
 注意：basic catalog 的 14 个函数均为 rendererOnly，不能通过 callRendererFunction 调用；
-只有目标 catalog 中声明 callableFrom 为 agentOnly 或 rendererOrAgent 的函数才可被 Agent 调用。
+只有目标 catalog 中声明 allowedCallers 为 agentOnly 或 rendererOrAgent 的函数才可被 Agent 调用。
 
 ## 示例 5：agentFunctionResponse — 响应 Renderer 发起的函数调用
 

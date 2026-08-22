@@ -15,13 +15,13 @@
  * - DataModel 增量更新（JSON Pointer 路径）
  * - 快照/恢复（会话持久化）
  * - sendDataModel 载荷导出
- * - callFunction 边界检查（callableFrom）
+ * - callFunction 边界检查（allowedCallers）
  */
 
 import { signal } from '@preact/signals-core';
 import { z } from 'zod';
 import { setAtPath, deleteAtPath } from '../processing/data-binding.js';
-import { callFunction, getFunctionCallableFrom } from '../processing/function-call.js';
+import { callFunction, getFunctionAllowedCallers } from '../processing/function-call.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('surface-manager');
 
@@ -199,8 +199,8 @@ export class SurfaceManager {
   ): void {
     if (!onResponse) return;
 
-    const callableFrom = getFunctionCallableFrom(call.call, call.catalogId);
-    if (!callableFrom) {
+    const allowedCallers = getFunctionAllowedCallers(call.call, call.catalogId);
+    if (!allowedCallers) {
       onResponse({
         functionCallId: call.functionCallId,
         error: {
@@ -210,7 +210,7 @@ export class SurfaceManager {
       });
       return;
     }
-    if (callableFrom === 'rendererOnly') {
+    if (allowedCallers === 'rendererOnly') {
       onResponse({
         functionCallId: call.functionCallId,
         error: { code: 'INVALID_FUNCTION_CALL', message: `Function '${call.call}' is rendererOnly.` },

@@ -39,7 +39,7 @@ export const pluralizeFunction: FunctionApi = createFunctionApi(
   {
     description: '根据数值选择正确的复数形式',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.number(),
       zero: z.string().optional(),

@@ -20,7 +20,7 @@ export const formatDateFunction: FunctionApi = createFunctionApi(
   {
     description: '按照指定的格式模式格式化日期，支持 TR35 token',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.union([z.string(), z.date(), z.number()]),
       format: z.string(),

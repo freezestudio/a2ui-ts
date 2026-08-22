@@ -62,7 +62,7 @@ export const formatNumberFunction: FunctionApi = createFunctionApi(
   {
     description: '格式化数字，支持小数位数和千分位分组',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.number(),
       decimals: z.number().optional(),

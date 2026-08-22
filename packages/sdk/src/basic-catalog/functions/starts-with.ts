@@ -24,7 +24,7 @@ export const startsWithFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串是否以指定的前缀开始',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       string: z.string(),
       prefix: z.string(),

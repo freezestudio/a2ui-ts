@@ -27,7 +27,7 @@ export const numericFunction: FunctionApi = createFunctionApi(
   {
     description: '检查数值是否在指定范围内，返回 ValidationResult',
     returnType: 'validationResult',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.number(),
       min: z.number().optional(),

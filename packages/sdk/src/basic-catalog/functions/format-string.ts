@@ -24,7 +24,7 @@ export const formatStringFunction: FunctionApi = createFunctionApi(
   {
     description: '对字符串模板进行插值替换，将 ${key} 替换为对应参数值',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.string(),
     }),

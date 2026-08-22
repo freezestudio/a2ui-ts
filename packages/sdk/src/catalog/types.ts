@@ -78,8 +78,8 @@ export interface FunctionApi {
   description?: string;
   /** 返回类型元数据（v1.0 #2220 新增 validationResult） */
   returnType?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'validationResult' | 'any' | 'void';
-  /** 执行边界：rendererOnly(仅渲染端) | agentOnly(仅Agent端) | rendererOrAgent(两端均可) */
-  callableFrom?: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
+  /** 授权调用者（allowedCallers，上游 #2238 由 callableFrom 改名）：rendererOnly(仅渲染端) | agentOnly(仅Agent端) | rendererOrAgent(两端均可) */
+  allowedCallers?: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
   /** 是否需要用户激活上下文（requiresUserActivation）才能执行：仅用户交互（click/tap/submit）触发时允许 */
   requiresUserActivation?: boolean;
   /** 函数执行实现（可选） */
@@ -97,7 +97,7 @@ export function createFunctionApi(
   options?: {
     description?: string;
     returnType?: FunctionApi['returnType'];
-    callableFrom?: FunctionApi['callableFrom'];
+    allowedCallers?: FunctionApi['allowedCallers'];
     requiresUserActivation?: FunctionApi['requiresUserActivation'];
     execute?: FunctionApi['execute'];
     argsSchema?: ZodType;

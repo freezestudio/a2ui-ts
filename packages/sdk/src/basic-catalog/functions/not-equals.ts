@@ -16,7 +16,7 @@ export const notEqualsFunction: FunctionApi = createFunctionApi(
   {
     description: '检查两个值是否不相等',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ a: z.unknown(), b: z.unknown() }),
     execute: (args) => {
       return args.a !== args.b;

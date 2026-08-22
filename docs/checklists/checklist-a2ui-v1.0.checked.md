@@ -304,7 +304,7 @@ interface ErrorMessage {
 | 7.3 | Server 端的 `agentFunctionResponse` 是否符合 `value` 和 `error` 互斥的规则（FunctionResponse）？                                         | ✅                                                                                                                                                                               |
 | 7.4 | 客户端 `rendererFunctionResponse` 消息中 `value` 或 `error` 是否必填其一？                                                               | ✅                                                                                                                                                                               |
 | 7.5 | `rendererOnly` 函数被 agent 端调用时，是否返回 `error { code: "INVALID_FUNCTION_CALL" }`？                                               | ✅                                                                                                                                                                               |
-| 7.6 | 函数调用查找流程是否正确：①查询 catalog 中的 `callableFrom` → ②未注册或 `rendererOnly` 则拒绝？                                          | ✅                                                                                                                                                                               |
+| 7.6 | 函数调用查找流程是否正确：①查询 catalog 中的 `allowedCallers` → ②未注册或 `rendererOnly` 则拒绝？                                        | ✅                                                                                                                                                                               |
 | 7.7 | `sendDataModel: true` 时，每次 action 是否在 transport metadata 中包含当前 surface 的 data model？                                       | ✅                                                                                                                                                                               |
 | 7.8 | `a2uiClientDataModel` 是否只定向投递给创建该 surface 的 server（防止数据泄漏）？                                                         | ✅                                                                                                                                                                               |
 | 7.9 | 渲染端校验失败时，error `code` 是否使用规范枚举（`VALIDATION_FAILED` / `UNALLOWED_PARENT` / `UNALLOWED_CHILD`，后两者上游 #2155 新增）？ | **⚠ 部分：SDK `ValidationFailedErrorSchema` 已接受三枚举（2026-08 修复）；渲染端 message-handler 尚未主动产生 UNALLOWED_PARENT/UNALLOWED_CHILD 错误（仅 SDK 组合约束校验产生）** |
@@ -313,7 +313,7 @@ interface ErrorMessage {
 
 - ❌ action 消息携带 `wantResponse`/`actionId` 字段 → ✅ v1.0 #2210 已移除，改用 `callAgentFunction`/`agentFunctionResponse`
 - ❌ renderer 需要响应却发送纯 `action` → ✅ 应发 `callAgentFunction`（带 `functionCallId`）
-- ❌ `callFunction` 的 `callableFrom` 检查放在 `function-registry.ts` 深处，错误无法正确回传
+- ❌ `callFunction` 的 `allowedCallers` 检查放在 `function-registry.ts` 深处，错误无法正确回传
 - ❌ client-side action 也走 A2A 通道 → 不必要的延迟
 - ❌ `sendDataModel` 的所有 surface 的 data model 发给所有 Agent → 数据泄漏。应定向投递
 
@@ -383,12 +383,12 @@ interface CallRendererFunctionMessage {
 
 > 以下为 Schema 实现时的常见检查点。具体技术选型（Zod 版本、JSON Schema 库等）由各 SDK 决定，不属于协议合规范围。
 
-| #    | 核查项                                                                                                                             | ✓                                           |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| 10.1 | 函数 Schema 是否设置了 `returnType`，且枚举值严格为 `string`、`number`、`boolean`、`array`、`object`、`any`、`void` 之一？         | ✅                                          |
-| 10.2 | 函数 Schema 是否设置了 `callableFrom`，且枚举值严格为 `rendererOnly`、`agentOnly`、`rendererOrAgent` 之一（默认 `rendererOnly`）？ | **❌ 无虚拟滚动（1000+ 模板实例全量渲染）** |
-| 10.3 | 每个组件的 Schema 是否设置了 `unevaluatedProperties: false`（拒绝未定义的额外属性）？                                              | ✅                                          |
-| 10.4 | 组件 Schema 中是否包含 `weight` 属性（`type: number`，用于 Row/Column 中的 flex-grow）？                                           | **❌ 无 debounce（effect 直接 setOption）** |
+| #    | 核查项                                                                                                                               | ✓                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| 10.1 | 函数 Schema 是否设置了 `returnType`，且枚举值严格为 `string`、`number`、`boolean`、`array`、`object`、`any`、`void` 之一？           | ✅                                          |
+| 10.2 | 函数 Schema 是否设置了 `allowedCallers`，且枚举值严格为 `rendererOnly`、`agentOnly`、`rendererOrAgent` 之一（默认 `rendererOnly`）？ | **❌ 无虚拟滚动（1000+ 模板实例全量渲染）** |
+| 10.3 | 每个组件的 Schema 是否设置了 `unevaluatedProperties: false`（拒绝未定义的额外属性）？                                                | ✅                                          |
+| 10.4 | 组件 Schema 中是否包含 `weight` 属性（`type: number`，用于 Row/Column 中的 flex-grow）？                                             | **❌ 无 debounce（effect 直接 setOption）** |
 
 ---
 
@@ -400,17 +400,17 @@ interface CallRendererFunctionMessage {
 
 ### 核查项
 
-| #    | 核查项                                                                                                                                     | ✓   |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------ | --- |
-| 11.1 | 孤儿组件引用（child 引用的 ID 不在当前组件列表中）是否显示 placeholder 而非崩溃？                                                          | ✅  |
-| 11.2 | 缺失的子组件在后续 `updateComponents` 消息中到达后，是否自动替换 placeholder？                                                             | ✅  |
-| 11.3 | `updateDataModel` 后，是否只变更受影响 path 绑定的组件内容（非全量重渲染）？                                                               | ✅  |
-| 11.4 | `object` 模式 ChildList 在数据长度变化时是否正确增删模板实例？                                                                             | ✅  |
-| 11.5 | 数据绑定路径的数据尚未到达时，是否显示空值而非崩溃（渐进渲染）？                                                                           | ✅  |
-| 11.6 | 在同一组消息中，`createSurface` 先于 `updateComponents` 到达时是否正确处理？                                                               | ✅  |
-| 11.7 | `updateComponents` 先于 `createSurface` 到达时是否缓存到 pending 队列？                                                                    | ✅  |
-| 11.8 | 消息列表中单条消息校验失败时，是否继续处理后续消息（规范要求）？                                                                           | ✅  |
-| 11.9 | `callRendererFunction` 的 `callableFrom` 组合是否正确执行（`rendererOnly` 拒绝、`agentOnly` 允许、`rendererOrAgent` 允许）？（v1.0 #2210） | ✅  |
+| #    | 核查项                                                                                                                                       | ✓   |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| 11.1 | 孤儿组件引用（child 引用的 ID 不在当前组件列表中）是否显示 placeholder 而非崩溃？                                                            | ✅  |
+| 11.2 | 缺失的子组件在后续 `updateComponents` 消息中到达后，是否自动替换 placeholder？                                                               | ✅  |
+| 11.3 | `updateDataModel` 后，是否只变更受影响 path 绑定的组件内容（非全量重渲染）？                                                                 | ✅  |
+| 11.4 | `object` 模式 ChildList 在数据长度变化时是否正确增删模板实例？                                                                               | ✅  |
+| 11.5 | 数据绑定路径的数据尚未到达时，是否显示空值而非崩溃（渐进渲染）？                                                                             | ✅  |
+| 11.6 | 在同一组消息中，`createSurface` 先于 `updateComponents` 到达时是否正确处理？                                                                 | ✅  |
+| 11.7 | `updateComponents` 先于 `createSurface` 到达时是否缓存到 pending 队列？                                                                      | ✅  |
+| 11.8 | 消息列表中单条消息校验失败时，是否继续处理后续消息（规范要求）？                                                                             | ✅  |
+| 11.9 | `callRendererFunction` 的 `allowedCallers` 组合是否正确执行（`rendererOnly` 拒绝、`agentOnly` 允许、`rendererOrAgent` 允许）？（v1.0 #2210） | ✅  |
 
 ---
 
@@ -743,7 +743,7 @@ interface CatalogDefinition {
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
 | 25.25  | 每个函数 schema 是否包含 `call: { const: "函数名" }` 属性？                                                                                            | ✅  |
 | 25.26  | 是否包含 `returnType` 元数据字段（`string \| number \| boolean \| array \| object \| validationResult \| any \| void`，#2220 新增 validationResult）？ | ✅  |
-| 25.27  | 是否包含 `callableFrom` 元数据字段（`rendererOnly \| agentOnly \| rendererOrAgent`，默认 `rendererOnly`）？                                            | ✅  |
+| 25.27  | 是否包含 `allowedCallers` 元数据字段（`rendererOnly \| agentOnly \| rendererOrAgent`，默认 `rendererOnly`）？                                          | ✅  |
 | 25.27b | `requiresUserActivation` 元数据字段是否支持（默认 `false`，`openUrl` 已声明 `true`，#2157）？                                                          | ✅  |
 | 25.28  | 函数的 `args` 是否定义了 `required` 数组和 `additionalProperties: false`？                                                                             | ✅  |
 | 25.29  | 无参函数（如 `now()`）的 `args` 是否不定义或定义为 `{}`？                                                                                              | ✅  |

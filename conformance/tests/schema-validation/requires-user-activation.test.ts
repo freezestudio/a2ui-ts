@@ -7,7 +7,7 @@ import { createFullCatalog } from '@freezestudio/a2ui-sdk';
 
 /** 对齐上游 basic catalog 的函数定义结构（allOf 形式，引用 FunctionCommon） */
 function functionDef(overrides: Record<string, unknown>): Record<string, unknown> {
-  // call 属于 allOf 分支的 properties（const），其余元数据（callableFrom/requiresUserActivation）
+  // call 属于 allOf 分支的 properties（const），其余元数据（allowedCallers/requiresUserActivation）
   // 位于顶层，两者不可混淆，否则 unevaluatedProperties: false 会拒绝顶层 call
   const { call = 'test', ...rest } = overrides;
   return {
@@ -92,11 +92,11 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
     expect(result.valid).toBe(true);
   });
 
-  it('requiresUserActivation: true 且 callableFrom=agentOnly → 拒绝（条件约束）', () => {
+  it('requiresUserActivation: true 且 allowedCallers=agentOnly → 拒绝（条件约束）', () => {
     const result = ajvValidator.validate('catalog_definition.json', {
       catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
       functions: {
-        bad: functionDef({ call: 'bad', callableFrom: 'agentOnly', requiresUserActivation: true }),
+        bad: functionDef({ call: 'bad', allowedCallers: 'agentOnly', requiresUserActivation: true }),
       },
     });
     expect(result.valid).toBe(false);
@@ -106,10 +106,20 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
     const result = ajvValidator.validate('catalog_definition.json', {
       catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
       functions: {
-        ping: functionDef({ call: 'ping', callableFrom: 'agentOnly', requiresUserActivation: false }),
+        ping: functionDef({ call: 'ping', allowedCallers: 'agentOnly', requiresUserActivation: false }),
       },
     });
     expect(result.valid).toBe(true);
+  });
+
+  it('requiresUserActivation: true 且 allowedCallers=rendererOrAgent → 拒绝（上游 #2238 收紧为仅 rendererOnly）', () => {
+    const result = ajvValidator.validate('catalog_definition.json', {
+      catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
+      functions: {
+        risky: functionDef({ call: 'risky', allowedCallers: 'rendererOrAgent', requiresUserActivation: true }),
+      },
+    });
+    expect(result.valid).toBe(false);
   });
 });
 
@@ -118,7 +128,7 @@ describe('SDK 双轨：BasicCatalog openUrl requiresUserActivation', () => {
     const catalog = createFullCatalog();
     const openUrl = catalog.getFunction('openUrl');
     expect(openUrl?.requiresUserActivation).toBe(true);
-    // openUrl 未声明 callableFrom → 按规范缺省为 rendererOnly（上游 #2157 仅声明 requiresUserActivation）
-    expect(openUrl?.callableFrom).toBe('rendererOnly');
+    // openUrl 未声明 allowedCallers → 按规范缺省为 rendererOnly（上游 #2157 仅声明 requiresUserActivation）
+    expect(openUrl?.allowedCallers).toBe('rendererOnly');
   });
 });

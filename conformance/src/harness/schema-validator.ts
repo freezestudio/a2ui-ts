@@ -18,7 +18,7 @@ export class SchemaValidator {
   private catalogFile: string;
 
   /**
-   * @param schemaDir - schema 目录（默认包内 schemas/v1_0）
+   * @param schemaDir - schema 目录（默认 packages/sdk/resources/specification/v1_0/json 官方只读副本）
    * @param catalogFile - 注册为 catalog.json（$ref 目标）的 catalog 文件；
    *                      官方 run_tests.py 按 suite 的 "catalog" 字段切换
    *                      （basic 或 testing_catalog），此处对应实现

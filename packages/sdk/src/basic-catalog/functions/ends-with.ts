@@ -24,7 +24,7 @@ export const endsWithFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串是否以指定的后缀结束',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       string: z.string(),
       suffix: z.string(),

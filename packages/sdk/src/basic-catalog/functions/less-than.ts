@@ -25,7 +25,7 @@ export const lessThanFunction: FunctionApi = createFunctionApi(
   {
     description: '检查 a 是否小于 b',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ a: z.number(), b: z.number() }),
     execute: (args) => {
       return toFloat(args.a) < toFloat(args.b);

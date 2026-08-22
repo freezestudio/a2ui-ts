@@ -83,7 +83,7 @@ export {
   resolveDynamicValue,
   resolveDynamicString,
   callFunction,
-  getFunctionCallableFrom,
+  getFunctionAllowedCallers,
   getFunctionRequiresActivation,
   isKnownFunction,
   registerRendererFunction,

@@ -26,7 +26,7 @@ export const lengthFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串长度是否在指定范围内，返回 ValidationResult',
     returnType: 'validationResult',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.string(),
       min: z.number().int().min(0).optional(),

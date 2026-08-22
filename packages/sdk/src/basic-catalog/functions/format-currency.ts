@@ -63,7 +63,7 @@ export const formatCurrencyFunction: FunctionApi = createFunctionApi(
   {
     description: '将数值格式化为货币格式，包含货币符号和语言环境分隔符',
     returnType: 'string',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       value: z.number(),
       currency: z.string(),

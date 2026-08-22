@@ -20,7 +20,7 @@ export const notFunction: FunctionApi = createFunctionApi(
   {
     description: '对布尔值执行逻辑非运算',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({ value: z.unknown() }),
     execute: (args) => {
       return !toBool(args.value);

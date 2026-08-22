@@ -137,11 +137,11 @@ describe('Catalog.validateComponent — catalog 感知校验', () => {
     expect(catalog.validateComponent({ id: 'x', component: 'Text' }).some((i) => i.path === '/text')).toBe(true);
   });
 
-  it('getFunctionCallableFrom 边界查询', () => {
-    // openUrl 未声明 callableFrom → 按规范缺省为 rendererOnly（上游 #2157 仅声明 requiresUserActivation）
-    expect(catalog.getFunctionCallableFrom('openUrl')).toBe('rendererOnly');
-    expect(catalog.getFunctionCallableFrom('required')).toBe('rendererOnly');
-    expect(catalog.getFunctionCallableFrom('noSuchFunction')).toBeUndefined();
+  it('getFunctionAllowedCallers 边界查询', () => {
+    // openUrl 未声明 allowedCallers → 按规范缺省为 rendererOnly（上游 #2157 仅声明 requiresUserActivation）
+    expect(catalog.getFunctionAllowedCallers('openUrl')).toBe('rendererOnly');
+    expect(catalog.getFunctionAllowedCallers('required')).toBe('rendererOnly');
+    expect(catalog.getFunctionAllowedCallers('noSuchFunction')).toBeUndefined();
   });
 
   it('openUrl 声明 requiresUserActivation（上游 #2157）', () => {

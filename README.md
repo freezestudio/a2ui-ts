@@ -100,19 +100,7 @@ pnpm -r build    # 全部构建（拓扑序，含 angular 库与 demo）
 pnpm check    # vp check：format + lint + type（根 vite.config.ts 配置）
 ```
 
-## 发布（公网 npm）
-
-使用 Changesets 自动管理版本、CHANGELOG、tag 与 npm 发布：
-
-```bash
-pnpm changeset                        # 声明本次变更影响的包和 bump 类型
-pnpm release:check                    # 检查变更是否已登记 changeset
-```
-
-- 变更合并到 `main` 后，`release.yml` 自动创建 “Version Packages” PR。
-- 合并该 PR 后，Changesets 只发布实际变更的 public 包，并自动创建包级 git tag。
-- `publish.yml` 仅作为人工补发单个 workspace 包的 fallback。
-- conformance / eval / demo 为 private，在 Changesets 配置中 ignore，不发布
+> 📦 发布流程（公网 npm / Changesets）见 [`docs/publishing.md`](docs/publishing.md)。
 
 ## 免责声明
 

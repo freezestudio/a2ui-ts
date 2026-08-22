@@ -24,7 +24,7 @@ export const containsFunction: FunctionApi = createFunctionApi(
   {
     description: '检查字符串是否包含指定的子字符串',
     returnType: 'boolean',
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     argsSchema: z.object({
       string: z.string(),
       substring: z.string(),

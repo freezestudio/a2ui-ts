@@ -26,7 +26,7 @@ const KNOWN_FUNCTIONS = new Set([
   '@index',
 ]);
 
-const FUNCTION_CALLABLE_FROM: Record<string, 'rendererOnly' | 'agentOnly' | 'rendererOrAgent'> = {
+const FUNCTION_ALLOWED_CALLERS: Record<string, 'rendererOnly' | 'agentOnly' | 'rendererOrAgent'> = {
   openUrl: 'rendererOnly',
   '@index': 'rendererOnly',
 };
@@ -35,7 +35,7 @@ const FUNCTION_CALLABLE_FROM: Record<string, 'rendererOnly' | 'agentOnly' | 'ren
 const FUNCTION_REQUIRES_ACTIVATION = new Set<string>(['openUrl']);
 
 interface RegisteredRendererFunction {
-  callableFrom: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
+  allowedCallers: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
   requiresUserActivation?: boolean;
   execute?: (args: Record<string, unknown>, context: Record<string, unknown>) => unknown;
 }
@@ -98,14 +98,14 @@ function assertUserActivation(name: string, catalogId: string | undefined, conte
   }
 }
 
-export function getFunctionCallableFrom(
+export function getFunctionAllowedCallers(
   name: string,
   catalogId?: string,
 ): 'rendererOnly' | 'agentOnly' | 'rendererOrAgent' | undefined {
   const registered = findRegisteredFunction(catalogId, name);
-  if (registered) return registered.callableFrom;
+  if (registered) return registered.allowedCallers;
   if (catalogId && catalogId !== BASIC_CATALOG_ID) return undefined;
-  if (FUNCTION_CALLABLE_FROM[name]) return FUNCTION_CALLABLE_FROM[name];
+  if (FUNCTION_ALLOWED_CALLERS[name]) return FUNCTION_ALLOWED_CALLERS[name];
   return KNOWN_FUNCTIONS.has(name) ? 'rendererOnly' : undefined;
 }
 
@@ -520,7 +520,7 @@ function fnEndsWith(args: Record<string, unknown>): boolean {
 export const EXTENDED_CATALOG_ID = 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json';
 
 registerRendererFunction(EXTENDED_CATALOG_ID, 'capitalize', {
-  callableFrom: 'rendererOnly',
+  allowedCallers: 'rendererOnly',
   execute: (args) => fnCapitalize(args),
 });
 for (const [name, execute] of [
@@ -537,7 +537,7 @@ for (const [name, execute] of [
   ['endsWith', fnEndsWith],
 ] as const) {
   registerRendererFunction(EXTENDED_CATALOG_ID, name, {
-    callableFrom: 'rendererOnly',
+    allowedCallers: 'rendererOnly',
     execute: (args) => execute(args),
   });
 }
