@@ -1,5 +1,12 @@
 # @freezestudio/a2ui-sdk
 
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies [4adbcbf]
+  - @freezestudio/a2ui-shared@1.1.2
+
 ## 3.0.0
 
 ### Major Changes

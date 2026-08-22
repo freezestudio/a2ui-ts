@@ -1,5 +1,11 @@
 # @freezestudio/a2ui-agent
 
+## 1.1.5
+
+### Patch Changes
+
+- @freezestudio/a2ui-sdk@3.0.1
+
 ## 1.1.4
 
 ### Patch Changes

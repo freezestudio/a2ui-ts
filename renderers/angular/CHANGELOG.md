@@ -1,5 +1,13 @@
 # @freezestudio/a2ui-angular
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [4adbcbf]
+  - @freezestudio/a2ui-shared@1.1.2
+  - @freezestudio/a2ui-web-core@3.0.1
+
 ## 0.3.0
 
 ### Minor Changes
