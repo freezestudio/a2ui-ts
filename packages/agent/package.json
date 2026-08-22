@@ -1,6 +1,6 @@
 {
   "name": "@freezestudio/a2ui-agent",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "A2UI LLM client — DeepSeek Generator for eval framework",
   "license": "Apache-2.0",
   "files": [

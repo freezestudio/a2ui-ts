@@ -1,6 +1,6 @@
 {
   "name": "@freezestudio/a2ui-angular",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A2UI v1.0 Angular renderer — basic catalog components, renderer adapters, catalog registry",
   "license": "Apache-2.0",
   "files": [
