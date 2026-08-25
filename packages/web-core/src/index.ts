@@ -100,4 +100,4 @@ export {
 export type { A2UIMessage } from './processing/message-handler.js';
 
 export { SurfaceManager, findRootComponent, surfaceSchema, a2uIDescriptorSchema } from './state/surface-manager.js';
-export type { Surface, A2UIDescriptor } from './state/surface-manager.js';
+export type { Surface, A2UIDescriptor, RendererDataModel } from './state/surface-manager.js';

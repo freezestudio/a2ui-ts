@@ -34,7 +34,11 @@ import {
   isKnownFunction,
   type FunctionCall,
 } from './function-call.js';
-import { A2uiClientActionMessageSchema, A2uiClientErrorMessageSchema } from '@freezestudio/a2ui-web-core';
+import {
+  A2uiClientActionMessageSchema,
+  A2uiClientErrorMessageSchema,
+  type RendererDataModel,
+} from '@freezestudio/a2ui-web-core';
 import { createRendererLogger } from './logger.js';
 const logger = createRendererLogger('renderer');
 
@@ -72,7 +76,7 @@ export class A2UIRendererService {
           context: Record<string, unknown>;
           metadata?: Record<string, unknown>;
         },
-        transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+        transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
       ) => unknown)
     | null = null;
 
@@ -84,7 +88,7 @@ export class A2UIRendererService {
           functionCallId: string;
           callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
         },
-        transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+        transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
       ) => unknown)
     | null = null;
 
@@ -116,7 +120,7 @@ export class A2UIRendererService {
         context: Record<string, unknown>;
         metadata?: Record<string, unknown>;
       },
-      transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+      transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
     ) => unknown,
   ): void {
     this._sendAction = sender;
@@ -132,7 +136,7 @@ export class A2UIRendererService {
         functionCallId: string;
         callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
       },
-      transportMetadata?: { a2uiRendererDataModel?: Record<string, unknown> },
+      transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
     ) => unknown,
   ): void {
     this._sendCallAgentFunction = sender;
@@ -332,7 +336,7 @@ export class A2UIRendererService {
   }
 
   /** 获取标记了 sendDataModel 的 surface 数据模型 payload */
-  getSendDataModelPayload(): Record<string, unknown> | undefined {
+  getSendDataModelPayload(): RendererDataModel | undefined {
     return this._surfaceManager.getSendDataModelPayload();
   }
 

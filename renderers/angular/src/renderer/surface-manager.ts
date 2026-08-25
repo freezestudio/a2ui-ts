@@ -4,7 +4,7 @@ import {
   SurfaceManager as CoreSurfaceManager,
   findRootComponent as coreFindRootComponent,
 } from '@freezestudio/a2ui-web-core';
-import type { Surface, A2UIDescriptor } from '@freezestudio/a2ui-web-core';
+import type { Surface, A2UIDescriptor, RendererDataModel } from '@freezestudio/a2ui-web-core';
 
 export type { Surface, A2UIDescriptor } from '@freezestudio/a2ui-web-core';
 export const findRootComponent = coreFindRootComponent;
@@ -55,7 +55,7 @@ export class SurfaceManager {
     this._core.restore(surfaces);
   }
 
-  getSendDataModelPayload(): Record<string, unknown> | undefined {
+  getSendDataModelPayload(): RendererDataModel | undefined {
     return this._core.getSendDataModelPayload();
   }
 

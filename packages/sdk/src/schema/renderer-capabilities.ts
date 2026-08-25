@@ -12,16 +12,58 @@ import { SPEC_VERSION } from './constants.js';
 // ============================================================================
 
 /**
- * 函数定义 — 描述函数接口
+ * 函数返回类型（对齐官方 catalog_definition.json#/$defs/FunctionDefinition.returnType）
  */
-export const FunctionDefinitionSchema = z.strictObject({
-  /** 函数唯一名称 */
-  name: z.string(),
-  /** 函数描述 */
-  description: z.string().optional(),
-  /** 参数 JSON Schema */
-  parameters: z.record(z.string(), z.unknown()),
-});
+export const FUNCTION_RETURN_TYPES = [
+  'string',
+  'number',
+  'boolean',
+  'array',
+  'object',
+  'validationResult',
+  'any',
+  'void',
+] as const;
+export type FunctionReturnType = (typeof FUNCTION_RETURN_TYPES)[number];
+
+/**
+ * 函数执行边界（对齐官方 catalog_definition.json#/$defs/FunctionDefinition.allowedCallers）
+ */
+export const FUNCTION_ALLOWED_CALLERS = ['rendererOnly', 'agentOnly', 'rendererOrAgent'] as const;
+export type FunctionAllowedCallers = (typeof FUNCTION_ALLOWED_CALLERS)[number];
+
+/**
+ * 函数定义 — 描述函数接口（对齐官方 catalog_definition.json#/$defs/FunctionDefinition）
+ *
+ * 官方约束：
+ * - returnType 枚举 8 种取值
+ * - allowedCallers 枚举 3 种取值，默认 rendererOnly
+ * - requiresUserActivation=true 时 allowedCallers 必须为 rendererOnly
+ */
+export const FunctionDefinitionSchema = z
+  .strictObject({
+    /** 函数唯一名称 */
+    name: z.string(),
+    /** 函数描述 */
+    description: z.string().optional(),
+    /** 参数 JSON Schema */
+    parameters: z.record(z.string(), z.unknown()),
+    /** 返回类型（默认 any） */
+    returnType: z.enum(FUNCTION_RETURN_TYPES).optional(),
+    /** 允许的调用方（默认 rendererOnly） */
+    allowedCallers: z.enum(FUNCTION_ALLOWED_CALLERS).optional(),
+    /** 是否要求用户激活上下文（默认 false） */
+    requiresUserActivation: z.boolean().optional(),
+  })
+  .superRefine((fn, ctx) => {
+    if (fn.requiresUserActivation === true && fn.allowedCallers !== 'rendererOnly' && fn.allowedCallers !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'requiresUserActivation=true 时 allowedCallers 必须为 rendererOnly',
+        path: ['allowedCallers'],
+      });
+    }
+  });
 export type FunctionDefinition = z.infer<typeof FunctionDefinitionSchema>;
 
 // ============================================================================

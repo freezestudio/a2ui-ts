@@ -148,16 +148,23 @@ export {
 
 // Renderer 能力
 export {
+  FUNCTION_RETURN_TYPES,
+  FUNCTION_ALLOWED_CALLERS,
   FunctionDefinitionSchema,
   InlineCatalogSchema,
   V10CapabilitiesSchema,
   A2uiClientCapabilitiesSchema,
+  type FunctionReturnType,
+  type FunctionAllowedCallers,
   type FunctionDefinition,
   type InlineCatalog,
   type V10Capabilities,
   type A2uiClientCapabilities,
   getV10Capabilities,
 } from './renderer-capabilities.js';
+
+// Renderer Data Model（双向数据同步，对应官方 renderer_data_model.json）
+export { RendererDataModelSchema, isRendererDataModel, type RendererDataModel } from './renderer-data-model.js';
 
 // Agent 能力
 export {

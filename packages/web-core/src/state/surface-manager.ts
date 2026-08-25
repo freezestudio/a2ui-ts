@@ -37,6 +37,15 @@ export const surfaceSchema = z.object({
 });
 export type Surface = z.infer<typeof surfaceSchema>;
 
+/**
+ * Renderer Data Model 载荷（对齐官方 renderer_data_model.json）
+ * 启用 sendDataModel 的 surface 通过 A2A 元数据 a2uiRendererDataModel 发送给 Agent。
+ */
+export type RendererDataModel = {
+  version: 'v1.0';
+  surfaces: Record<string, Record<string, unknown>>;
+};
+
 export function findRootComponent(components: A2UIDescriptor[]): A2UIDescriptor | null {
   return components.find((c) => c.id === 'root') ?? null;
 }
@@ -166,7 +175,7 @@ export class SurfaceManager {
     logger.debug('从快照恢复', { surfaceCount: map.size });
   }
 
-  getSendDataModelPayload(): Record<string, unknown> | undefined {
+  getSendDataModelPayload(): RendererDataModel | undefined {
     const result: Record<string, Record<string, unknown>> = {};
     for (const [id, surface] of this.surfaces.value) {
       if (surface.sendDataModel) {
