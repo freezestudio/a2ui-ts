@@ -1,6 +1,13 @@
 import { SurfaceManager, A2UIDescriptor, a2uIDescriptorSchema } from '../state/surface-manager.js';
 import { z } from 'zod';
 import { A2uiMessageSchema, validateComponentByType } from '../schema/schemas.js';
+import {
+  UNALLOWED_CHILD,
+  UNALLOWED_PARENT,
+  checkCompositionConstraints,
+  getConstraintResolver,
+  type CompositionIssue,
+} from '../schema/composition-constraints.js';
 import { A2uiValidationError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('message-handler');
@@ -52,33 +59,92 @@ export function resolveCatalog(catalogId: string): string | undefined {
   return KNOWN_CATALOGS.find((k) => k === catalogId);
 }
 
-export function validateComponents(components: A2UIDescriptor[]): string[] {
-  const errors: string[] = [];
+/** 结构化组件校验错误（code 为 v1.0 renderer→agent 标准错误码） */
+export interface ComponentValidationIssue {
+  code: 'VALIDATION_FAILED' | typeof UNALLOWED_PARENT | typeof UNALLOWED_CHILD;
+  path: string;
+  message: string;
+}
+
+/** 组件级校验（id/component 类型/属性 schema）→ VALIDATION_FAILED */
+function validateComponentLevel(components: A2UIDescriptor[]): ComponentValidationIssue[] {
+  const issues: ComponentValidationIssue[] = [];
   const ids = new Set<string>();
   for (const comp of components) {
     if (!comp.id) {
-      errors.push('组件缺少 id 字段');
+      issues.push({ code: 'VALIDATION_FAILED', path: '/', message: '组件缺少 id 字段' });
       continue;
     }
     if (ids.has(comp.id)) {
-      errors.push(`重复的组件 ID: "${comp.id}"`);
+      issues.push({ code: 'VALIDATION_FAILED', path: comp.id, message: `重复的组件 ID: "${comp.id}"` });
     }
     ids.add(comp.id);
     if (!comp.component) {
-      errors.push(`组件 "${comp.id}" 缺少 component 类型`);
+      issues.push({ code: 'VALIDATION_FAILED', path: comp.id, message: `组件 "${comp.id}" 缺少 component 类型` });
       continue;
     }
     // 按组件类型精确校验属性（对齐上游按 catalog schema safeParse）
     const result = validateComponentByType(comp as Record<string, unknown>, comp.component);
     if (!result.valid) {
-      errors.push(...result.errors.map((e) => `[${comp.id}] ${e}`));
+      issues.push(...result.errors.map((e) => ({ code: 'VALIDATION_FAILED' as const, path: comp.id, message: e })));
     }
   }
-  return errors;
+  return issues;
+}
+
+export function validateComponents(components: A2UIDescriptor[], catalogId?: string): string[] {
+  return validateComponentsDetailed(components, catalogId).map((i) => `[${i.path}] ${i.code}: ${i.message}`);
+}
+
+/**
+ * 结构化组件校验：组件级（VALIDATION_FAILED）+ 组合约束（UNALLOWED_PARENT/UNALLOWED_CHILD，v1.0 #2155）
+ *
+ * @param components - 组件列表（邻接表）
+ * @param catalogId - surface 默认 catalogId（组合约束表按此解析；缺省不做限制）
+ */
+export function validateComponentsDetailed(
+  components: A2UIDescriptor[],
+  catalogId?: string,
+): ComponentValidationIssue[] {
+  const issues = validateComponentLevel(components);
+  // 组件级已失败时不再做组合校验（父子关系可能不完整，避免噪音错误）
+  if (issues.length > 0) return issues;
+
+  const resolver = getConstraintResolver(catalogId);
+  const compositionIssues: CompositionIssue[] = checkCompositionConstraints(components, resolver);
+  return issues.concat(compositionIssues);
 }
 
 export function isValidMessage(msg: unknown): msg is A2UIMessage {
   return A2uiMessageSchema.safeParse(msg).success;
+}
+
+type SendErrorFn = NonNullable<Parameters<typeof processMessage>[3]>['sendError'];
+
+/**
+ * 发送组件校验错误：
+ * - VALIDATION_FAILED → 聚合为一条（保持既有行为）
+ * - UNALLOWED_PARENT / UNALLOWED_CHILD → 每条单独发送（v1.0 #2155 标准码，path 为违规组件 ID）
+ */
+function sendComponentIssues(
+  renderer: { sendError: SendErrorFn } | undefined,
+  surfaceId: string,
+  issues: ComponentValidationIssue[],
+): void {
+  if (!renderer) return;
+  for (const issue of issues) {
+    if (issue.code === 'VALIDATION_FAILED') continue;
+    renderer.sendError({ code: issue.code, message: issue.message, surfaceId, path: issue.path });
+  }
+  const validationFailed = issues.filter((i) => i.code === 'VALIDATION_FAILED');
+  if (validationFailed.length > 0) {
+    renderer.sendError(
+      new A2uiValidationError(`组件校验失败: ${validationFailed.map((e) => `[${e.path}] ${e.message}`).join('; ')}`, {
+        surfaceId,
+        path: '/components',
+      }).toSendErrorPayload(),
+    );
+  }
 }
 
 export function processMessage(
@@ -134,14 +200,9 @@ export function processMessage(
       return;
     }
     if (cs.components) {
-      const compErrors = validateComponents(cs.components);
+      const compErrors = validateComponentsDetailed(cs.components, cs.catalogId);
       if (compErrors.length > 0) {
-        renderer?.sendError(
-          new A2uiValidationError(`组件校验失败: ${compErrors.map((e) => String(e)).join('; ')}`, {
-            surfaceId: cs.surfaceId,
-            path: '/components',
-          }).toSendErrorPayload(),
-        );
+        sendComponentIssues(renderer, cs.surfaceId, compErrors);
       } else {
         surfaceManager.handleUpdateComponents(cs.surfaceId, cs.components);
       }
@@ -160,14 +221,12 @@ export function processMessage(
       });
       return;
     }
-    const compErrors = validateComponents(uc.components || []);
+    const compErrors = validateComponentsDetailed(
+      uc.components || [],
+      surfaceManager.surfaces.value.get(uc.surfaceId)?.catalogId,
+    );
     if (compErrors.length > 0) {
-      renderer?.sendError(
-        new A2uiValidationError(`组件校验失败: ${compErrors.map((e) => String(e)).join('; ')}`, {
-          surfaceId: uc.surfaceId,
-          path: '/components',
-        }).toSendErrorPayload(),
-      );
+      sendComponentIssues(renderer, uc.surfaceId, compErrors);
       return;
     }
     surfaceManager.handleUpdateComponents(uc.surfaceId, uc.components);

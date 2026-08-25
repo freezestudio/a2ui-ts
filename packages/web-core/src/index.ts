@@ -94,10 +94,27 @@ export {
   processMessage,
   isValidMessage,
   validateComponents,
+  validateComponentsDetailed,
   resolveCatalog,
   clearAllPending,
 } from './processing/message-handler.js';
-export type { A2UIMessage } from './processing/message-handler.js';
+export type { A2UIMessage, ComponentValidationIssue } from './processing/message-handler.js';
+
+// 组合约束校验（allowedParents/allowedChildren + Surface，v1.0 #2155）
+export {
+  SURFACE_COMPONENT,
+  UNALLOWED_PARENT,
+  UNALLOWED_CHILD,
+  registerCatalogConstraints,
+  clearCatalogConstraints,
+  getConstraintResolver,
+  checkCompositionConstraints,
+} from './schema/composition-constraints.js';
+export type {
+  CompositionConstraints,
+  CompositionConstraintResolver,
+  CompositionIssue,
+} from './schema/composition-constraints.js';
 
 export { SurfaceManager, findRootComponent, surfaceSchema, a2uIDescriptorSchema } from './state/surface-manager.js';
 export type { Surface, A2UIDescriptor, RendererDataModel } from './state/surface-manager.js';
