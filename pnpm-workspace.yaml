@@ -5,6 +5,7 @@ packages:
   - eval
   - samples/*
   - samples/client/angular
+  - samples/agent/*
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true

@@ -60,7 +60,7 @@ v1.0 协议一致性核查套件（568 用例）：`harness` + `tests/`（schema
 
 ### renderers/（框架适配器）
 
-- [ ] **补 `testing/` 测试基座**：官方 `renderers/angular/testing/`（index.ts / public-api.ts / test-utils.ts / ng-package.json）为渲染器测试提供共享工具，我方尚未建立
+- [x] **补 `testing/` 测试基座**：官方 `renderers/angular/testing/` 为渲染器测试提供共享工具；我方已在同路径建立 ng-packagr 二级入口 `@freezestudio/a2ui-angular/testing`（`createBoundProperty` / `setA2uiInputs`）
 - [ ] **演示壳归属对齐**：官方将演示壳收在 `renderers/angular/a2ui_explorer/`（含 e2e + playwright 配置）；我方演示壳在 `samples/client/angular/`——评估是否按官方方式把 explorer 移入渲染器目录
 - [ ] **多框架适配器占位**：官方 `renderers/` 含 angular / lit / react / flutter / markdown / web_core 多个适配器；我方仅 angular，后续扩展多框架参考实现时按官方子目录约定组织
 - [ ] **版本兼容层**：官方 `renderers/angular/{v0_8,v0_9}/` 承载旧版协议兼容；我方仅支持 v1.0，**无需引入**（标注以免误对齐）
@@ -68,8 +68,8 @@ v1.0 协议一致性核查套件（568 用例）：`harness` + `tests/`（schema
 
 ### samples/（示例与开发工具）
 
-- [ ] **补 `samples/README.md` 注册表**：官方 samples/README.md 维护表格（Sample / Agent / Renderer / e2e / Video），我方未建
-- [ ] **agent 侧示例**：官方 `samples/agent/adk/` 为 agent 端示例；我方对应 `@freezestudio/a2ui-agent` 的用法示例（当前缺失）
+- [x] **补 `samples/README.md` 注册表**：对齐官方表格格式（Sample / Agent / Renderer / e2e），已建立并登记现有示例
+- [x] **agent 侧示例**：官方 `samples/agent/adk/` 为 agent 端示例；我方已建 `samples/agent/generator-demo/`（prompt → generate → validate 循环，DeepSeek/Ollama 可切换）
 - [ ] **client 壳按框架分目录**：官方 `samples/client/{angular,flutter,lit,react,shared}/`；我方仅 client/angular，后续框架加壳沿用此布局
 - [ ] **community/**：官方社区示例目录，可选跟进，非必须
 

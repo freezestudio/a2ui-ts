@@ -1,0 +1,19 @@
+{
+  "name": "@freezestudio/a2ui-agent-generator-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A2UI agent 侧示例 — 用 @freezestudio/a2ui-agent 的 LLM 生成器执行 prompt → generate → validate 循环",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/demo.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@freezestudio/a2ui-agent": "workspace:*",
+    "@freezestudio/a2ui-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3"
+  }
+}
