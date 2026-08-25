@@ -30,9 +30,35 @@ logs/
 *.swp
 *.swo
 
-# OS
+# OS（macOS）
 .DS_Store
+.AppleDouble
+.LSOverride
+# 图标文件必须以两个 \r 结尾
+Icon
+# Thumbnails（AppleDouble）
+._*
+# 磁盘卷根目录可能出现的文件
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+# 远程 AFP 共享可能创建的目录
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+.localized
+# 网络文件系统临时锁文件
+.nfs*
+
+# OS（Windows）
 Thumbs.db
+Desktop.ini
 
 # Test
 coverage/
