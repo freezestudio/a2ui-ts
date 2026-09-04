@@ -5,34 +5,27 @@ import { PACKAGE_ROOT } from '../../src/harness/package-root';
 import { join } from 'node:path';
 import { createFullCatalog } from '@freezestudio/a2ui-sdk';
 
-/** 对齐上游 basic catalog 的函数定义结构（allOf 形式，引用 FunctionCommon） */
+/** 对齐上游 basic catalog 的函数定义结构（扁平 properties 形式，上游 #2486 后弃用 allOf） */
 function functionDef(overrides: Record<string, unknown>): Record<string, unknown> {
-  // call 属于 allOf 分支的 properties（const），其余元数据（allowedCallers/requiresUserActivation）
+  // call 属于 properties（const），其余元数据（allowedCallers/requiresUserActivation）
   // 位于顶层，两者不可混淆，否则 unevaluatedProperties: false 会拒绝顶层 call
   const { call = 'test', ...rest } = overrides;
   return {
     type: 'object',
     description: 'Test function.',
     returnType: 'void',
-    allOf: [
-      { $ref: 'https://a2ui.org/specification/v1_0/common_types.json#/$defs/FunctionCommon' },
-      {
+    properties: {
+      call: { const: call },
+      args: {
         type: 'object',
         properties: {
-          call: { const: call },
-          args: {
-            type: 'object',
-            properties: {
-              url: { type: 'string' },
-            },
-            required: ['url'],
-            unevaluatedProperties: false,
-          },
+          url: { type: 'string' },
         },
-        required: ['call', 'args'],
+        required: ['url'],
+        unevaluatedProperties: false,
       },
-    ],
-    unevaluatedProperties: false,
+    },
+    required: ['call', 'args'],
     ...rest,
   };
 }
