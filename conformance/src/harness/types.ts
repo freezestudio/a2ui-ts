@@ -23,8 +23,15 @@ export interface SDKBehaviorTestCase extends TestCaseBase {
     | 'has_parts'
     | 'select_catalog'
     | 'load_catalog'
-    | 'generate_prompt';
-  steps?: ProcessChunkStep[];
+    | 'generate_prompt'
+    | 'data_model'
+    | 'process_messages'
+    | 'catalog_schema';
+  steps?: DataModelStep[];
+  initial?: Record<string, unknown>;
+  watch?: string[];
+  catalogPaths?: string[];
+  messages?: unknown[] | { messages: unknown[] };
   payload?: unknown;
   args?: Record<string, unknown>;
   input?: string;
@@ -53,7 +60,20 @@ export type ErrorCategory =
   | 'CatalogError'
   | 'IntegrityError'
   | 'RecursionError'
-  | 'CompileError';
+  | 'CompileError'
+  | 'DataError';
+
+export interface DataModelStep {
+  op: 'get' | 'set' | 'delete' | 'dispose';
+  path: string;
+  value?: unknown;
+  expect?: unknown;
+  expect_absent?: boolean;
+  expect_type?: 'list' | 'object';
+  expect_values?: Record<string, unknown>;
+  expect_notified?: string[];
+  expect_error?: ExpectedError;
+}
 
 export interface SchemaValidationTestFile {
   schema: string;

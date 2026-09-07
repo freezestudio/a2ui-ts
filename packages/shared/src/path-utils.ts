@@ -11,7 +11,9 @@ export function parsePointer(pointer: string): string[] {
     return [];
   }
 
-  const path = pointer.startsWith('/') ? pointer.slice(1) : pointer;
+  let path = pointer.startsWith('/') ? pointer.slice(1) : pointer;
+  // 去除尾部斜杠（/foo/ → foo）
+  path = path.replace(/\/+$/, '');
 
   if (path === '') {
     return [];
@@ -31,7 +33,7 @@ export function serializePointer(tokens: string[]): string {
   return '/' + escaped.join('/');
 }
 
-/** 归一化路径：空/根返回空串，非 / 开头补 / */
+/** 归一化路径：空/根返回空串，非 / 开头补 /，去除尾部斜杠 */
 export function normalizePath(path: string): string {
   if (path === '' || path === '/') {
     return '';
@@ -39,7 +41,9 @@ export function normalizePath(path: string): string {
   if (!path.startsWith('/')) {
     path = '/' + path;
   }
-  return path;
+  // 去除尾部斜杠（/foo/ → /foo），但保留根路径 /
+  path = path.replace(/\/+$/, '');
+  return path === '' ? '' : path;
 }
 
 /** 获取父路径 */

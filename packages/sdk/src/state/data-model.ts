@@ -108,11 +108,14 @@ export class DataModel {
     const clonedValue = typeof value === 'object' && value !== null ? structuredClone(value) : value;
 
     if (normalizedPath === '') {
-      // 设置根路径
-      if (typeof clonedValue === 'object' && clonedValue !== null && !Array.isArray(clonedValue)) {
-        this._data = clonedValue as Record<string, unknown>;
-      } else {
+      // 仅空根（undefined/null）替换为容器。原始值 root 是调用者主动设置的，
+      // 通过它写入路径等同于在任何深度通过原始值写入，应报 DataError。
+      if (this._data === undefined || this._data === null) {
         this._data = {};
+      } else if (typeof this._data !== 'object') {
+        throw new Error(`Cannot set path '${path}': the data model root is a primitive value.`);
+      } else {
+        this._data = clonedValue as Record<string, unknown>;
       }
       this._triggerCascade(normalizedPath, this._data);
       return;

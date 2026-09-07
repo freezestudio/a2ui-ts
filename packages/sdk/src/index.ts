@@ -242,20 +242,15 @@ export {
 } from './core/index.js';
 
 // ============================================================================
-// 状态管理模块（实验性参考实现，不公开导出）
+// 状态管理模块（实验性参考实现）
 // ============================================================================
-//
-// state/ 是官方 Python SDK（core/state/ + core/rendering/）的 TypeScript 移植，
-// 定位为"headless renderer 参考实现"。当前项目实际渲染器在 apps/web 独立实现
-// （Angular Signal），未消费本模块；且本模块尚有缺口（NodeGraph 装配、@index、
-// 集合作用域、sendDataModel 载荷等）未接通业务闭环。
-//
-// 故从公共 API 收敛：不在此处导出，仅保留源码与单测作为参考/未来基础。
-// 若需引用，请直接 import 自 './state/index.js'。
-//
-// ============================================================================
-// 版本信息
-// ============================================================================
+
+export {
+  DataModel,
+  dataModelChangeEventSchema,
+  type DataModelChangeEvent,
+  type DataModelChangeHandler,
+} from './state/index.js';
 
 export const VERSION = '1.0.0';
 export const PROTOCOL_VERSION = 'v1_0';
