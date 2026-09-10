@@ -1,5 +1,28 @@
 # @freezestudio/a2ui-web-core
 
+## 3.1.0
+
+### Minor Changes
+
+- b74efd1: feat(a2ui): 落地 todo 清单三项 —— 渲染端组合约束错误码、angular testing 测试基座、agent 生成示例
+
+  - web-core (minor): 新增 `composition-constraints.ts`（catalog 约束注册表 +
+    `checkCompositionConstraints`），message-handler 组件校验链路主动产生
+    UNALLOWED_PARENT / UNALLOWED_CHILD 标准错误码（v1.0 #2155）；新增结构化
+    `validateComponentsDetailed`
+  - angular (minor): 新增 `testing/` 二级入口（`createBoundProperty` /
+    `setA2uiInputs`），对齐官方 renderers/angular/testing 布局
+  - agent (patch): system prompt 中旧消息名 callFunction/actionResponse 修正为
+    v1.0 #2210 的 callRendererFunction/agentFunctionResponse
+
+### Patch Changes
+
+- 6e13c03: feat(a2ui): 对齐官方 v1.0 协议 schema —— 新增 RendererDataModel（renderer_data_model.json）、强化 FunctionDefinition 校验（returnType/allowedCallers/requiresUserActivation 约束）
+
+  - sdk: 新增 `RendererDataModelSchema`/`isRendererDataModel`（对应官方 renderer_data_model.json）；`FunctionDefinitionSchema` 补 returnType 8 枚举、allowedCallers 3 枚举、requiresUserActivation（true 时强制 rendererOnly）
+  - web-core/angular: `getSendDataModelPayload()` 返回类型细化为 `RendererDataModel`（非破坏）
+  - conformance: 新增官方 basic catalog examples（43 个）SDK zod 一致性测试
+
 ## 3.0.0
 
 ### Major Changes
