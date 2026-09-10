@@ -11,9 +11,16 @@
  * 6. 组件属性校验（AJV 对照 Catalog Schema）
  */
 
+import { readFile } from 'node:fs/promises';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { A2uiValidator, A2uiMessageSchema, BasicCatalog } from '@freezestudio/a2ui-sdk';
+import {
+  A2uiValidator,
+  A2uiMessageSchema,
+  BasicCatalog,
+  getSchemaPath,
+  createBasicCatalogPath,
+} from '@freezestudio/a2ui-sdk';
 import type { GeneratedResult, ValidatedResult, ValidationResultError } from './types.js';
 import type { A2uiMessage } from '@freezestudio/a2ui-sdk';
 
@@ -140,6 +147,23 @@ export class Validator {
   /** 加载 Catalog Schema 用于组件属性校验 */
   private async loadCatalogSchemas(): Promise<void> {
     if (this.catalogSchemas.size > 0) return;
+
+    // v1.0 组件 schema 使用相对引用 `common_types.json#/$defs/*`，而 common_types 的
+    // FunctionCall 又反向引用 `catalog.json#/$defs/anyFunction`。按上游 blueprint 要求，
+    // 必须以根相对 key 同时注册 common_types 与 basic catalog，否则 Ajv 编译会因无法
+    // 解析引用而抛错，随后被 catch 静默跳过，导致组件属性漏检（如 Icon）。
+    // eval 使用 draft-07 版 Ajv，需去掉官方 schema 的 2020-12 `$schema` 声明才能注册；
+    // 所引用的 $defs（DataBinding/DynamicString/FunctionCall 等）均兼容 draft-07。
+    const commonTypes = JSON.parse(await readFile(getSchemaPath('common_types'), 'utf-8')) as Record<string, unknown>;
+    delete commonTypes['$schema'];
+    this.ajv.addSchema(commonTypes, 'common_types.json');
+
+    const officialCatalog = JSON.parse(await readFile(createBasicCatalogPath(), 'utf-8')) as Record<string, unknown>;
+    delete officialCatalog['$schema'];
+    // 覆盖 $id，使 catalog 内相对引用与 common_types 的 `catalog.json` 引用都解析到
+    // `.../v1_0/` 根（与 conformance harness 的注册方式一致）。
+    officialCatalog['$id'] = 'https://a2ui.org/specification/v1_0/catalog.json';
+    this.ajv.addSchema(officialCatalog, 'catalog.json');
 
     const catalog = BasicCatalog.getFullInstance();
     for (const [name, comp] of catalog.getComponents()) {

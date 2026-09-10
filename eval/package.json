@@ -19,6 +19,7 @@
     "build": "vp pack",
     "eval": "tsx src/cli.ts",
     "lint": "tsc --noEmit",
+    "test": "vp test",
     "clean": "rm -rf dist"
   },
   "dependencies": {
