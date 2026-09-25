@@ -26,10 +26,19 @@ export const DataBindingSchema = z.strictObject({
 });
 export type DataBinding = z.infer<typeof DataBindingSchema>;
 
+/** 函数调用参数数量上限（防超大 payload / 海量订阅，CWE-400）。与 SDK `MAX_FUNCTION_CALL_ARGS` 同值。 */
+export const MAX_FUNCTION_CALL_ARGS = 1_000;
+
 export const FunctionCallSchema = z.strictObject({
   call: z.string(),
   catalogId: z.string().optional(),
-  args: z.record(z.string(), z.any()).optional(),
+  args: z
+    .record(z.string(), z.any())
+    .refine(
+      (args) => Object.keys(args).length <= MAX_FUNCTION_CALL_ARGS,
+      `函数参数数量超过上限 (${MAX_FUNCTION_CALL_ARGS})`,
+    )
+    .optional(),
 });
 export type FunctionCall = z.infer<typeof FunctionCallSchema>;
 

@@ -1,7 +1,9 @@
 import { describe, it } from 'vite-plus/test';
 import assert from 'node:assert/strict';
 import { DataModel } from './data-model.js';
-import { DataContext } from './data-context.js';
+import { DataContext, MAX_DYNAMIC_VALUE_DEPTH } from './data-context.js';
+import { MAX_FUNCTION_CALL_ARGS } from '../schema/common-types.js';
+import { createBasicCatalog } from '../basic-catalog/index.js';
 
 function createContext(initial: Record<string, unknown>): { dataModel: DataModel; context: DataContext } {
   const dataModel = new DataModel();
@@ -57,5 +59,29 @@ describe('DataContext 插值字符串订阅', () => {
     sub.unsubscribe();
     dataModel.set('/temp', 35);
     assert.equal(events.length, 2);
+  });
+});
+
+describe('DataContext 资源限额（CWE-400 / CWE-674）', () => {
+  it('函数参数数量超过上限时返回 undefined', () => {
+    const dataModel = new DataModel();
+    const catalog = createBasicCatalog();
+    const context = new DataContext({ dataModel, catalog });
+    const args: Record<string, unknown> = {};
+    for (let i = 0; i <= MAX_FUNCTION_CALL_ARGS; i++) {
+      args[`a${i}`] = i;
+    }
+    assert.equal(context.resolveDynamicValue({ call: 'required', args }), undefined);
+  });
+
+  it('深层嵌套函数调用不会栈溢出', () => {
+    const dataModel = new DataModel();
+    const catalog = createBasicCatalog();
+    const context = new DataContext({ dataModel, catalog });
+    let nested: unknown = { call: 'required', args: { value: 'x' } };
+    for (let i = 0; i < MAX_DYNAMIC_VALUE_DEPTH * 5; i++) {
+      nested = { call: 'required', args: { value: nested } };
+    }
+    assert.doesNotThrow(() => context.resolveDynamicValue(nested));
   });
 });

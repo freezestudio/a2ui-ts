@@ -21,7 +21,7 @@ import { A2UIComponent } from '../component.js';
   `,
   styles: `
     .a2ui-card {
-      background: var(--card-bg, #fff);
+      background-color: var(--card-bg, #fff);
       border: 1px solid var(--card-border, #e0e0e0);
       border-radius: 8px;
       padding: 16px;

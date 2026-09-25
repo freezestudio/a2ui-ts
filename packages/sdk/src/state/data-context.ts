@@ -13,7 +13,7 @@ import { Subscription } from '../core/events.js';
 import { DataModel } from './data-model.js';
 import { Catalog } from '../catalog/catalog.js';
 import { SurfaceModel } from './surface-model.js';
-import { isDataBinding, isFunctionCall } from '../schema/common-types.js';
+import { isDataBinding, isFunctionCall, MAX_FUNCTION_CALL_ARGS } from '../schema/common-types.js';
 import { ExpressionParser, toStr } from '@freezestudio/a2ui-shared';
 import type { DataBinding, FunctionCall } from '../schema/common-types.js';
 
@@ -44,6 +44,13 @@ export interface DataContextConfig {
   /** 数据路径前缀（用于相对路径解析） */
   dataPathPrefix?: string;
 }
+
+/**
+ * 动态值/函数调用求值的最大递归深度。
+ * 防止深层嵌套表达式载荷导致调用栈耗尽（CWE-674）。
+ * 对齐上游 web_core `MAX_DYNAMIC_VALUE_DEPTH`。
+ */
+export const MAX_DYNAMIC_VALUE_DEPTH = 1_000;
 
 // ============================================================================
 // DataContext
@@ -89,7 +96,12 @@ export class DataContext {
    * - 字面量 → 直接返回
    * - 数组/对象 → 递归求值每个元素
    */
-  resolveDynamicValue(value: unknown): unknown {
+  resolveDynamicValue(value: unknown, depth = 0): unknown {
+    if (depth > MAX_DYNAMIC_VALUE_DEPTH) {
+      this._dispatchExpressionError(`Maximum dynamic value nesting depth exceeded (${MAX_DYNAMIC_VALUE_DEPTH})`);
+      return undefined;
+    }
+
     // DataBinding
     if (isDataBinding(value)) {
       return this._resolveDataBinding(value);
@@ -97,26 +109,26 @@ export class DataContext {
 
     // FunctionCall
     if (isFunctionCall(value)) {
-      return this._executeFunctionCall(value);
+      return this._executeFunctionCall(value, depth);
     }
 
     // 数组 — 递归求值
     if (Array.isArray(value)) {
-      return value.map((item) => this.resolveDynamicValue(item));
+      return value.map((item) => this.resolveDynamicValue(item, depth + 1));
     }
 
     // 对象（非 DataBinding/FunctionCall）— 递归求值属性
     if (typeof value === 'object' && value !== null) {
       const resolved: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(value)) {
-        resolved[k] = this.resolveDynamicValue(v);
+        resolved[k] = this.resolveDynamicValue(v, depth + 1);
       }
       return resolved;
     }
 
     // 插值字符串（含 ${...}）— 解析模板并逐段求值
     if (typeof value === 'string' && value.includes('${')) {
-      return this._resolveInterpolatedString(value);
+      return this._resolveInterpolatedString(value, depth);
     }
 
     // 字面量（string/number/boolean/null/undefined）
@@ -129,7 +141,7 @@ export class DataContext {
    * 对应 Python: data_context + expression_parser 的模板插值求值，
    * 也即官方 formatString 的语义。
    */
-  private _resolveInterpolatedString(template: string): string {
+  private _resolveInterpolatedString(template: string, depth = 0): string {
     const parser = new ExpressionParser();
     let parts;
     try {
@@ -145,11 +157,11 @@ export class DataContext {
         if (typeof part === 'string') return part;
         if (typeof part === 'number' || typeof part === 'boolean') return toStr(part);
         if ('path' in part) {
-          const val = this.resolveDynamicValue({ path: part.path });
+          const val = this.resolveDynamicValue({ path: part.path }, depth + 1);
           return val != null ? toStr(val) : '';
         }
         if ('call' in part) {
-          const val = this.resolveDynamicValue(part);
+          const val = this.resolveDynamicValue(part, depth + 1);
           return val != null ? toStr(val) : '';
         }
         return toStr(part);
@@ -227,7 +239,7 @@ export class DataContext {
   }
 
   /** 执行函数调用 */
-  private _executeFunctionCall(call: FunctionCall): unknown {
+  private _executeFunctionCall(call: FunctionCall, depth = 0): unknown {
     if (!this.catalog) {
       throw new Error(`函数调用 "${call.call}" 需要 Catalog 但当前 DataContext 未绑定 Catalog`);
     }
@@ -249,11 +261,20 @@ export class DataContext {
       return undefined;
     }
 
+    // 参数数量上限（防超大 payload / 海量订阅，CWE-400）
+    const argKeys = call.args ? Object.keys(call.args) : [];
+    if (argKeys.length > MAX_FUNCTION_CALL_ARGS) {
+      this._dispatchExpressionError(
+        `Function call '${call.call}' exceeds maximum allowed arguments count (${MAX_FUNCTION_CALL_ARGS})`,
+      );
+      return undefined;
+    }
+
     // 递归解析参数
     const resolvedArgs: Record<string, unknown> = {};
     if (call.args) {
       for (const [k, v] of Object.entries(call.args)) {
-        resolvedArgs[k] = this.resolveDynamicValue(v);
+        resolvedArgs[k] = this.resolveDynamicValue(v, depth + 1);
       }
     }
 
@@ -273,9 +294,23 @@ export class DataContext {
     }
   }
 
+  /** 派发表达式错误（深度/参数超限等），不抛出以保持渲染继续 */
+  private _dispatchExpressionError(message: string): void {
+    if (!this.surface) return;
+    this.surface.dispatchError({
+      code: 'EXPRESSION_ERROR',
+      surfaceId: this.surface.surfaceId,
+      message,
+    });
+  }
+
   /** 从 DynamicValue 中提取所有 path 引用 */
-  private _extractPaths(value: unknown): string[] {
+  private _extractPaths(value: unknown, depth = 0): string[] {
     const paths: string[] = [];
+
+    if (depth > MAX_DYNAMIC_VALUE_DEPTH) {
+      return paths;
+    }
 
     if (isDataBinding(value)) {
       paths.push(value.path);
@@ -283,16 +318,16 @@ export class DataContext {
       // 函数参数中的路径
       if (value.args) {
         for (const argValue of Object.values(value.args)) {
-          paths.push(...this._extractPaths(argValue));
+          paths.push(...this._extractPaths(argValue, depth + 1));
         }
       }
     } else if (Array.isArray(value)) {
       for (const item of value) {
-        paths.push(...this._extractPaths(item));
+        paths.push(...this._extractPaths(item, depth + 1));
       }
     } else if (typeof value === 'object' && value !== null) {
       for (const v of Object.values(value)) {
-        paths.push(...this._extractPaths(v));
+        paths.push(...this._extractPaths(v, depth + 1));
       }
     } else if (typeof value === 'string' && value.includes('${')) {
       // 插值字符串 — 提取模板中的路径引用

@@ -10,6 +10,27 @@
 
 ---
 
+## [2026-09-25] 移植上游 web_core 资源限额加固
+
+> 上游 `web_core` 的 Lit/Web Components 破坏性重构（#2596 / #2698）与本项目 Angular 架构无关，
+> 未同步；但其中**与协议无关的安全/健壮性限额**被逐项移植。
+> 全仓测试 **1403 用例全绿**（shared 56 / web-core 28 / sdk 561 / angular 100 / conformance 655 / eval 3），
+> `pnpm check` 与 `pnpm -r build` 通过。
+
+| 上游 commit       | 加固项                                                | 落地位置                                                                  |
+| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| `c76e17272` #2432 | `MAX_DYNAMIC_VALUE_DEPTH = 1000` 递归限深             | sdk `DataContext.resolveDynamicValue` / `_extractPaths`                   |
+| `82789191c` #2430 | `MAX_ARRAY_INDEX = 10000` 数组下标上限                | sdk `DataModel._setAtContainer`                                           |
+| `c97f4a02d` #2431 | `MAX_DYNAMIC_CHILD_LIST_SIZE = 1000` 模板列表物化上限 | angular `catalog/constants.ts` + `layout-container.ts` / `basic/list.ts`  |
+| `1f71d1aac` #2433 | 模板长度 10000 / 片段数 1000                          | shared `ExpressionParser`；sdk `formatString`                             |
+| `eb314e14f` #2417 | 函数参数数量上限 1000                                 | sdk/web-core `FunctionCallSchema`；sdk `DataContext._executeFunctionCall` |
+| `fb8e85aec` #2367 | 背景样式防注入                                        | angular `Button` / `Card`：`background` → `background-color`              |
+
+> 说明：上游 #2417 的「未知参数直接抛错」未移植——本实现 `formatString` 依赖额外参数作为
+> 数据来源回退，严格拒绝会破坏既有语义；仅保留参数数量上限。
+
+---
+
 ## [2026-09-25] 同步官方 v1.0 规范到上游 HEAD fcec476bf
 
 > 依据 `~/Codes/a2ui-system/a2ui`（与 `~/github/ai-tools/a2ui` 同一 HEAD）逐文件对比后同步。

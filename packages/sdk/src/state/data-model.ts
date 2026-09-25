@@ -30,6 +30,13 @@ export type DataModelChangeEvent = z.infer<typeof dataModelChangeEventSchema>;
 /** 路径订阅回调 */
 export type DataModelChangeHandler = (event: DataModelChangeEvent) => void;
 
+/**
+ * 数组下标自动扩展（auto-vivification）允许的最大索引。
+ * 防止超大索引导致数组无界膨胀 / OOM（CWE-400 / CWE-770）。
+ * 与 Dart SDK `maxAutoVivifyIndex`、上游 web_core `MAX_ARRAY_INDEX` 对齐。
+ */
+export const MAX_ARRAY_INDEX = 10_000;
+
 // ============================================================================
 // DataModel
 // ============================================================================
@@ -269,6 +276,9 @@ export class DataModel {
     if (Array.isArray(container)) {
       const index = parseInt(key, 10);
       if (!isNaN(index)) {
+        if (index > MAX_ARRAY_INDEX) {
+          throw new Error(`Cannot set array index '${key}': exceeds maximum supported index (${MAX_ARRAY_INDEX}).`);
+        }
         (container as unknown[])[index] = value;
       }
     } else {

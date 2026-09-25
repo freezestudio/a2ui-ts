@@ -105,11 +105,19 @@ export type DataBinding = z.infer<typeof DataBindingSchema>;
  * - strictObject：拒绝未知属性（unevaluatedProperties: false 语义）
  * - @index 系统函数（IndexSystemFunction）：不允许 catalogId，args 仅允许 offset
  */
+export const MAX_FUNCTION_CALL_ARGS = 1_000;
+
 export const FunctionCallSchema = z
   .strictObject({
     call: z.string().min(1, '函数名不能为空'),
     catalogId: z.string().optional(),
-    args: z.record(z.string(), z.unknown()).optional(),
+    args: z
+      .record(z.string(), z.unknown())
+      .refine(
+        (args) => Object.keys(args).length <= MAX_FUNCTION_CALL_ARGS,
+        `函数参数数量超过上限 (${MAX_FUNCTION_CALL_ARGS})`,
+      )
+      .optional(),
   })
   .superRefine((fc, ctx) => {
     if (fc.call === '@index') {

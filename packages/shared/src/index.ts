@@ -5,7 +5,13 @@
  * 国际化规则，以及下沉自 @geo/shared 的通用工具（深合并/JSON 修复/目录创建）。
  * @geo/shared 对这些工具做 re-export 以保持公共 API。
  */
-export { ExpressionParser, parseTemplateExpression, parseResultSchema } from './expression-parser.js';
+export {
+  ExpressionParser,
+  parseTemplateExpression,
+  parseResultSchema,
+  MAX_EXPRESSION_TEMPLATE_LENGTH,
+  MAX_EXPRESSION_PARTS,
+} from './expression-parser.js';
 export type { ParseResult } from './expression-parser.js';
 export { evaluateExpression } from './evaluate.js';
 export type { EvaluateOptions } from './evaluate.js';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vite-plus/test';
-import { ExpressionParser } from './expression-parser.js';
+import { ExpressionParser, MAX_EXPRESSION_PARTS, MAX_EXPRESSION_TEMPLATE_LENGTH } from './expression-parser.js';
 
 describe('ExpressionParser', () => {
   describe('parse - 路径表达式', () => {
@@ -129,6 +129,27 @@ describe('ExpressionParser', () => {
     it('未闭合的插值抛出错误', () => {
       const parser = new ExpressionParser();
       expect(() => parser.parse('${unclosed')).toThrow('Unclosed interpolation');
+    });
+  });
+
+  describe('parse - 资源限额（CWE-400）', () => {
+    it('模板长度超过上限抛错', () => {
+      const parser = new ExpressionParser();
+      const huge = `${'a'.repeat(MAX_EXPRESSION_TEMPLATE_LENGTH + 1)}\${x}`;
+      expect(() => parser.parse(huge)).toThrow('exceeds maximum limit');
+    });
+
+    it('片段数量超过上限抛错', () => {
+      const parser = new ExpressionParser();
+      // 每个片段形如 ${a0}，总长度远小于模板长度上限，仅触发片段数上限
+      const many = Array.from({ length: MAX_EXPRESSION_PARTS + 5 }, (_, i) => `\${a${i}}`).join('');
+      expect(() => parser.parse(many)).toThrow('parts count exceeds');
+    });
+
+    it('刚好在上限内的模板可正常解析', () => {
+      const parser = new ExpressionParser();
+      const ok = Array.from({ length: MAX_EXPRESSION_PARTS }, (_, i) => `\${a${i}}`).join('');
+      expect(parser.parse(ok).length).toBe(MAX_EXPRESSION_PARTS);
     });
   });
 });

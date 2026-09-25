@@ -1,5 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { CatalogComponent } from '../catalog/catalog-component.js';
+import { MAX_DYNAMIC_CHILD_LIST_SIZE } from '../catalog/constants.js';
 import { A2UIComponent } from '../component.js';
 import type { A2UIDescriptor } from '../renderer/index.js';
 
@@ -78,7 +79,8 @@ export class A2UIList extends CatalogComponent {
         const template = surface?.components.find((c) => c.id === templateId) ?? null;
         const data = this.renderer.resolveDynamicValue({ path: dataPath }, this.surface());
         if (Array.isArray(data) && template) {
-          for (let i = 0; i < data.length; i++) {
+          const limit = Math.min(data.length, MAX_DYNAMIC_CHILD_LIST_SIZE);
+          for (let i = 0; i < limit; i++) {
             const item = data[i] as Record<string, unknown>;
             const itemId = item['id'] || item['name'] || i;
             const itemDataPath = `${dataPath}/${i}`;

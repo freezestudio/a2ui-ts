@@ -1,6 +1,6 @@
 import { describe, it } from 'vite-plus/test';
 import assert from 'node:assert/strict';
-import { DataModel } from './data-model.js';
+import { DataModel, MAX_ARRAY_INDEX } from './data-model.js';
 
 describe('DataModel get/set', () => {
   it('设置根路径 get("") → 整个对象', () => {
@@ -111,5 +111,30 @@ describe('DataModel subscribe', () => {
     // 应收到级联通知
     assert.equal(received.length, 2);
     assert.deepEqual(received[1], { path: '/a/b', value: 'new' });
+  });
+
+  describe('MAX_ARRAY_INDEX 数组索引上限', () => {
+    it('合法数组索引可写入', () => {
+      const model = new DataModel();
+      model.set('/items/2', 'x');
+      assert.equal(model.get('/items/2'), 'x');
+      assert.equal((model.get('/items') as unknown[]).length, 3);
+    });
+
+    it('叶子数组索引超过上限抛错', () => {
+      const model = new DataModel();
+      assert.throws(() => model.set('/items/10000000', 'x'), /exceeds maximum supported index/);
+    });
+
+    it('中间路径数组索引超过上限抛错（auto-vivify）', () => {
+      const model = new DataModel();
+      assert.throws(() => model.set('/items/10001/name', 'x'), /exceeds maximum supported index/);
+    });
+
+    it('恰好等于上限的索引可写入', () => {
+      const model = new DataModel();
+      model.set(`/items/${MAX_ARRAY_INDEX}`, 'x');
+      assert.equal(model.get(`/items/${MAX_ARRAY_INDEX}`), 'x');
+    });
   });
 });

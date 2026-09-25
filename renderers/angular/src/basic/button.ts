@@ -42,15 +42,15 @@ import type { A2UIDescriptor } from '../renderer/index.js';
         opacity 0.2s;
     }
     .a2ui-button-default {
-      background: var(--button-bg, #f0f0f0);
+      background-color: var(--button-bg, #f0f0f0);
       color: var(--button-text, #333);
     }
     .a2ui-button-primary {
-      background: var(--color-primary, #0066cc);
+      background-color: var(--color-primary, #0066cc);
       color: white;
     }
     .a2ui-button-borderless {
-      background: transparent;
+      background-color: transparent;
       color: var(--color-primary, #0066cc);
       padding-left: 8px;
       padding-right: 8px;

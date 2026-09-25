@@ -90,6 +90,18 @@ export const parseResultSchema = z.union([
 export type ParseResult = z.infer<typeof parseResultSchema>;
 
 /**
+ * 表达式模板字符串最大长度（UTF-16 code units），防止超大模板耗尽主线程（CWE-400）。
+ * 对齐上游 web_core `MAX_EXPRESSION_TEMPLATE_LENGTH`。
+ */
+export const MAX_EXPRESSION_TEMPLATE_LENGTH = 10_000;
+
+/**
+ * 表达式模板解析后的最大片段数（字面量 / `${...}` / 转义片段），防止超大模板耗尽主线程（CWE-400）。
+ * 对齐上游 web_core `MAX_EXPRESSION_PARTS`。
+ */
+export const MAX_EXPRESSION_PARTS = 1_000;
+
+/**
  * ExpressionParser — 解析 ${...} 插值模板表达式
  *
  * 输入: "Hello ${user/name}, you have ${count} items"
@@ -108,6 +120,11 @@ export class ExpressionParser {
     if (depth > ExpressionParser.MAX_DEPTH) {
       throw new Error('Max recursion depth reached in parse');
     }
+    if (input && input.length > MAX_EXPRESSION_TEMPLATE_LENGTH) {
+      throw new Error(
+        `Expression template length (${input.length}) exceeds maximum limit (${MAX_EXPRESSION_TEMPLATE_LENGTH})`,
+      );
+    }
 
     if (!input || !input.includes('${')) {
       return input ? [input] : [];
@@ -117,6 +134,9 @@ export class ExpressionParser {
     const scanner = new Scanner(input);
 
     while (!scanner.isAtEnd()) {
+      if (parts.length >= MAX_EXPRESSION_PARTS) {
+        throw new Error(`Expression parts count exceeds maximum limit (${MAX_EXPRESSION_PARTS})`);
+      }
       if (scanner.matches('${')) {
         scanner.advance(2);
         const content = this.extractInterpolationContent(scanner);

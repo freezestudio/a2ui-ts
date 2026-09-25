@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { evaluateExpression } from '@freezestudio/a2ui-shared';
+import { evaluateExpression, MAX_EXPRESSION_TEMPLATE_LENGTH } from '@freezestudio/a2ui-shared';
 import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
 
@@ -26,7 +26,7 @@ export const formatStringFunction: FunctionApi = createFunctionApi(
     returnType: 'string',
     allowedCallers: 'rendererOnly',
     argsSchema: z.object({
-      value: z.string(),
+      value: z.string().max(MAX_EXPRESSION_TEMPLATE_LENGTH),
     }),
     execute: (args, context) => {
       const template = toStr(args.value);

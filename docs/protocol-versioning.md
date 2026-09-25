@@ -34,7 +34,7 @@
 1. 同步官方规范副本（见 AGENTS.md「规范副本同步」）
 2. 在 web-core/sdk 更新对应 zod schema 与校验器
 3. `pnpm --filter @freezestudio/a2ui-conformance test` 全绿（655 基线）
-4. `pnpm -r test`（1394 基线）+ `pnpm check` 全绿
+4. `pnpm -r test`（1403 基线）+ `pnpm check` 全绿
 5. 版本推进：按规则决定协议版本/包版本
 6. 发布（见 AGENTS.md「发布流程」）
 7. **验证 geo-scout 消费侧**：server 150 / web 144 测试 + 联调冒烟

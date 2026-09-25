@@ -8,6 +8,7 @@ export { parsePointer, serializePointer, normalizePath, getParentPath, isAncesto
 // DataModel
 export {
   DataModel,
+  MAX_ARRAY_INDEX,
   dataModelChangeEventSchema,
   type DataModelChangeEvent,
   type DataModelChangeHandler,
@@ -58,6 +59,7 @@ export { NodeGraph, nodeDestroyedEventSchema, type NodeCreatedEvent, type NodeDe
 // DataContext (原 rendering/data-context.ts)
 export {
   DataContext,
+  MAX_DYNAMIC_VALUE_DEPTH,
   dynamicValueChangeEventSchema,
   type DataContextConfig,
   type DynamicValueChangeEvent,

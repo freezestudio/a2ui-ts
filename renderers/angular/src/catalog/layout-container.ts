@@ -1,5 +1,6 @@
 import { computed } from '@angular/core';
 import { CatalogComponent } from './catalog-component.js';
+import { MAX_DYNAMIC_CHILD_LIST_SIZE } from './constants.js';
 import { DataContext } from '../renderer/index.js';
 import type { A2UIDescriptor } from '../renderer/index.js';
 
@@ -52,7 +53,7 @@ export abstract class LayoutContainer extends CatalogComponent {
         const ctx = new DataContext(this.renderer.surfaceManager, this.surface().surfaceId);
         const data = ctx.resolve<Record<string, unknown>[]>({ path: dataPath })();
         if (Array.isArray(data) && template) {
-          return data.map((item: Record<string, unknown>, i: number) => {
+          return data.slice(0, MAX_DYNAMIC_CHILD_LIST_SIZE).map((item: Record<string, unknown>, i: number) => {
             const itemId = item['id'] ?? item['name'] ?? i;
             const itemDataPath = `${dataPath}/${i}`;
             const instance: A2UIDescriptor = { ...template, _dataPathPrefix: itemDataPath, '@index': i };

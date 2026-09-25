@@ -37,7 +37,7 @@ a2ui-ts/
 ```bash
 pnpm install
 pnpm -r build          # 全部构建（拓扑序，含 angular/demo）
-pnpm -r test           # 全部测试（1394：shared 53 / web-core 28 / sdk 555 / angular 100 / conformance 655 / eval 3）
+pnpm -r test           # 全部测试（1403：shared 56 / web-core 28 / sdk 561 / angular 100 / conformance 655 / eval 3）
 pnpm check             # 格式 + lint + 类型（根 vite.config.ts 配置）
 ```
 

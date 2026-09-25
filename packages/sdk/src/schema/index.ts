@@ -65,6 +65,7 @@ export {
   isDataBinding,
   isFunctionCall,
   isTemplateChildList,
+  MAX_FUNCTION_CALL_ARGS,
 } from './common-types.js';
 
 // Agent 到 Renderer 消息
