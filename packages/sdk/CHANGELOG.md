@@ -1,5 +1,48 @@
 # @freezestudio/a2ui-sdk
 
+## 3.1.0
+
+### Minor Changes
+
+- 2c8b978: fix(a2ui): 移植上游 web_core 资源限额加固（CWE-400 / CWE-674）
+
+  对齐上游 web_core 的一批安全/健壮性修复（非破坏性，与协议 wire 格式无关）：
+
+  - shared (minor)：`ExpressionParser` 新增 `MAX_EXPRESSION_TEMPLATE_LENGTH`(10000) 与
+    `MAX_EXPRESSION_PARTS`(1000) 限额，拒绝超大模板（对齐上游 #2433）
+  - sdk (minor)：
+    - `DataContext` 新增 `MAX_DYNAMIC_VALUE_DEPTH`(1000) 递归限深，超限派发 `EXPRESSION_ERROR`
+      并回退（对齐 #2432）；`_extractPaths` 同步限深
+    - 函数调用参数数量上限 `MAX_FUNCTION_CALL_ARGS`(1000)（对齐 #2417）
+    - `DataModel` 新增 `MAX_ARRAY_INDEX`(10000)，超大数组下标 auto-vivify 抛错（对齐 #2430）
+    - `formatString` 模板长度限幅
+  - web-core (patch)：`FunctionCallSchema` 限制 args 数量
+  - angular (patch)：动态 ChildList 模板物化上限 `MAX_DYNAMIC_CHILD_LIST_SIZE`(1000)
+    （对齐 #2431）；Button/Card 背景样式 `background` → `background-color`（对齐 #2367）
+
+- 6e13c03: feat(a2ui): 对齐官方 v1.0 协议 schema —— 新增 RendererDataModel（renderer_data_model.json）、强化 FunctionDefinition 校验（returnType/allowedCallers/requiresUserActivation 约束）
+
+  - sdk: 新增 `RendererDataModelSchema`/`isRendererDataModel`（对应官方 renderer_data_model.json）；`FunctionDefinitionSchema` 补 returnType 8 枚举、allowedCallers 3 枚举、requiresUserActivation（true 时强制 rendererOnly）
+  - web-core/angular: `getSendDataModelPayload()` 返回类型细化为 `RendererDataModel`（非破坏）
+  - conformance: 新增官方 basic catalog examples（43 个）SDK zod 一致性测试
+
+- 14831b5: chore(a2ui): 同步官方 v1.0 规范到上游 HEAD fcec476bf（Catalog 迁移 + 协议新增）
+
+  - 规范副本：`specification/v1_0` 同步至上游（`Child`/`DataBinding`/`FunctionCall`
+    纳入外部 `$ref` 白名单、`deprecated`/`x-deprecated-reason`、renderer capabilities
+    作用域澄清），删除上游已移除的 `specification/v1_0/eval`
+  - Catalog 副本：v1.0 basic catalog 自上游 #2693 起迁至顶层 `catalogs/`，本包新增
+    `resources/catalogs/`（`basic/v1/catalog.json`、`mcp/catalog.json`）；`getCatalogDir()`
+    / `createBasicCatalogPath()` 返回路径随之变化，新增 `getCatalogsDir()`
+    （catalog `$id` 与发布 URL 不变）
+  - `Catalog.fromJson()` 解析 `deprecated` / `x-deprecated-reason`（规范 catalog rule 8）
+  - 修正 basic catalog examples 中的非法图标名（`warning` / `favorite` / `payment` / `arrowForward`）
+
+### Patch Changes
+
+- Updated dependencies [2c8b978]
+  - @freezestudio/a2ui-shared@1.2.0
+
 ## 3.0.0
 
 ### Major Changes
