@@ -3,8 +3,8 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   fmt: {
     ignorePatterns: [
-      // A2UI 官方规范副本（只读），非本项目代码，不参与格式化
-      'packages/sdk/resources/specification/**',
+      // A2UI 官方规范与 Catalog 副本（只读），非本项目代码，不参与格式化
+      'packages/sdk/resources/**',
     ],
     singleQuote: true,
     semi: true,
@@ -15,8 +15,8 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [
-      // A2UI 官方规范副本（只读），非本项目代码，不参与 lint
-      'packages/sdk/resources/specification/**',
+      // A2UI 官方规范与 Catalog 副本（只读），非本项目代码，不参与 lint
+      'packages/sdk/resources/**',
     ],
     options: {
       typeAware: true,

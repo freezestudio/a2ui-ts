@@ -63,18 +63,7 @@ describe('UAX #31 标识符合规检查', () => {
 
   it('basic/catalog.json 所有标识符符合 UAX #31', () => {
     const catalog = loadTestData<Record<string, unknown>>(
-      join(
-        PACKAGE_ROOT,
-        '..',
-        'packages',
-        'sdk',
-        'resources',
-        'specification',
-        'v1_0',
-        'catalogs',
-        'basic',
-        'catalog.json',
-      ),
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json'),
     );
     const violations = validateCatalogIdentifiers(catalog, 'basic/catalog.json');
     expect(violations).toEqual([]);

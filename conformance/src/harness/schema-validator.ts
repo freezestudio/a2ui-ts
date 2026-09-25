@@ -61,18 +61,7 @@ export class SchemaValidator {
             'test',
             'testing_catalog.json',
           )
-        : join(
-            PACKAGE_ROOT,
-            '..',
-            'packages',
-            'sdk',
-            'resources',
-            'specification',
-            'v1_0',
-            'catalogs',
-            'basic',
-            'catalog.json',
-          );
+        : join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json');
     const catalog = loadTestData<Record<string, unknown>>(catalogPath);
     this.ajv.addSchema({ ...catalog, $id: 'https://a2ui.org/specification/v1_0/catalog.json' }, 'catalog.json');
 

@@ -14,18 +14,7 @@ import { A2uiMessageSchema } from '@freezestudio/a2ui-sdk';
  *
  * 此处用 SDK 的 A2uiMessageSchema（zod）校验每条消息，防止实现随协议演进漂移。
  */
-const EXAMPLES_DIR = join(
-  PACKAGE_ROOT,
-  '..',
-  'packages',
-  'sdk',
-  'resources',
-  'specification',
-  'v1_0',
-  'catalogs',
-  'basic',
-  'examples',
-);
+const EXAMPLES_DIR = join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'examples');
 
 describe('官方 basic catalog examples（SDK zod 一致性）', () => {
   const files = readdirSync(EXAMPLES_DIR)

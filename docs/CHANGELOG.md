@@ -10,6 +10,47 @@
 
 ---
 
+## [2026-09-25] 同步官方 v1.0 规范到上游 HEAD fcec476bf
+
+> 依据 `~/Codes/a2ui-system/a2ui`（与 `~/github/ai-tools/a2ui` 同一 HEAD）逐文件对比后同步。
+> 全仓测试 **1394 用例全绿**（shared 53 / web-core 28 / sdk 555 / angular 100 / conformance 655 / eval 3），
+> `pnpm check` 通过。
+
+### 上游关键变更（2c796d94 → fcec476bf）
+
+| 上游 commit | 内容                                                                                                                             |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `d57abebe4` | 允许 `Child` / `DataBinding` / `FunctionCall` 作为 catalog 外部 `$ref` 目标；`run_tests.py` 新增 rule 3「`$ref` 目标白名单」校验 |
+| `df58ff0bd` | v1.0 basic catalog 迁至仓库顶层 `catalogs/basic/v1/`（`$id` 与发布 URL 不变），implementation guide 一并迁移                     |
+| `4eb30b610` | 正式化 `deprecated` / `x-deprecated-reason`；catalog 版本化指引                                                                  |
+| `0086493c4` | 澄清 `a2uiRendererCapabilities` 作用域（message=单轮，session=整会话）                                                           |
+| `6e9729920` | 修正 canonical examples 中不在 catalog `Icon.name` 枚举内的图标名                                                                |
+| `118942229` | 删除 `specification/<version>/eval`（统一由顶层 `eval/` 承载）                                                                   |
+
+### 本项目落地
+
+- **规范副本**：`packages/sdk/resources/specification/v1_0/` rsync 同步并**删除**上游已移除的
+  `eval/**`、`catalogs/**`、`docs/basic_catalog_implementation_guide.md`
+- **Catalog 副本（新目录）**：`packages/sdk/resources/catalogs/`（`basic/v1/` + `mcp/`），
+  与 `specification/` 分离；上游自 #2693 起 Catalog 独立于协议版本、由 `$id` 标识
+- **路径解析**：`getCatalogsDir()` 新增；`getCatalogDir()` / `createBasicCatalogPath()` 指向新布局；
+  `schema/manager.ts` 改用 `createBasicCatalogPath()`；conformance 各测试与 `vite.config.ts`
+  ignore 规则同步更新
+- **协议能力**：`Catalog.fromJson()` 解析 `deprecated` / `x-deprecated-reason`；conformance 新增
+  `catalog-ref-targets.test.ts` 落地 catalog rule 3 `$ref` 白名单校验
+- **数据修正**：examples 图标名 `priority_high→warning`、`directions_run→favorite`、
+  `trending_up→payment`、`arrow_upward→arrowForward`（angular `icon.map.ts` 已覆盖，无需改）
+- **流程**：`AGENTS.md` 同步流程改为 rsync **两个目录**（`specification/v1_0/` + `catalogs/`）；
+  `docs/protocol-versioning.md` 资源目录约定更新
+
+### 备注（未纳入本次范围）
+
+- 上游 `catalogs/mcp/` 已随副本引入，但 SDK 侧 MCP 函数（`callMcpTool` 等）未实现
+- 上游 `web_core!` 破坏性重构（#2698 按渲染注册 catalog 元素、#2596 universal element
+  helpers）属 Python/Dart 参考实现行为变更，与 v1.0 协议文本无关，未同步
+
+---
+
 ## [2026-08-16] npm 发布（Changesets 首轮）
 
 发布并推送包级 tag：

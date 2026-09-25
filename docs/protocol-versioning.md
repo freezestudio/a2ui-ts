@@ -7,9 +7,11 @@
 
 ```
 官方规范（specification/<version>/）  ← 权威真源，只读副本同步
+官方 Catalog（catalogs/）             ← 独立于协议版本（$id 标识），只读副本同步
    │
    ▼
-本仓库 packages/sdk/resources/specification/v1_0/  ← 官方 v1_0 副本（只读，rsync 同步）
+本仓库 packages/sdk/resources/specification/v1_0/  ← 官方 v1_0 协议副本（只读，rsync 同步）
+本仓库 packages/sdk/resources/catalogs/           ← 官方 Catalog 副本（只读，rsync 同步）
    │
    ├── schema（zod，web-core/sdk）    ← 协议校验实现
    ├── conformance/                   ← 一致性测试（随版本目录）
@@ -31,15 +33,16 @@
 
 1. 同步官方规范副本（见 AGENTS.md「规范副本同步」）
 2. 在 web-core/sdk 更新对应 zod schema 与校验器
-3. `pnpm --filter @freezestudio/a2ui-conformance test` 全绿（561 基线）
-4. `pnpm -r test`（1234 基线）+ `pnpm check` 全绿
+3. `pnpm --filter @freezestudio/a2ui-conformance test` 全绿（655 基线）
+4. `pnpm -r test`（1394 基线）+ `pnpm check` 全绿
 5. 版本推进：按规则决定协议版本/包版本
 6. 发布（见 AGENTS.md「发布流程」）
 7. **验证 geo-scout 消费侧**：server 150 / web 144 测试 + 联调冒烟
 
 ## 版本目录约定
 
-- `packages/sdk/resources/specification/<version>/`：官方规范副本（只读）
+- `packages/sdk/resources/specification/<version>/`：官方协议规范副本（只读）
+- `packages/sdk/resources/catalogs/`：官方 Catalog 副本（只读，`basic/v1/catalog.json` 等，由 `$id` 标识、独立于协议版本）
 - `conformance/`：测试用例按协议版本组织（当前 v1_0）
 - 渲染器/组件 schema 与协议版本对齐（`ComponentBase` 等基础类型不随行业扩展变动）
 
@@ -47,4 +50,4 @@
 
 - 官方 AGENTS.md 版本权威章节：`~/github/ai-tools/a2ui/AGENTS.md`
 - 官方协议站点：<https://a2ui.org/>
-- 本仓库 spec 副本：`packages/sdk/resources/specification/v1_0/`
+- 本仓库 spec 副本：`packages/sdk/resources/specification/v1_0/` + `packages/sdk/resources/catalogs/`

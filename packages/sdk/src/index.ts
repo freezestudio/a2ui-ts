@@ -109,7 +109,13 @@ export {
 
 export { createComponentApi, createFunctionApi } from './catalog/types.js';
 
-export { getSchemaDir, getCatalogDir, createBasicCatalogPath, getSchemaPath } from './catalog/resource-path.js';
+export {
+  getSchemaDir,
+  getCatalogsDir,
+  getCatalogDir,
+  createBasicCatalogPath,
+  getSchemaPath,
+} from './catalog/resource-path.js';
 
 // ============================================================================
 // BasicCatalog — 内置组件与函数

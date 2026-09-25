@@ -23,6 +23,10 @@ export const componentApiSchema = z.object({
   schema: z.record(z.string(), z.unknown()),
   /** 组件描述（用于 prompt 生成） */
   description: z.string().optional(),
+  /** 是否已废弃（catalog `deprecated: true`） */
+  deprecated: z.boolean().optional(),
+  /** 废弃原因（catalog `x-deprecated-reason`，可读文本） */
+  deprecatedReason: z.string().optional(),
 });
 export type ComponentApi = z.infer<typeof componentApiSchema>;
 
@@ -40,8 +44,13 @@ export type CatalogComponentCommon = z.infer<typeof catalogComponentCommonSchema
  * 从组件 payload 创建 ComponentApi
  * 提取组件名称并包装 schema
  */
-export function createComponentApi(name: string, schema: Record<string, unknown>, description?: string): ComponentApi {
-  return { name, schema, description };
+export function createComponentApi(
+  name: string,
+  schema: Record<string, unknown>,
+  description?: string,
+  options?: { deprecated?: boolean; deprecatedReason?: string },
+): ComponentApi {
+  return { name, schema, description, ...options };
 }
 
 // ============================================================================
@@ -82,6 +91,10 @@ export interface FunctionApi {
   allowedCallers?: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
   /** 是否需要用户激活上下文（requiresUserActivation）才能执行：仅用户交互（click/tap/submit）触发时允许 */
   requiresUserActivation?: boolean;
+  /** 是否已废弃（catalog `deprecated: true`） */
+  deprecated?: boolean;
+  /** 废弃原因（catalog `x-deprecated-reason`，可读文本） */
+  deprecatedReason?: string;
   /** 函数执行实现（可选） */
   execute?: (args: Record<string, unknown>, context: FunctionContext) => unknown;
   /** 参数 Zod 校验器（可选，用于运行时参数校验） */
@@ -99,6 +112,8 @@ export function createFunctionApi(
     returnType?: FunctionApi['returnType'];
     allowedCallers?: FunctionApi['allowedCallers'];
     requiresUserActivation?: FunctionApi['requiresUserActivation'];
+    deprecated?: boolean;
+    deprecatedReason?: string;
     execute?: FunctionApi['execute'];
     argsSchema?: ZodType;
   },

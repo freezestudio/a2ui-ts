@@ -60,18 +60,7 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
 
   it('basic catalog 的 openUrl 定义符合新 schema（requiresUserActivation: true + rendererOrAgent）', () => {
     const basicCatalog = loadTestData(
-      join(
-        PACKAGE_ROOT,
-        '..',
-        'packages',
-        'sdk',
-        'resources',
-        'specification',
-        'v1_0',
-        'catalogs',
-        'basic',
-        'catalog.json',
-      ),
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json'),
     );
     const openUrl = (basicCatalog as Record<string, Record<string, unknown>>)['functions']?.['openUrl'] as
       | Record<string, unknown>

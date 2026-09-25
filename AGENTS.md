@@ -12,11 +12,12 @@ a2ui-ts/
 │   ├── shared/      # @freezestudio/a2ui-shared  共享工具（表达式/路径/类型/国际化/JSON 修复）
 │   ├── web-core/    # @freezestudio/a2ui-web-core 框架无关渲染核心（消息处理/Surface/数据绑定/函数调用）
 │   ├── sdk/         # @freezestudio/a2ui-sdk     协议 SDK（schema/5 层校验/流式解析/catalog）
-│   │   └── resources/specification/v1_0/  # 官方规范副本（只读！同步方式见下）
+│   │   ├── resources/specification/v1_0/  # 官方协议规范副本（只读！同步方式见下）
+│   │   └── resources/catalogs/            # 官方 Catalog 副本（只读！独立于协议版本）
 │   └── agent/       # @freezestudio/a2ui-agent   LLM 生成器（DeepSeek/Ollama）
 ├── renderers/
 │   └── angular/     # @freezestudio/a2ui-angular Angular 渲染器（basic 组件/渲染适配/CatalogRegistry）
-├── conformance/     # @freezestudio/a2ui-conformance v1.0 一致性测试（568 用例，PRIVATE 不发布）
+├── conformance/     # @freezestudio/a2ui-conformance v1.0 一致性测试（655 用例，PRIVATE 不发布）
 ├── eval/            # @freezestudio/a2ui-eval    LLM 评估框架（PRIVATE 不发布）
 ├── samples/client/angular/  # @freezestudio/a2ui-angular-demo 演示壳
 └── .github/workflows/       # ci.yml（build/test/check/changeset 门禁）+ release.yml（Changesets 自动发版）+ publish.yml（单包人工补发）
@@ -36,7 +37,7 @@ a2ui-ts/
 ```bash
 pnpm install
 pnpm -r build          # 全部构建（拓扑序，含 angular/demo）
-pnpm -r test           # 全部测试（1266：shared 53 / web-core 11 / sdk 538 / angular 96 / conformance 568）
+pnpm -r test           # 全部测试（1394：shared 53 / web-core 28 / sdk 555 / angular 100 / conformance 655 / eval 3）
 pnpm check             # 格式 + lint + 类型（根 vite.config.ts 配置）
 ```
 
@@ -72,15 +73,20 @@ pnpm release:check   # 检查当前 PR 中变更的 public 包是否已有 chang
 
 ## 规范副本同步
 
-`packages/sdk/resources/specification/v1_0/` 为官方规范副本（**只读**），上游 = 本地 `~/github/ai-tools/a2ui`：
+`packages/sdk/resources/specification/v1_0/` 为官方协议规范副本，`packages/sdk/resources/catalogs/` 为官方 Catalog 副本（均**只读**），上游 = 本地 `~/github/ai-tools/a2ui`（`~/Codes/a2ui-system/a2ui` 为同一仓库的另一克隆）：
+
+> 上游自 #2693 起把 v1.0 basic catalog 从 `specification/v1_0/catalogs/` 迁到仓库顶层 `catalogs/`
+> （由 catalog 自身 `$id` 标识，发布 URL 不变），因此副本需**同步两个目录**。
 
 ```bash
 # 1. 确认上游新提交
-cd ~/github/ai-tools/a2ui && git fetch origin && git log --oneline -N specification/
-# 2. 全量同步
-rsync -a --delete ~/github/ai-tools/a2ui/specification/v1_0/ packages/sdk/resources/specification/v1_0/
+cd ~/github/ai-tools/a2ui && git fetch origin && git log --oneline -N specification/ catalogs/
+# 2. 全量同步（两个目录，排除 .DS_Store）
+rsync -a --delete --exclude='.DS_Store' ~/github/ai-tools/a2ui/specification/v1_0/ packages/sdk/resources/specification/v1_0/
+rsync -a --delete --exclude='.DS_Store' ~/github/ai-tools/a2ui/catalogs/ packages/sdk/resources/catalogs/
 # 3. 验证
-diff -rq ~/github/ai-tools/a2ui/specification/v1_0/ packages/sdk/resources/specification/v1_0/
+diff -rq --exclude='.DS_Store' ~/github/ai-tools/a2ui/specification/v1_0/ packages/sdk/resources/specification/v1_0/
+diff -rq --exclude='.DS_Store' ~/github/ai-tools/a2ui/catalogs/ packages/sdk/resources/catalogs/
 pnpm --filter @freezestudio/a2ui-sdk test
 pnpm --filter @freezestudio/a2ui-conformance test
 # 4. 提交（记录上游 commit）
@@ -92,7 +98,7 @@ git commit -m "chore(a2ui): 同步官方规范副本到上游 HEAD <commit>"
 - 单引号、有分号、2 空格缩进、120 字符行宽、尾逗号 all（oxfmt，`vp fmt`）
 - 严格 TS，禁 any；ESM；文件名 kebab-case；测试 `.spec.ts`
 - 修改后必须 `pnpm check`（或对应包 lint）验证；`pnpm -r test` 全绿后才可合入
-- `packages/sdk/resources/specification/**` 参与格式/lint 排除（根 vite.config.ts 已配置）
+- `packages/sdk/resources/**` 参与格式/lint 排除（根 vite.config.ts 已配置）
 
 ## 注意事项
 

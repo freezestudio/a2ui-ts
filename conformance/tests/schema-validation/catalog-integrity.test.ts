@@ -24,18 +24,7 @@ describe('Catalog $defs key validation', () => {
 
   it('basic/catalog.json $defs has only allowed keys', () => {
     const c = loadTestData(
-      join(
-        PACKAGE_ROOT,
-        '..',
-        'packages',
-        'sdk',
-        'resources',
-        'specification',
-        'v1_0',
-        'catalogs',
-        'basic',
-        'catalog.json',
-      ),
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json'),
     );
     const defs = (c as any).$defs || {};
     expect(checkDefs(defs, 'basic/catalog')).toEqual([]);
@@ -52,18 +41,7 @@ describe('Catalog $defs key validation', () => {
 
   it('basic catalog has 18 components and functions map', () => {
     const c = loadTestData(
-      join(
-        PACKAGE_ROOT,
-        '..',
-        'packages',
-        'sdk',
-        'resources',
-        'specification',
-        'v1_0',
-        'catalogs',
-        'basic',
-        'catalog.json',
-      ),
+      join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json'),
     );
     const compCount = Object.keys((c as any).components || {}).length;
     expect(compCount).toBe(18);

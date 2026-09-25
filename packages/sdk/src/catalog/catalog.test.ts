@@ -267,5 +267,41 @@ describe('Catalog', () => {
       const catalog = Catalog.fromJson({});
       assert.equal(catalog.catalogId, 'unknown');
     });
+
+    it('解析组件 deprecated / x-deprecated-reason（规范 rule 8）', () => {
+      const catalog = Catalog.fromJson({
+        catalogId: 'deprecated-catalog',
+        components: {
+          LegacyText: {
+            type: 'object',
+            description: '旧文本组件',
+            deprecated: true,
+            'x-deprecated-reason': '请改用 Text + Markdown',
+          },
+          Text: { type: 'object' },
+        },
+      });
+      const legacy = catalog.getComponent('LegacyText');
+      assert.equal(legacy?.deprecated, true);
+      assert.equal(legacy?.deprecatedReason, '请改用 Text + Markdown');
+      assert.equal(catalog.getComponent('Text')?.deprecated, false);
+    });
+
+    it('解析函数 deprecated / x-deprecated-reason', () => {
+      const catalog = Catalog.fromJson({
+        catalogId: 'deprecated-fn-catalog',
+        functions: {
+          oldFn: {
+            description: '旧函数',
+            deprecated: true,
+            'x-deprecated-reason': '请改用 newFn',
+            args: {},
+          },
+        },
+      });
+      const fn = catalog.getFunction('oldFn');
+      assert.equal(fn?.deprecated, true);
+      assert.equal(fn?.deprecatedReason, '请改用 newFn');
+    });
   });
 });

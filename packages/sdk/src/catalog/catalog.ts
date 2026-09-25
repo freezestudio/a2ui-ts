@@ -372,7 +372,14 @@ export class Catalog {
           throw new Error(`Catalog "${catalogId}" 定义了协议保留组件名 "${SURFACE_COMPONENT}"（禁止）`);
         }
         const description = schema.description as string | undefined;
-        components.push({ name, schema: normalizeCatalogSchema(schema), description });
+        components.push({
+          name,
+          schema: normalizeCatalogSchema(schema),
+          description,
+          deprecated: schema['deprecated'] === true,
+          deprecatedReason:
+            typeof schema['x-deprecated-reason'] === 'string' ? schema['x-deprecated-reason'] : undefined,
+        });
       }
     }
 
@@ -412,6 +419,9 @@ export class Catalog {
                 ? 'rendererOnly'
                 : undefined,
           requiresUserActivation: rawRequiresActivation === true,
+          deprecated: schema['deprecated'] === true,
+          deprecatedReason:
+            typeof schema['x-deprecated-reason'] === 'string' ? schema['x-deprecated-reason'] : undefined,
         });
       }
     }

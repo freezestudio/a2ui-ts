@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { BasicCatalog, createBasicCatalog } from '../basic-catalog/index.js';
 import { V10CapabilitiesSchema } from './renderer-capabilities.js';
-import { getSchemaDir, getCatalogDir } from '../catalog/resource-path.js';
+import { getSchemaDir, createBasicCatalogPath } from '../catalog/resource-path.js';
 
 /**
  * Schema Manager 配置
@@ -76,7 +76,7 @@ export class A2uiSchemaManager {
       const [agentToRenderer, commonTypes, catalog] = await Promise.all([
         readFile(`${schemaDir}/agent_to_renderer.json`, 'utf-8'),
         readFile(`${schemaDir}/common_types.json`, 'utf-8'),
-        readFile(`${getCatalogDir()}/basic/catalog.json`, 'utf-8'),
+        readFile(createBasicCatalogPath(), 'utf-8'),
       ]);
 
       this.serverToClientSchema = agentToRenderer;
