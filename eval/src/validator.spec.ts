@@ -51,7 +51,7 @@ describe('Validator 组件 schema 校验（相对 common_types 引用）', () =>
   it('Icon.name 合法 DataBinding 时不应有 name schema 错误', async () => {
     const errors = await validate([
       { id: 'root', component: 'Column', children: ['icon1'] },
-      { id: 'icon1', component: 'Icon', name: { path: '/icon' } },
+      { id: 'icon1', component: 'Icon', name: { '@path': '/icon' } },
     ]);
 
     const iconNameErrors = errors.filter((e) => e.path.includes('icon1') && e.path.includes('name'));

@@ -22,6 +22,9 @@
     "test": "vp test",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "redos-detector": "^6.1.4"
+  },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "tsx": "catalog:tsx",

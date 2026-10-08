@@ -13,7 +13,13 @@ import { Subscription } from '../core/events.js';
 import { DataModel } from './data-model.js';
 import { Catalog } from '../catalog/catalog.js';
 import { SurfaceModel } from './surface-model.js';
-import { isDataBinding, isFunctionCall, MAX_FUNCTION_CALL_ARGS } from '../schema/common-types.js';
+import {
+  isDataBinding,
+  isFunctionCall,
+  assertNoUnknownReservedKeys,
+  unescapeObjectKey,
+  MAX_FUNCTION_CALL_ARGS,
+} from '../schema/common-types.js';
 import { ExpressionParser, toStr } from '@freezestudio/a2ui-shared';
 import type { DataBinding, FunctionCall } from '../schema/common-types.js';
 
@@ -119,9 +125,11 @@ export class DataContext {
 
     // 对象（非 DataBinding/FunctionCall）— 递归求值属性
     if (typeof value === 'object' && value !== null) {
+      // v1.0：动态对象中未转义的单 @ 键必须拒绝；普通字面量 @ 键经 @@ 前缀加倍转义
+      assertNoUnknownReservedKeys(Object.keys(value));
       const resolved: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(value)) {
-        resolved[k] = this.resolveDynamicValue(v, depth + 1);
+        resolved[unescapeObjectKey(k)] = this.resolveDynamicValue(v, depth + 1);
       }
       return resolved;
     }
@@ -157,11 +165,11 @@ export class DataContext {
         if (typeof part === 'string') return part;
         if (typeof part === 'number' || typeof part === 'boolean') return toStr(part);
         if ('path' in part) {
-          const val = this.resolveDynamicValue({ path: part.path }, depth + 1);
+          const val = this.resolveDynamicValue({ '@path': part.path }, depth + 1);
           return val != null ? toStr(val) : '';
         }
         if ('call' in part) {
-          const val = this.resolveDynamicValue(part, depth + 1);
+          const val = this.resolveDynamicValue({ '@call': part.call, args: part.args }, depth + 1);
           return val != null ? toStr(val) : '';
         }
         return toStr(part);
@@ -234,19 +242,19 @@ export class DataContext {
 
   /** 解析 DataBinding */
   private _resolveDataBinding(binding: DataBinding): unknown {
-    const fullPath = this._resolvePath(binding.path);
+    const fullPath = this._resolvePath(binding['@path']);
     return this.dataModel.get(fullPath);
   }
 
   /** 执行函数调用 */
   private _executeFunctionCall(call: FunctionCall, depth = 0): unknown {
     if (!this.catalog) {
-      throw new Error(`函数调用 "${call.call}" 需要 Catalog 但当前 DataContext 未绑定 Catalog`);
+      throw new Error(`函数调用 "${call['@call']}" 需要 Catalog 但当前 DataContext 未绑定 Catalog`);
     }
 
-    const fn = this.catalog.getFunction(call.call);
+    const fn = this.catalog.getFunction(call['@call']);
     if (!fn) {
-      const error = `函数 "${call.call}" 未在 Catalog 中注册`;
+      const error = `函数 "${call['@call']}" 未在 Catalog 中注册`;
       if (this.surface) {
         this.surface.dispatchError({
           code: 'FUNCTION_NOT_FOUND',
@@ -265,7 +273,7 @@ export class DataContext {
     const argKeys = call.args ? Object.keys(call.args) : [];
     if (argKeys.length > MAX_FUNCTION_CALL_ARGS) {
       this._dispatchExpressionError(
-        `Function call '${call.call}' exceeds maximum allowed arguments count (${MAX_FUNCTION_CALL_ARGS})`,
+        `Function call '${call['@call']}' exceeds maximum allowed arguments count (${MAX_FUNCTION_CALL_ARGS})`,
       );
       return undefined;
     }
@@ -287,7 +295,7 @@ export class DataContext {
         this.surface.dispatchError({
           code: 'FUNCTION_EXECUTION_ERROR',
           surfaceId: this.surface.surfaceId,
-          message: `函数 "${call.call}" 执行失败: ${String(error as string | number | bigint | symbol)}`,
+          message: `函数 "${call['@call']}" 执行失败: ${String(error as string | number | bigint | symbol)}`,
         });
       }
       throw error;
@@ -313,7 +321,7 @@ export class DataContext {
     }
 
     if (isDataBinding(value)) {
-      paths.push(value.path);
+      paths.push(value['@path']);
     } else if (isFunctionCall(value)) {
       // 函数参数中的路径
       if (value.args) {

@@ -10,6 +10,32 @@
 
 ---
 
+## [2026-10-08] 对齐上游 v1.0 保留协议键 `@` 前缀迁移
+
+> 同步官方规范副本 `fcec476bf` → `db430653`（198 commits），并原地演进 v1.0 wire 格式。
+> 全仓测试 **1428 用例全绿**（shared 56 / web-core 28 / sdk 577 / angular 100 / conformance 664 / eval 3），
+> `pnpm check` 与 `pnpm -r build` 通过。
+
+### 破坏性变更：保留协议指令改为 `@` 前缀（上游 #2692 / #2891，`ae0a5253`）
+
+- 数据绑定 `{ "path": "..." }` → `{ "@path": "..." }`；函数调用 `{ "call": "..." }` → `{ "@call": "..." }`（含 `@index`）。
+- v1.0 动态对象中的普通 `path` / `call` 键不再被拦截，视为字面量；未转义的单 `@` 键（`^@([^@]|$)`）一律拒绝。
+- 字面量 `@` 键通过 `@@` 前缀加倍转义，求值时去转义（`"@@path"` → `"@path"`）。
+- **保持不变**：`ChildList` 模板指针 `{ componentId, path }`、`updateDataModel.path` 与错误载荷的 `path`。
+- 落地：sdk `common-types` / `validator` / `component-validator`（新增 `propertyNames`）/ `state` / `basic-catalog`；
+  web-core `schemas` / `processing` / `state`；angular renderer 与组件；shared 新增保留键工具；agent/eval/conformance/samples 同步。
+
+### 安全与健壮性
+
+| 上游 commit      | 内容                                                                                | 落地位置                                             |
+| ---------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `4862bd47` #2366 | ReDoS（CWE-1333）防护：`redos-detector` 拒绝灾难性回溯模式 + 输入长度上限           | shared `isSafeRegex`；sdk / web-core / angular regex |
+| `ae466ff0` #2527 | 表达式解析支持非 ASCII 数据模型键（`\p{XID_Continue}` + 码点感知 Scanner）          | shared `ExpressionParser`                            |
+| `32da7df7` #3026 | v1.0 流式解析缓冲未闭合组件（`catalogId` 晚到不误校验）；placeholder 仅用于前向引用 | sdk `IncrementalStreamParser`                        |
+| `8d74a873` #2715 | 函数调用 `catalogId` 覆盖时参数按实际运行的 catalog 校验                            | sdk `validator` + 覆盖测试                           |
+
+---
+
 ## [2026-09-25] 移植上游 web_core 资源限额加固
 
 > 上游 `web_core` 的 Lit/Web Components 破坏性重构（#2596 / #2698）与本项目 Angular 架构无关，

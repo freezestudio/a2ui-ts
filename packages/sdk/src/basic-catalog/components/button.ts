@@ -40,10 +40,10 @@ export const ButtonComponentSchema: ComponentApi = {
               functionCall: {
                 type: 'object',
                 properties: {
-                  call: { type: 'string' },
+                  '@call': { type: 'string' },
                   args: { type: 'object' },
                 },
-                required: ['call'],
+                required: ['@call'],
               },
             },
             required: ['functionCall'],

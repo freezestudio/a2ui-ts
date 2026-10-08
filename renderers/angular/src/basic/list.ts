@@ -77,7 +77,7 @@ export class A2UIList extends CatalogComponent {
       const dataPath = childList['path'] as string;
       if (templateId && dataPath) {
         const template = surface?.components.find((c) => c.id === templateId) ?? null;
-        const data = this.renderer.resolveDynamicValue({ path: dataPath }, this.surface());
+        const data = this.renderer.resolveDynamicValue({ '@path': dataPath }, this.surface());
         if (Array.isArray(data) && template) {
           const limit = Math.min(data.length, MAX_DYNAMIC_CHILD_LIST_SIZE);
           for (let i = 0; i < limit; i++) {
@@ -112,10 +112,10 @@ export class A2UIList extends CatalogComponent {
       return value.map((item) => this.deepCloneWithPrefix(item, prefix));
     }
     const obj = value as Record<string, unknown>;
-    if ('path' in obj && typeof obj['path'] === 'string' && !(obj['path'] as string).startsWith('/')) {
-      return { ...obj, path: `${prefix}/${obj['path']}` };
+    if ('@path' in obj && typeof obj['@path'] === 'string' && !(obj['@path'] as string).startsWith('/')) {
+      return { ...obj, '@path': `${prefix}/${obj['@path']}` };
     }
-    if ('call' in obj && 'args' in obj && obj['args'] && typeof obj['args'] === 'object') {
+    if ('@call' in obj && 'args' in obj && obj['args'] && typeof obj['args'] === 'object') {
       return { ...obj, args: this.deepCloneWithPrefix(obj['args'], prefix) };
     }
     const result: Record<string, unknown> = {};

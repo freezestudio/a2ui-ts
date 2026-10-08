@@ -86,7 +86,7 @@ export class A2UIRendererService {
         call: {
           surfaceId: string;
           functionCallId: string;
-          callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
+          callFunction: { '@call': string; catalogId?: string; args?: Record<string, unknown> };
         },
         transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
       ) => unknown)
@@ -134,7 +134,7 @@ export class A2UIRendererService {
       call: {
         surfaceId: string;
         functionCallId: string;
-        callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
+        callFunction: { '@call': string; catalogId?: string; args?: Record<string, unknown> };
       },
       transportMetadata?: { a2uiRendererDataModel?: RendererDataModel },
     ) => unknown,
@@ -226,12 +226,12 @@ export class A2UIRendererService {
   sendCallAgentFunction(call: {
     surfaceId: string;
     functionCallId: string;
-    callFunction: { call: string; catalogId?: string; args?: Record<string, unknown> };
+    callFunction: { '@call': string; catalogId?: string; args?: Record<string, unknown> };
   }): unknown {
     const dataModelPayload = this.getSendDataModelPayload();
     const transportMetadata = dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
     logger.debug('sendCallAgentFunction', {
-      call: call.callFunction.call,
+      call: call.callFunction['@call'],
       surfaceId: call.surfaceId,
       functionCallId: call.functionCallId,
       hasDataModelMetadata: transportMetadata !== undefined,
@@ -263,7 +263,7 @@ export class A2UIRendererService {
     if (action['functionCall']) {
       const fn = action['functionCall'] as FunctionCall;
       // agent 端函数：本地 FunctionRegistry 未注册 → callAgentFunction（如 refreshData）
-      if (!isKnownFunction(fn.call, fn.catalogId)) {
+      if (!isKnownFunction(fn['@call'], fn.catalogId)) {
         await this.handleAgentFunction(fn, surface);
         return;
       }
@@ -277,7 +277,7 @@ export class A2UIRendererService {
         callFunction(fn, surface.dataModel, 0, context);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        logger.warn('action.functionCall 执行失败', { call: fn.call, message });
+        logger.warn('action.functionCall 执行失败', { call: fn['@call'], message });
       }
       return;
     }
@@ -311,11 +311,11 @@ export class A2UIRendererService {
    * 将 agentFunctionResponse 的 value 写回 dataModel 对应路径（响应式刷新）。
    */
   private async handleAgentFunction(fn: FunctionCall, surface: Surface): Promise<void> {
-    const functionCallId = `${fn.call}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const functionCallId = `${fn['@call']}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await this.sendCallAgentFunction({
       surfaceId: surface.surfaceId,
       functionCallId,
-      callFunction: { call: fn.call, catalogId: fn.catalogId, args: fn.args },
+      callFunction: { '@call': fn['@call'], catalogId: fn.catalogId, args: fn.args },
     });
   }
 
@@ -543,7 +543,12 @@ export class A2UIRendererService {
    */
   resolveComponentProp(component: A2UIDescriptor, surface: Surface, key: string): unknown {
     const value = component[key];
-    if (typeof value === 'object' && value !== null && !Array.isArray(value) && ('path' in value || 'call' in value)) {
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      ('@path' in value || '@call' in value)
+    ) {
       return this.resolveDynamicValue(value, surface);
     }
     return value;

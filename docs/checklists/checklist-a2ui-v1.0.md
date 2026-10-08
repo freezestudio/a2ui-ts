@@ -182,7 +182,7 @@ interface ComponentDef {
 
 | #   | 核查项                                                                                                                                                         | ✓   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| 5.1 | Zod Schema 的 DynamicString 是否定义为 `z.union([z.string(), z.object({ path: z.string() }), z.object({ call: z.string(), args: z.record(...) })])`？          |     |
+| 5.1 | Zod Schema 的 DynamicString 是否定义为 `z.union([z.string(), z.object({ '@path': z.string() }), z.object({ '@call': z.string(), args: z.record(...) })])`？    |     |
 | 5.2 | JSON Pointer 路径的解析是否使用 RFC 6901 标准（`/user/name` → data.user.name）？                                                                               |     |
 | 5.3 | scope-aware 路径解析：collection scope 内 `/name` 是否解析为 `/items/2/name`？                                                                                 |     |
 | 5.4 | `FunctionCall` 的 Schema 是否使用 `oneOf` 匹配 `anyFunction` 或 `IndexSystemFunction`（即只允许 catalog 注册的函数和 `@index` 系统函数）？                     |     |
@@ -467,15 +467,15 @@ interface CheckRule {
 }
 ```
 
-| #    | 核查项                                                                                                                | ✓   |
-| ---- | --------------------------------------------------------------------------------------------------------------------- | --- |
-| 16.1 | `CheckRule` 是否使用 `condition` 包裹校验逻辑（`{ condition: { call: "required", args: {...} }, message: "..." }`）？ |     |
-| 16.2 | `condition` 的类型是否为 `DynamicBoolean`（支持 FunctionCall / DataBinding / boolean 字面量三种形态）？               |     |
-| 16.3 | 多个 checks 是否按数组顺序执行（第一个 `condition` 为 false 就停止后续）？                                            |     |
-| 16.4 | Button 的 `disabled` 是否从下游组件的 checks 结果汇总（任一 fail → disabled）？                                       |     |
-| 16.5 | checks 中的函数（如 `required`、`email`、`regex`、`and`、`or`、`not`）是否在 `FunctionRegistry` 中正确注册？          |     |
-| 16.6 | checks 中是否支持嵌套逻辑（`and`/`or`/`not` 组合多个 condition）？                                                    |     |
-| 16.7 | Button checks 失败时，样式是否灰化且点击事件不触发？                                                                  |     |
+| #    | 核查项                                                                                                                 | ✓   |
+| ---- | ---------------------------------------------------------------------------------------------------------------------- | --- |
+| 16.1 | `CheckRule` 是否使用 `condition` 包裹校验逻辑（`{ condition: { @call: "required", args: {...} }, message: "..." }`）？ |     |
+| 16.2 | `condition` 的类型是否为 `DynamicBoolean`（支持 FunctionCall / DataBinding / boolean 字面量三种形态）？                |     |
+| 16.3 | 多个 checks 是否按数组顺序执行（第一个 `condition` 为 false 就停止后续）？                                             |     |
+| 16.4 | Button 的 `disabled` 是否从下游组件的 checks 结果汇总（任一 fail → disabled）？                                        |     |
+| 16.5 | checks 中的函数（如 `required`、`email`、`regex`、`and`、`or`、`not`）是否在 `FunctionRegistry` 中正确注册？           |     |
+| 16.6 | checks 中是否支持嵌套逻辑（`and`/`or`/`not` 组合多个 condition）？                                                     |     |
+| 16.7 | Button checks 失败时，样式是否灰化且点击事件不触发？                                                                   |     |
 
 ---
 
@@ -632,7 +632,7 @@ interface CheckRule {
 
 **常见误用**：
 
-- ❌ 仍使用 v0.9 格式 `{ call: "required", args: {...}, message: "..." }` → ✅ 必须包装在 `condition` 中
+- ❌ 仍使用 v0.9 格式 `{ @call: "required", args: {...}, message: "..." }` → ✅ 必须包装在 `condition` 中
 - ❌ `condition` 中使用了不存在的函数名 → FunctionRegistry 查不到时返回 false
 
 ---

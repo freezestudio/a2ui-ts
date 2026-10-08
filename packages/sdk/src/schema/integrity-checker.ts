@@ -151,7 +151,7 @@ function countFunctionCallDepth(value: unknown, currentDepth: number): number {
 
   const obj = value as Record<string, unknown>;
 
-  if ('call' in obj && 'args' in obj) {
+  if ('@call' in obj && 'args' in obj) {
     const newDepth = currentDepth + 1;
     const args = obj.args;
     if (typeof args === 'object' && args !== null) {
@@ -212,17 +212,17 @@ export function checkPathSyntax(components: Array<{ id?: string; [key: string]: 
     if (!id || typeof id !== 'string') continue;
 
     for (const [key, value] of Object.entries(comp)) {
-      // 检查 DataBinding 的 path 字段
+      // 检查 DataBinding 的 @path 字段（v1.0 保留协议指令）
       if (
         typeof value === 'object' &&
         value !== null &&
-        'path' in value &&
-        typeof (value as Record<string, unknown>).path === 'string'
+        '@path' in value &&
+        typeof (value as Record<string, unknown>)['@path'] === 'string'
       ) {
-        const path = (value as Record<string, unknown>).path as string;
+        const path = (value as Record<string, unknown>)['@path'] as string;
         if (!validatePathSyntax(path)) {
           errors.push({
-            path: `${id}.${key}.path`,
+            path: `${id}.${key}.@path`,
             message: `无效的路径语法: "${path}"`,
           });
         }

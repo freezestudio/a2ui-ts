@@ -66,7 +66,7 @@ export class SurfaceManager {
   handleCallRendererFunction(
     call: {
       functionCallId: string;
-      call: string;
+      '@call': string;
       catalogId: string;
       args?: Record<string, unknown>;
     },

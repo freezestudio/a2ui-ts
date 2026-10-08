@@ -25,9 +25,9 @@ describe('交互组件双向绑定', () => {
 
   function buildSurface(): Surface {
     const components: A2UIDescriptor[] = [
-      { id: 'cb', component: 'CheckBox', label: '启用', value: { path: '/settings/enabled' } },
-      { id: 'slider', component: 'Slider', label: '阈值', min: 0, max: 100, value: { path: '/settings/threshold' } },
-      { id: 'tf', component: 'TextField', label: '备注', value: { path: '/settings/note' } },
+      { id: 'cb', component: 'CheckBox', label: '启用', value: { '@path': '/settings/enabled' } },
+      { id: 'slider', component: 'Slider', label: '阈值', min: 0, max: 100, value: { '@path': '/settings/threshold' } },
+      { id: 'tf', component: 'TextField', label: '备注', value: { '@path': '/settings/note' } },
     ];
     return {
       surfaceId: 's1',

@@ -187,7 +187,7 @@ describe('testing_catalog 下的 callRendererFunction 精确验证', () => {
       callRendererFunction: {
         functionCallId: 'call-1',
         callFunction: {
-          call: 'pingAgent',
+          '@call': 'pingAgent',
           catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
         },
       },

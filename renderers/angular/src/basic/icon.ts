@@ -40,7 +40,7 @@ export class A2UIIcon extends CatalogComponent {
       if ('svgPath' in record && record['svgPath'] !== undefined) {
         return this.resolveString(record['svgPath']);
       }
-      if ('path' in record || 'call' in record) {
+      if ('@path' in record || '@call' in record) {
         const resolved = this.resolveValue(rawName);
         if (typeof resolved === 'string') return ICON_PATHS[resolved] || resolved;
         if (resolved && typeof resolved === 'object' && 'svgPath' in resolved) {

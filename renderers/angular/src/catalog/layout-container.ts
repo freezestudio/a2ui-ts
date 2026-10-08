@@ -51,7 +51,7 @@ export abstract class LayoutContainer extends CatalogComponent {
       if (templateId && dataPath) {
         const template = compMap.get(templateId);
         const ctx = new DataContext(this.renderer.surfaceManager, this.surface().surfaceId);
-        const data = ctx.resolve<Record<string, unknown>[]>({ path: dataPath })();
+        const data = ctx.resolve<Record<string, unknown>[]>({ '@path': dataPath })();
         if (Array.isArray(data) && template) {
           return data.slice(0, MAX_DYNAMIC_CHILD_LIST_SIZE).map((item: Record<string, unknown>, i: number) => {
             const itemId = item['id'] ?? item['name'] ?? i;

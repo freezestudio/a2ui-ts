@@ -266,5 +266,110 @@ describe('A2uiValidator', () => {
       assert.equal(result.valid, false);
       assert.ok(result.errors.some((e) => e.message.includes('缺少必填属性 text')));
     });
+
+    // 函数调用 catalogId 覆盖（#2715：参数按实际运行的 catalog 校验，而非 surface 默认）
+    const fnCatalogB = new Catalog({
+      catalogId: catB.catalogId,
+      version: 'v1.0',
+      components: [],
+      functions: [
+        {
+          name: 'ping',
+          parameters: {
+            type: 'object',
+            properties: { url: { type: 'string' } },
+            required: ['url'],
+            unevaluatedProperties: false,
+          },
+          allowedCallers: 'rendererOrAgent',
+        },
+      ],
+    });
+
+    // Text.text 允许 FunctionCall，便于把调用放在组件属性中
+    const catAWithFn = new Catalog({
+      catalogId: catA.catalogId,
+      version: 'v1.0',
+      components: [
+        {
+          name: 'Text',
+          description: '文本',
+          schema: {
+            type: 'object',
+            properties: {
+              component: { const: 'Text' },
+              text: { oneOf: [{ type: 'string' }, { type: 'object', properties: { '@call': { type: 'string' } } }] },
+            },
+            required: ['component', 'text'],
+          },
+        },
+        {
+          name: 'Column',
+          description: '列',
+          schema: {
+            type: 'object',
+            properties: {
+              component: { const: 'Column' },
+              children: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['component'],
+          },
+        },
+      ],
+      functions: [],
+    });
+
+    it('函数调用 catalogId 覆盖：按覆盖 catalog 校验参数 → valid', () => {
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        {
+          id: 't1',
+          component: 'Text',
+          text: { '@call': 'ping', catalogId: catB.catalogId, args: { url: 'https://example.com' } },
+          catalogId: catA.catalogId,
+        },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catAWithFn, fnCatalogB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, true, `期望 valid，但得到错误: ${JSON.stringify(result.errors)}`);
+    });
+
+    it('函数调用 catalogId 覆盖：参数不满足覆盖 catalog 的函数 schema → invalid', () => {
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        {
+          id: 't1',
+          component: 'Text',
+          text: { '@call': 'ping', catalogId: catB.catalogId, args: { url: 123 } },
+          catalogId: catA.catalogId,
+        },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catAWithFn, fnCatalogB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.errors.some((e) => e.message.includes('期望类型') || e.message.includes('url')));
+    });
+
+    it('函数调用 catalogId 不可达 → invalid', () => {
+      const components = [
+        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        {
+          id: 't1',
+          component: 'Text',
+          text: { '@call': 'ping', catalogId: 'https://example.com/unknown/catalog.json', args: { url: 'x' } },
+          catalogId: catA.catalogId,
+        },
+      ];
+      const msg = makeUpdateComponentsMessage(components);
+      const result = validator.validateComponentsWithCatalogs(msg, [catAWithFn, catB], {
+        surfaceDefaultCatalogId: catA.catalogId,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.errors.some((e) => e.message.includes('不在可用 catalogs')));
+    });
   });
 });

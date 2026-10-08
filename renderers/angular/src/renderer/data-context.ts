@@ -42,11 +42,11 @@ export class DataContext {
 
     if (isDataBinding(value)) {
       const binding = value as DataBinding;
-      const absolutePath = this.resolvePath(binding.path);
+      const absolutePath = this.resolvePath(binding['@path']);
       return computed(() => {
         const dataModel = this.getDataModel();
         const ctx = index !== undefined ? { '@index': index } : undefined;
-        return resolvePath({ path: absolutePath }, dataModel, ctx) as T;
+        return resolvePath({ '@path': absolutePath }, dataModel, ctx) as T;
       }) as Signal<T>;
     }
 

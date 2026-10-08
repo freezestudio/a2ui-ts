@@ -80,11 +80,11 @@ describe('validateComponentProps — 组件属性校验', () => {
 
   it('Text 组件：动态绑定/函数调用也合法', () => {
     expect(
-      validateComponentProps({ id: 't1', component: 'Text', text: { path: '/x' } }, TextComponentSchema.schema),
+      validateComponentProps({ id: 't1', component: 'Text', text: { '@path': '/x' } }, TextComponentSchema.schema),
     ).toEqual([]);
     expect(
       validateComponentProps(
-        { id: 't1', component: 'Text', text: { call: 'formatNumber', args: { value: 1 } } },
+        { id: 't1', component: 'Text', text: { '@call': 'formatNumber', args: { value: 1 } } },
         TextComponentSchema.schema,
       ),
     ).toEqual([]);
@@ -99,7 +99,7 @@ describe('validateComponentProps — 组件属性校验', () => {
     };
     expect(validateComponentProps(valid, ButtonComponentSchema.schema)).toEqual([]);
     const issues = validateComponentProps(
-      { ...valid, checks: [{ condition: { path: '/x' }, message: 42 }] },
+      { ...valid, checks: [{ condition: { '@path': '/x' }, message: 42 }] },
       ButtonComponentSchema.schema,
     );
     expect(issues.length).toBeGreaterThan(0);

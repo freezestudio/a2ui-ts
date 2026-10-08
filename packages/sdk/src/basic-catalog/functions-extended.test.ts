@@ -72,7 +72,7 @@ describe('functions-extended', () => {
       const exec = (value: string, pattern: string) => regexFunction.execute!({ value, pattern }, emptyCtx);
 
       it('匹配成功应返回 true', () => {
-        assert.equal(validOf(exec('hello123', '[a-z]+[0-9]+')), true);
+        assert.equal(validOf(exec('hello123', '^[a-z]+[0-9]+$')), true);
       });
 
       it('匹配失败应返回 false', () => {
@@ -81,6 +81,10 @@ describe('functions-extended', () => {
 
       it('无效正则应返回 false', () => {
         assert.equal(validOf(exec('test', '[')), false);
+      });
+
+      it('灾难性回溯模式（ReDoS）应返回 false', () => {
+        assert.equal(validOf(exec('aaaaaaaaaaaaaaaaaaaaaa', '(a+)+b')), false);
       });
     });
 

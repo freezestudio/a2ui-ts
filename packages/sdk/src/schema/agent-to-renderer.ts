@@ -138,7 +138,7 @@ export type DeleteSurfaceMessage = z.infer<typeof DeleteSurfaceMessageSchema>;
 export const CallRendererFunctionPayloadSchema = z.strictObject({
   functionCallId: CallIdSchema,
   callFunction: z.strictObject({
-    call: z.string(),
+    '@call': z.string(),
     catalogId: z.string(),
     args: z.record(z.string(), z.unknown()).optional(),
   }),

@@ -22,7 +22,7 @@ export const MetadataSchema = z
 export type Metadata = z.infer<typeof MetadataSchema>;
 
 export const DataBindingSchema = z.strictObject({
-  path: z.string(),
+  '@path': z.string(),
 });
 export type DataBinding = z.infer<typeof DataBindingSchema>;
 
@@ -30,7 +30,7 @@ export type DataBinding = z.infer<typeof DataBindingSchema>;
 export const MAX_FUNCTION_CALL_ARGS = 1_000;
 
 export const FunctionCallSchema = z.strictObject({
-  call: z.string(),
+  '@call': z.string(),
   catalogId: z.string().optional(),
   args: z
     .record(z.string(), z.any())
@@ -42,14 +42,22 @@ export const FunctionCallSchema = z.strictObject({
 });
 export type FunctionCall = z.infer<typeof FunctionCallSchema>;
 
+/**
+ * 未转义的单 `@` 键（匹配 `^@([^@]|$)`）。
+ * v1.0 (#2692 / #2891)：普通动态对象不得包含此类保留键；字面量 `@` 键需 `@@` 前缀加倍转义。
+ */
+function isSingleAtKey(key: string): boolean {
+  return key.startsWith('@') && !key.startsWith('@@');
+}
+
 export const DynamicValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),
   z.array(z.any()),
-  z
-    .record(z.string(), z.unknown())
-    .refine((v) => !('path' in v) && !('call' in v), { message: 'object 字面量不能包含 path/call' }),
+  z.record(z.string(), z.unknown()).refine((v) => Object.keys(v).every((k) => !isSingleAtKey(k)), {
+    message: 'dynamic object 不能包含未转义的单 @ 保留键（字面量 @ 键请用 @@ 前缀加倍转义）',
+  }),
   DataBindingSchema,
   FunctionCallSchema,
 ]);
@@ -85,7 +93,7 @@ export const DeleteSurfacePayloadSchema = z.strictObject({
 });
 
 export const CallRendererFunctionPayloadSchema = z.strictObject({
-  call: z.string(),
+  '@call': z.string(),
   catalogId: z.string(),
   args: z.record(z.string(), z.any()).optional(),
 });
@@ -495,7 +503,7 @@ export const CallAgentFunctionPayloadSchema = z.strictObject({
   surfaceId: z.string(),
   functionCallId: z.string(),
   callFunction: z.strictObject({
-    call: z.string(),
+    '@call': z.string(),
     catalogId: z.string().optional(),
     args: z.record(z.string(), z.any()).optional(),
   }),

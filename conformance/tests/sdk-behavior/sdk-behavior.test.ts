@@ -2,12 +2,14 @@ import { describe, it, expect } from 'vite-plus/test';
 import {
   parseResponse,
   createStreamParser,
+  IncrementalStreamParser,
   A2uiValidator,
   A2uiMessageSchema,
   A2uiClientMessageSchema,
   Catalog,
   createFullCatalog,
   createSchemaManager,
+  type IncrementalResponsePart,
 } from '@freezestudio/a2ui-sdk';
 import { loadTestData } from '../../src/harness/loader';
 import { PACKAGE_ROOT } from '../../src/harness/package-root';
@@ -86,6 +88,53 @@ describe('Streaming Parser 一致性', () => {
     parser.reset();
     expect(parser.getState()).toBe('idle');
   });
+});
+
+describe('Streaming Parser v1.0 增量协议（IncrementalStreamParser）', () => {
+  interface StreamingExpect {
+    components: Array<{ id: string; type?: string; isPlaceholder?: boolean }>;
+    dataModelDelta?: { path: string; value: unknown };
+  }
+  interface StreamingCase {
+    name: string;
+    description: string;
+    action: string;
+    steps: Array<{ input: string; expect: StreamingExpect[] }>;
+  }
+
+  const cases = loadTestData<StreamingCase[]>(
+    join(PACKAGE_ROOT, 'test-data', 'sdk-behavior', 'streaming-parser', 'streaming-parser.yaml'),
+  );
+
+  type PartialPart = Extract<IncrementalResponsePart, { type: 'a2ui_partial' }>;
+
+  const normComponent = (c: { id: string; type?: string; isPlaceholder?: boolean }): Record<string, unknown> => {
+    const o: Record<string, unknown> = { id: c.id };
+    if (c.type) o.type = c.type;
+    if (c.isPlaceholder) o.isPlaceholder = true;
+    return o;
+  };
+  const normSummary = (p: PartialPart): Record<string, unknown> => {
+    const o: Record<string, unknown> = { components: p.components.map(normComponent) };
+    if (p.dataModelDelta !== undefined) o.dataModelDelta = p.dataModelDelta;
+    return o;
+  };
+  const normExpected = (e: StreamingExpect): Record<string, unknown> => {
+    const o: Record<string, unknown> = { components: e.components.map(normComponent) };
+    if (e.dataModelDelta !== undefined) o.dataModelDelta = e.dataModelDelta;
+    return o;
+  };
+
+  for (const tc of cases) {
+    it(`${tc.name}: ${tc.description}`, () => {
+      const parser = new IncrementalStreamParser();
+      for (const step of tc.steps) {
+        const partials = parser.processChunk(step.input).filter((p): p is PartialPart => p.type === 'a2ui_partial');
+        expect(partials.map(normSummary)).toEqual((step.expect ?? []).map(normExpected));
+      }
+      parser.finish();
+    });
+  }
 });
 
 describe('A2uiValidator 一致性', () => {
@@ -199,7 +248,7 @@ describe('A2uiValidator 一致性', () => {
         callRendererFunction: {
           functionCallId: 'fc1',
           callFunction: {
-            call: 'fn',
+            '@call': 'fn',
             catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
             args: {},
           },
@@ -227,7 +276,7 @@ describe('A2uiValidator 一致性', () => {
       },
       {
         version: 'v1.0',
-        callAgentFunction: { surfaceId: 's1', functionCallId: 'fc1', callFunction: { call: 'fn' } },
+        callAgentFunction: { surfaceId: 's1', functionCallId: 'fc1', callFunction: { '@call': 'fn' } },
       },
       { version: 'v1.0', rendererFunctionResponse: { functionCallId: 'fc1', value: 'result' } },
       { version: 'v1.0', error: { code: 'ERR', message: 'err', surfaceId: 's1' } },

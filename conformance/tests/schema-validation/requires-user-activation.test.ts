@@ -7,15 +7,15 @@ import { createFullCatalog } from '@freezestudio/a2ui-sdk';
 
 /** 对齐上游 basic catalog 的函数定义结构（扁平 properties 形式，上游 #2486 后弃用 allOf） */
 function functionDef(overrides: Record<string, unknown>): Record<string, unknown> {
-  // call 属于 properties（const），其余元数据（allowedCallers/requiresUserActivation）
-  // 位于顶层，两者不可混淆，否则 unevaluatedProperties: false 会拒绝顶层 call
-  const { call = 'test', ...rest } = overrides;
+  // @call 属于 properties（const），其余元数据（allowedCallers/requiresUserActivation）
+  // 位于顶层，两者不可混淆，否则 unevaluatedProperties: false 会拒绝顶层 @call
+  const { '@call': call = 'test', ...rest } = overrides;
   return {
     type: 'object',
     description: 'Test function.',
     returnType: 'void',
     properties: {
-      call: { const: call },
+      '@call': { const: call },
       args: {
         type: 'object',
         properties: {
@@ -25,7 +25,7 @@ function functionDef(overrides: Record<string, unknown>): Record<string, unknown
         unevaluatedProperties: false,
       },
     },
-    required: ['call', 'args'],
+    required: ['@call', 'args'],
     ...rest,
   };
 }
@@ -78,7 +78,7 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
     const result = ajvValidator.validate('catalog_definition.json', {
       catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
       functions: {
-        bad: functionDef({ call: 'bad', allowedCallers: 'agentOnly', requiresUserActivation: true }),
+        bad: functionDef({ '@call': 'bad', allowedCallers: 'agentOnly', requiresUserActivation: true }),
       },
     });
     expect(result.valid).toBe(false);
@@ -88,7 +88,7 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
     const result = ajvValidator.validate('catalog_definition.json', {
       catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
       functions: {
-        ping: functionDef({ call: 'ping', allowedCallers: 'agentOnly', requiresUserActivation: false }),
+        ping: functionDef({ '@call': 'ping', allowedCallers: 'agentOnly', requiresUserActivation: false }),
       },
     });
     expect(result.valid).toBe(true);
@@ -98,7 +98,7 @@ describe('requiresUserActivation — catalog_definition 规范一致性（上游
     const result = ajvValidator.validate('catalog_definition.json', {
       catalogId: 'https://a2ui.org/specification/v1_0/basic-catalog.json',
       functions: {
-        risky: functionDef({ call: 'risky', allowedCallers: 'rendererOrAgent', requiresUserActivation: true }),
+        risky: functionDef({ '@call': 'risky', allowedCallers: 'rendererOrAgent', requiresUserActivation: true }),
       },
     });
     expect(result.valid).toBe(false);

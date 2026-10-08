@@ -19,9 +19,9 @@ export function isDataBinding(value: unknown): boolean {
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    'path' in value &&
-    typeof (value as Record<string, unknown>)['path'] === 'string' &&
-    !('call' in value) &&
+    '@path' in value &&
+    typeof (value as Record<string, unknown>)['@path'] === 'string' &&
+    !('@call' in value) &&
     !('component' in value)
   );
 }
@@ -30,8 +30,9 @@ export function isFunctionCall(value: unknown): boolean {
   return (
     typeof value === 'object' &&
     value !== null &&
-    'call' in value &&
-    typeof (value as Record<string, unknown>)['call'] === 'string'
+    '@call' in value &&
+    typeof (value as Record<string, unknown>)['@call'] === 'string' &&
+    !('@path' in value)
   );
 }
 
@@ -40,20 +41,20 @@ export function resolvePath(
   dataModel: Record<string, unknown>,
   context?: Record<string, unknown>,
 ): unknown {
-  if (binding.path === '@index' && context?.['@index'] !== undefined) {
+  if (binding['@path'] === '@index' && context?.['@index'] !== undefined) {
     return context['@index'];
   }
-  if (binding.path.startsWith('@index(') && context?.['@index'] !== undefined) {
-    const named = binding.path.match(/^@index\(\s*offset\s*:\s*(-?\d+)\s*\)$/);
-    const positional = binding.path.match(/^@index\((-?\d+)\)$/);
+  if (binding['@path'].startsWith('@index(') && context?.['@index'] !== undefined) {
+    const named = binding['@path'].match(/^@index\(\s*offset\s*:\s*(-?\d+)\s*\)$/);
+    const positional = binding['@path'].match(/^@index\((-?\d+)\)$/);
     const match = named ?? positional;
     if (match) return (context['@index'] as number) + parseInt(match[1], 10);
   }
-  if (binding.path === '@index' || binding.path.startsWith('@index(')) {
+  if (binding['@path'] === '@index' || binding['@path'].startsWith('@index(')) {
     throw new Error('@index 只能在 ChildList 模板中使用');
   }
 
-  const path = binding.path;
+  const path = binding['@path'];
   if (!path || path === '/') {
     return dataModel;
   }

@@ -29,7 +29,7 @@ describe('message-handler', () => {
         version: 'v1.0',
         callRendererFunction: {
           functionCallId: '1',
-          callFunction: { call: 'x', catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json' },
+          callFunction: { '@call': 'x', catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json' },
         },
       }),
     ).toBe(true);
@@ -193,7 +193,7 @@ describe('message-handler', () => {
           callRendererFunction: {
             functionCallId: 'f1',
             callFunction: {
-              call: 'formatNumber',
+              '@call': 'formatNumber',
               catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
               args: { value: 1234 },
             },

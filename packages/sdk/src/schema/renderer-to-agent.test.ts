@@ -269,19 +269,19 @@ describe('renderer-to-agent', () => {
         callAgentFunction: {
           surfaceId: 'surface_123',
           functionCallId: 'call-agent-1',
-          callFunction: { call: 'pingAgent' },
+          callFunction: { '@call': 'pingAgent' },
         },
       };
       const result = A2uiClientCallAgentFunctionMessageSchema.parse(msg);
       assert.equal(result.callAgentFunction.surfaceId, 'surface_123');
       assert.equal(result.callAgentFunction.functionCallId, 'call-agent-1');
-      assert.equal(result.callAgentFunction.callFunction.call, 'pingAgent');
+      assert.equal(result.callAgentFunction.callFunction['@call'], 'pingAgent');
     });
 
     it('应拒绝缺少 surfaceId', () => {
       const msg = {
         version: SPEC_VERSION,
-        callAgentFunction: { functionCallId: 'c1', callFunction: { call: 'fn' } },
+        callAgentFunction: { functionCallId: 'c1', callFunction: { '@call': 'fn' } },
       };
       assert.throws(() => A2uiClientCallAgentFunctionMessageSchema.parse(msg));
     });
@@ -289,7 +289,7 @@ describe('renderer-to-agent', () => {
     it('应拒绝缺少 functionCallId', () => {
       const msg = {
         version: SPEC_VERSION,
-        callAgentFunction: { surfaceId: 's1', callFunction: { call: 'fn' } },
+        callAgentFunction: { surfaceId: 's1', callFunction: { '@call': 'fn' } },
       };
       assert.throws(() => A2uiClientCallAgentFunctionMessageSchema.parse(msg));
     });
@@ -329,7 +329,7 @@ describe('renderer-to-agent', () => {
     it('应解析 callAgentFunction 消息（v1.0 #2210）', () => {
       const msg = {
         version: SPEC_VERSION,
-        callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { call: 'fn' } },
+        callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { '@call': 'fn' } },
       };
       const result = A2uiClientMessageSchema.parse(msg);
       assert.ok('callAgentFunction' in result);
@@ -425,7 +425,7 @@ describe('renderer-to-agent', () => {
     it('callAgentFunction 消息应返回 true', () => {
       const msg = {
         version: SPEC_VERSION,
-        callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { call: 'fn' } },
+        callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { '@call': 'fn' } },
       };
       assert.equal(isCallAgentFunctionMessage(msg), true);
     });

@@ -1,6 +1,12 @@
 import type { DataBinding, FunctionCall } from './data-binding.js';
 import { isDataBinding, isFunctionCall, resolvePath } from './data-binding.js';
-import { evaluateExpression } from '@freezestudio/a2ui-shared';
+import {
+  evaluateExpression,
+  assertNoUnknownReservedKeys,
+  unescapeObjectKey,
+  isSafeRegex,
+  MAX_REGEX_INPUT_LENGTH,
+} from '@freezestudio/a2ui-shared';
 import { A2uiFunctionError, A2uiSecurityError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('function-call');
@@ -186,6 +192,15 @@ export function resolveDynamicValue(
   if (isFunctionCall(value)) {
     return callFunction(value as FunctionCall, dataModel, depth + 1, context);
   }
+  // 普通对象：拒绝未转义的单 @ 保留键，并对 @@ 前缀加倍键去转义（v1.0 #2692 / #2891）
+  if (typeof value === 'object') {
+    assertNoUnknownReservedKeys(Object.keys(value));
+    const resolved: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      resolved[unescapeObjectKey(k)] = resolveDynamicValue(v, dataModel, context, depth + 1);
+    }
+    return resolved;
+  }
   return value;
 }
 
@@ -206,25 +221,26 @@ export function callFunction(
   depth = 0,
   context?: Record<string, unknown>,
 ): unknown {
-  assertUserActivation(fn.call, fn.catalogId, context);
+  const callName = fn['@call'];
+  assertUserActivation(callName, fn.catalogId, context);
   const args = fn.args || {};
   const resolvedArgs: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(args)) {
     resolvedArgs[key] = resolveDynamicValue(val, dataModel, context, depth + 1);
   }
 
-  const registered = findRegisteredFunction(fn.catalogId, fn.call);
+  const registered = findRegisteredFunction(fn.catalogId, callName);
   if (registered?.execute) {
     return registered.execute(resolvedArgs, context ?? {});
   }
   if (fn.catalogId && fn.catalogId !== BASIC_CATALOG_ID && !registered) {
-    throw new A2uiFunctionError(`Function '${fn.call}' is not registered in catalog '${fn.catalogId}'.`, {
+    throw new A2uiFunctionError(`Function '${callName}' is not registered in catalog '${fn.catalogId}'.`, {
       code: 'UNKNOWN_FUNCTION',
     });
   }
 
   let result: unknown;
-  switch (fn.call) {
+  switch (callName) {
     case 'required':
       result = fnRequired(resolvedArgs);
       break;
@@ -281,7 +297,7 @@ export function callFunction(
       break;
     }
     default:
-      throw new A2uiFunctionError(`Unknown renderer function '${fn.call}'.`, { code: 'UNKNOWN_FUNCTION' });
+      throw new A2uiFunctionError(`Unknown renderer function '${callName}'.`, { code: 'UNKNOWN_FUNCTION' });
   }
 
   return result;
@@ -312,6 +328,13 @@ function fnRegex(args: Record<string, unknown>): ValidationResult {
   const value = toStr(args['value']);
   const pattern = toStr(args['pattern']);
   if (!pattern) return { valid: false, message: '缺少正则表达式模式' };
+  // ReDoS 防护（CWE-1333）
+  if (!isSafeRegex(pattern)) {
+    return { valid: false, message: '正则表达式不安全（潜在 ReDoS 风险）' };
+  }
+  if (value.length > MAX_REGEX_INPUT_LENGTH) {
+    return { valid: false, message: `输入长度超过上限 (${MAX_REGEX_INPUT_LENGTH})` };
+  }
   try {
     return new RegExp(pattern).test(value) ? { valid: true } : { valid: false, message: '格式不匹配' };
   } catch {
@@ -351,7 +374,7 @@ function fnFormatString(args: Record<string, unknown>, dataModel: Record<string,
   const template = toStr(args['value']);
   return evaluateExpression(template, dataModel, {
     strict: true,
-    callFunction: (fn, ctx) => callFunction(fn as FunctionCall, ctx, depth + 1),
+    callFunction: (fn, ctx) => callFunction({ '@call': fn.call, args: fn.args } as FunctionCall, ctx, depth + 1),
   });
 }
 

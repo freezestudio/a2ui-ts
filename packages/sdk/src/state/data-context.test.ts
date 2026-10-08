@@ -71,16 +71,16 @@ describe('DataContext 资源限额（CWE-400 / CWE-674）', () => {
     for (let i = 0; i <= MAX_FUNCTION_CALL_ARGS; i++) {
       args[`a${i}`] = i;
     }
-    assert.equal(context.resolveDynamicValue({ call: 'required', args }), undefined);
+    assert.equal(context.resolveDynamicValue({ '@call': 'required', args }), undefined);
   });
 
   it('深层嵌套函数调用不会栈溢出', () => {
     const dataModel = new DataModel();
     const catalog = createBasicCatalog();
     const context = new DataContext({ dataModel, catalog });
-    let nested: unknown = { call: 'required', args: { value: 'x' } };
+    let nested: unknown = { '@call': 'required', args: { value: 'x' } };
     for (let i = 0; i < MAX_DYNAMIC_VALUE_DEPTH * 5; i++) {
-      nested = { call: 'required', args: { value: nested } };
+      nested = { '@call': 'required', args: { value: nested } };
     }
     assert.doesNotThrow(() => context.resolveDynamicValue(nested));
   });

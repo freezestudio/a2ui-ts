@@ -212,13 +212,13 @@ export class Catalog {
    */
   validateFunctionCall(call: Record<string, unknown>): ComponentValidationIssue[] {
     const issues: ComponentValidationIssue[] = [];
-    const name = call['call'];
+    const name = call['@call'];
     if (typeof name !== 'string') {
-      return [{ path: '/call', message: '函数调用缺少 call 字段' }];
+      return [{ path: '/@call', message: '函数调用缺少 @call 字段' }];
     }
     const fn = this.getFunction(name);
     if (!fn) {
-      return [{ path: '/call', message: `函数 "${name}" 不在 catalog ${this.catalogId} 中` }];
+      return [{ path: '/@call', message: `函数 "${name}" 不在 catalog ${this.catalogId} 中` }];
     }
     if (call['catalogId'] !== undefined) {
       validateValue({ type: 'string' }, call['catalogId'], '/catalogId', issues);

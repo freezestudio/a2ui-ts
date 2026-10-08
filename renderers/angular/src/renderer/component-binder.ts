@@ -58,7 +58,7 @@ export class ComponentBinder {
         'path' in value
       ) {
         const tpl = value as { componentId: string; path: string };
-        const listSig = ctx.resolve<unknown[]>({ path: tpl.path });
+        const listSig = ctx.resolve<unknown[]>({ '@path': tpl.path });
         bound[key] = {
           value: computed(() => (Array.isArray(listSig()) ? listSig() : [])),
           raw: value,
@@ -99,12 +99,12 @@ export class ComponentBinder {
       }
 
       const sig = ctx.resolve(value, index);
-      const isBinding = typeof value === 'object' && value !== null && 'path' in value && !('call' in value);
+      const isBinding = typeof value === 'object' && value !== null && '@path' in value && !('@call' in value);
 
       bound[key] = {
         value: sig,
         raw: value,
-        ...(isBinding ? { onUpdate: (v: unknown) => ctx.set((value as DataBinding).path, v) } : {}),
+        ...(isBinding ? { onUpdate: (v: unknown) => ctx.set((value as DataBinding)['@path'], v) } : {}),
       };
     }
 

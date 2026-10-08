@@ -1,27 +1,29 @@
 /**
  * DynamicXxx oneOf 模式工厂函数
  * A2UI v1.0 规范要求 DynamicString/DynamicNumber/DynamicBoolean
- * 必须支持三态: 字面量 | DataBinding({path}) | FunctionCall({call, args})
+ * 必须支持三态: 字面量 | DataBinding({@path}) | FunctionCall({@call, args})
+ *
+ * v1.0 (#2692 / #2891)：保留协议指令使用 `@` 前缀。
  */
-const dataBinding = { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] };
+const dataBinding = { type: 'object', properties: { '@path': { type: 'string' } }, required: ['@path'] };
 
 const functionCall = {
   type: 'object',
-  properties: { call: { type: 'string' }, args: { type: 'object', additionalProperties: true } },
-  required: ['call'],
+  properties: { '@call': { type: 'string' }, args: { type: 'object', additionalProperties: true } },
+  required: ['@call'],
 };
 
-/** DynamicString: string | {path: ...} | {call: ..., args: ...} */
+/** DynamicString: string | {@path: ...} | {@call: ..., args: ...} */
 export function dynamicStringOneOf(): Record<string, unknown>[] {
   return [{ type: 'string' }, { ...dataBinding }, { ...functionCall }];
 }
 
-/** DynamicNumber: number | {path: ...} | {call: ..., args: ...} */
+/** DynamicNumber: number | {@path: ...} | {@call: ..., args: ...} */
 export function dynamicNumberOneOf(): Record<string, unknown>[] {
   return [{ type: 'number' }, { ...dataBinding }, { ...functionCall }];
 }
 
-/** DynamicBoolean: boolean | {path: ...} | {call: ..., args: ...} */
+/** DynamicBoolean: boolean | {@path: ...} | {@call: ..., args: ...} */
 export function dynamicBooleanOneOf(): Record<string, unknown>[] {
   return [{ type: 'boolean' }, { ...dataBinding }, { ...functionCall }];
 }

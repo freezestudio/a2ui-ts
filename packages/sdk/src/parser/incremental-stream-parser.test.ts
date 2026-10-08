@@ -219,6 +219,78 @@ describe('IncrementalStreamParser', () => {
     });
   });
 
+  describe('v1.0 未闭合组件缓冲（#3026）', () => {
+    it('catalogId 晚到的组件在闭合前不下发（避免按 surface catalog 误校验）', () => {
+      const parser = new IncrementalStreamParser();
+      parser.processChunk(
+        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
+      );
+      const beforeClose = parser.processChunk(
+        '{"version":"v1.0","updateComponents":{"surfaceId":"main","components":[' +
+          '{"id":"root","component":"Column","children":["m1"]},' +
+          '{"id":"m1","component":"CustomMetric","value":42',
+      );
+      // m1 尚未闭合：不得下发 m1（既不下发 props，也不下发 placeholder）
+      assert.equal(
+        beforeClose.some((p) => p.type === 'a2ui_partial' && p.components.some((c) => c.id === 'm1')),
+        false,
+        '未闭合组件不得提前下发',
+      );
+
+      const afterClose = parser.processChunk(',"catalogId":"https://a2ui.org/catalogs/custom"}');
+      const partial = afterClose.find(
+        (p) => p.type === 'a2ui_partial' && p.components.some((c) => c.id === 'm1' && !c.isPlaceholder),
+      );
+      assert.ok(partial, '闭合后应下发 m1');
+      const m1 = (partial as { components: Array<{ id: string; props?: Record<string, unknown> }> }).components.find(
+        (c) => c.id === 'm1',
+      );
+      assert.equal(m1?.props?.['catalogId'], 'https://a2ui.org/catalogs/custom');
+      parser.finish();
+    });
+
+    it('catalogId 在被引用的同级组件闭合前不下发（含拆分跨块）', () => {
+      const parser = new IncrementalStreamParser();
+      parser.processChunk(
+        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
+      );
+      const steps = [
+        '{"version":"v1.0","updateComponents":{"surfaceId":"main","components":[{"id":"root","component":"CustomMetric","value":42,"catal',
+        'ogId"',
+        ': ',
+        '"https://a2ui.org/cat',
+        'alogs/custom"',
+      ];
+      const collected: IncrementalResponsePart[] = [];
+      for (const s of steps) collected.push(...parser.processChunk(s));
+      assert.equal(
+        collected.some((p) => p.type === 'a2ui_partial' && p.components.some((c) => c.id === 'root')),
+        false,
+        'catalogId 跨块拆分时未闭合前不得下发',
+      );
+      const closed = parser.processChunk('}');
+      const partial = closed.find(
+        (p) => p.type === 'a2ui_partial' && p.components.some((c) => c.id === 'root' && !c.isPlaceholder),
+      );
+      assert.ok(partial, '闭合后应下发 root');
+      parser.finish();
+    });
+
+    it('被引用但尚未开始的组件仍下发 placeholder（前向引用）', () => {
+      const parser = new IncrementalStreamParser();
+      parser.processChunk(
+        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":[' +
+          '{"id":"root","component":"Column","children":["later"]}',
+      );
+      const parts = parser.processChunk(']}}');
+      const placeholder = parts.some(
+        (p) => p.type === 'a2ui_partial' && p.components.some((c) => c.id === 'later' && c.isPlaceholder),
+      );
+      assert.ok(placeholder, '尚未开始的前向引用应下发 placeholder');
+      parser.finish();
+    });
+  });
+
   describe('状态管理', () => {
     it('reset 后应恢复初始状态', () => {
       const parser = new IncrementalStreamParser();

@@ -46,6 +46,7 @@ const CATALOG_CONTEXT_CASES: ReadonlySet<string> = new Set([
   // dynamic_value_validation.json — TestComponent.value vs DynamicValue oneOf（组件属性级）
   'dynamic_value_validation.json: DynamicValue: Invalid DataBinding with extra properties',
   'dynamic_value_validation.json: DynamicValue: Invalid FunctionCall with extra properties',
+  'dynamic_value_validation.json: DynamicValue: Invalid dynamic object with unknown single-@ key',
   // function_catalog_validation.json — 函数参数 / returnType / @index 系统函数 vs catalog 函数定义
   'function_catalog_validation.json: required: Invalid args (empty)',
   'function_catalog_validation.json: required: Invalid returnType',

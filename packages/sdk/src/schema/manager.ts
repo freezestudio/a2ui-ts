@@ -141,7 +141,7 @@ export class A2uiSchemaManager {
         '## 消息类型规则',
         '- `createSurface` 用于初始化表面，可以包含内联组件和 dataModel',
         '- `updateComponents` 用于更新组件内容，与 `createSurface` 分开',
-        '- `callRendererFunction` 让 Renderer 执行已注册的函数，必须提供 `functionCallId` 与 `callFunction`（含 `call` + `catalogId`）',
+        '- `callRendererFunction` 让 Renderer 执行已注册的函数，必须提供 `functionCallId` 与 `callFunction`（含 `@call` + `catalogId`）',
         '- `agentFunctionResponse` 响应 Renderer 发起的 `callAgentFunction` 请求，必须提供 `functionCallId`，以及 `value` 或 `error`',
         '',
         '## 多消息规则',
@@ -303,7 +303,7 @@ export class A2uiSchemaManager {
     "callRendererFunction": {
       "functionCallId": "call-screen-001",
       "callFunction": {
-        "call": "getScreenResolution",
+        "@call": "getScreenResolution",
         "catalogId": "https://example.com/a2ui/v1.0/device-catalog.json",
         "args": {
           "screenIndex": 0

@@ -9,36 +9,36 @@ describe('resolvePath — @index 系统函数', () => {
   const dataModel = { list: ['a', 'b', 'c'] };
 
   it('@index 返回当前索引', () => {
-    expect(resolvePath({ path: '@index' }, dataModel, { '@index': 2 })).toBe(2);
+    expect(resolvePath({ '@path': '@index' }, dataModel, { '@index': 2 })).toBe(2);
   });
 
   it('@index(offset) 位置参数兼容', () => {
-    expect(resolvePath({ path: '@index(1)' }, dataModel, { '@index': 2 })).toBe(3);
+    expect(resolvePath({ '@path': '@index(1)' }, dataModel, { '@index': 2 })).toBe(3);
   });
 
   it('@index(offset: 1) v1.0 命名参数语法', () => {
-    expect(resolvePath({ path: '@index(offset: 1)' }, dataModel, { '@index': 2 })).toBe(3);
+    expect(resolvePath({ '@path': '@index(offset: 1)' }, dataModel, { '@index': 2 })).toBe(3);
   });
 
   it('@index(offset: 0) 无偏移', () => {
-    expect(resolvePath({ path: '@index(offset: 0)' }, dataModel, { '@index': 2 })).toBe(2);
+    expect(resolvePath({ '@path': '@index(offset: 0)' }, dataModel, { '@index': 2 })).toBe(2);
   });
 
   it('模板外使用 @index 抛错', () => {
-    expect(() => resolvePath({ path: '@index' }, dataModel)).toThrow('ChildList');
-    expect(() => resolvePath({ path: '@index(offset: 1)' }, dataModel)).toThrow('ChildList');
+    expect(() => resolvePath({ '@path': '@index' }, dataModel)).toThrow('ChildList');
+    expect(() => resolvePath({ '@path': '@index(offset: 1)' }, dataModel)).toThrow('ChildList');
   });
 });
 
 describe('resolvePath / setAtPath / deleteAtPath — 基础路径', () => {
   it('根路径返回整个数据模型', () => {
-    expect(resolvePath({ path: '/' }, { a: 1 })).toEqual({ a: 1 });
+    expect(resolvePath({ '@path': '/' }, { a: 1 })).toEqual({ a: 1 });
   });
 
   it('嵌套路径查询与 ~1 转义', () => {
     const dm = { sensors: [{ value: 1 }], 'a/b': 2 };
-    expect(resolvePath({ path: '/sensors/0/value' }, dm)).toBe(1);
-    expect(resolvePath({ path: '/a~1b' }, dm)).toBe(2);
+    expect(resolvePath({ '@path': '/sensors/0/value' }, dm)).toBe(1);
+    expect(resolvePath({ '@path': '/a~1b' }, dm)).toBe(2);
   });
 
   it('setAtPath 自动创建中间层级', () => {
@@ -102,7 +102,7 @@ describe('resolveComponentProp — DataBinding 支持（v1.0 dataModel 外置）
     const comp: A2UIDescriptor = {
       id: 'chart-x',
       component: 'Chart',
-      series: { path: '/components/chart-x/series' },
+      series: { '@path': '/components/chart-x/series' },
     };
     expect(renderer.resolveComponentProp(comp, surface, 'series')).toEqual([{ name: 'a', data: [1, 2] }]);
   });
@@ -112,7 +112,7 @@ describe('resolveComponentProp — DataBinding 支持（v1.0 dataModel 外置）
       id: 'chart-x',
       component: 'Chart',
       title: {
-        call: 'capitalize',
+        '@call': 'capitalize',
         catalogId: 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json',
         args: { value: 'hello' },
       },
@@ -132,7 +132,7 @@ describe('响应式 dataModel 绑定（updateDataModel 驱动 UI 更新）', () 
   it('updateDataModel 到达后，DataBinding 绑定的值自动更新', () => {
     const sm = new SurfaceManager();
     sm.handleCreateSurface('s1');
-    sm.handleUpdateComponents('s1', [{ id: 'chart-x', component: 'MultiSensorChart', series: { path: '/series' } }]);
+    sm.handleUpdateComponents('s1', [{ id: 'chart-x', component: 'MultiSensorChart', series: { '@path': '/series' } }]);
     sm.handleUpdateDataModel('s1', '/series', [{ name: 'a', data: [1, 2] }]);
 
     const surface = sm.surfaces().get('s1')!;
@@ -160,7 +160,7 @@ describe('响应式 dataModel 绑定（updateDataModel 驱动 UI 更新）', () 
   it('updateDataModel 更新标量字段同样响应', () => {
     const sm = new SurfaceManager();
     sm.handleCreateSurface('s3');
-    sm.handleUpdateComponents('s3', [{ id: 'g', component: 'GaugeChart', value: { path: '/value' } }]);
+    sm.handleUpdateComponents('s3', [{ id: 'g', component: 'GaugeChart', value: { '@path': '/value' } }]);
     sm.handleUpdateDataModel('s3', '/value', 42);
 
     const surface = sm.surfaces().get('s3')!;
@@ -176,7 +176,7 @@ describe('响应式 dataModel 绑定（updateDataModel 驱动 UI 更新）', () 
 describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunctionResponse → dataModel 闭环）', () => {
   it('agent 端函数：发送 callAgentFunction，不自动写回 responsePath', async () => {
     const renderer = new A2UIRendererService();
-    let sent: { callFunction?: { call?: string; catalogId?: string; args?: Record<string, unknown> } } | null = null;
+    let sent: { callFunction?: { '@call'?: string; catalogId?: string; args?: Record<string, unknown> } } | null = null;
     renderer.setCallAgentFunctionSender((call) => {
       sent = call;
       return undefined;
@@ -188,10 +188,10 @@ describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunction
       {
         id: 'stats-summary',
         component: 'StatsSummary',
-        stats: { path: '/components/stats-summary/stats' },
+        stats: { '@path': '/components/stats-summary/stats' },
         action: {
           functionCall: {
-            call: 'refreshData',
+            '@call': 'refreshData',
             args: { monitoringType: 'landslide' },
           },
         },
@@ -203,7 +203,7 @@ describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunction
     const comp = surface.components[0];
     await renderer.handleComponentAction(comp, surface);
 
-    expect((sent as unknown as { callFunction?: { call?: string } }).callFunction?.call).toBe('refreshData');
+    expect((sent as unknown as { callFunction?: { '@call'?: string } }).callFunction?.['@call']).toBe('refreshData');
     const dm = sm.surfaces().get('s1')!.dataModel;
     expect(dm['components']).toEqual({ 'stats-summary': { stats: [] } });
   });
@@ -216,7 +216,7 @@ describe('handleComponentAction（v1.0 #2210 callAgentFunction → agentFunction
       {
         id: 'btn',
         component: 'Button',
-        action: { functionCall: { call: 'capitalize', args: { value: 'abc' } } },
+        action: { functionCall: { '@call': 'capitalize', args: { value: 'abc' } } },
       },
     ]);
     const surface = sm.surfaces().get('s1')!;

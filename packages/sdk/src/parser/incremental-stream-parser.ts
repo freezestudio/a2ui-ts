@@ -337,7 +337,10 @@ export class IncrementalStreamParser {
         for (const refId of refs) {
           if (included.has(refId)) continue;
           const cached = this.seenComponents.get(refId);
-          if (!cached?.complete && this.yieldedContent.get(refId) !== 'p') {
+          // v1.0 (#3026)：已开始但未闭合的组件一律缓冲，不提前下发 placeholder。
+          // 组件可在类型与属性之后才声明 catalogId，提前按 surface catalog 校验会误判；
+          // placeholder 仅用于「被引用但尚未开始」的组件（前向引用）。
+          if (cached === undefined && this.yieldedContent.get(refId) !== 'p') {
             result.push({ id: refId, isPlaceholder: true });
             this.yieldedContent.set(refId, 'p');
             included.add(refId);

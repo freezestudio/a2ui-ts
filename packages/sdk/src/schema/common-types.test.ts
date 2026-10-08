@@ -14,70 +14,77 @@ import {
   isDataBinding,
   isFunctionCall,
   isTemplateChildList,
+  isSingleAtKey,
+  unescapeObjectKey,
+  assertNoUnknownReservedKeys,
 } from './common-types.js';
 
 describe('common-types', () => {
   // ==========================================================================
-  // DataBindingSchema
+  // DataBindingSchema（v1.0 #2692：@path）
   // ==========================================================================
   describe('DataBindingSchema', () => {
-    it('应解析合法的 {path: "/user/name"}', () => {
-      const result = DataBindingSchema.parse({ path: '/user/name' });
-      assert.deepEqual(result, { path: '/user/name' });
+    it('应解析合法的 {@path: "/user/name"}', () => {
+      const result = DataBindingSchema.parse({ '@path': '/user/name' });
+      assert.deepEqual(result, { '@path': '/user/name' });
     });
 
-    it('应拒绝缺少 path 的对象', () => {
+    it('应拒绝缺少 @path 的对象', () => {
       assert.throws(() => DataBindingSchema.parse({}));
     });
 
-    it('应拒绝额外属性（strict 模式）', () => {
-      assert.throws(() => DataBindingSchema.parse({ path: '/x', extra: 'field' }));
+    it('应拒绝普通 path 键（v1.0 中 path 为字面量，不是绑定）', () => {
+      assert.throws(() => DataBindingSchema.parse({ path: '/x' }));
     });
 
-    it('应拒绝非字符串 path', () => {
-      assert.throws(() => DataBindingSchema.parse({ path: 123 }));
+    it('应拒绝额外属性（strict 模式）', () => {
+      assert.throws(() => DataBindingSchema.parse({ '@path': '/x', extra: 'field' }));
+    });
+
+    it('应拒绝非字符串 @path', () => {
+      assert.throws(() => DataBindingSchema.parse({ '@path': 123 }));
     });
   });
 
   // ==========================================================================
-  // FunctionCallSchema
+  // FunctionCallSchema（v1.0 #2692：@call）
   // ==========================================================================
   describe('FunctionCallSchema', () => {
-    it('应解析 {call: "foo", args: {x: 1}}', () => {
-      const result = FunctionCallSchema.parse({ call: 'foo', args: { x: 1 } });
-      assert.equal(result.call, 'foo');
+    it('应解析 {@call: "foo", args: {x: 1}}', () => {
+      const result = FunctionCallSchema.parse({ '@call': 'foo', args: { x: 1 } });
+      assert.equal(result['@call'], 'foo');
       assert.deepEqual(result.args, { x: 1 });
     });
 
     it('应允许省略 args', () => {
-      const result = FunctionCallSchema.parse({ call: 'bar' });
-      assert.equal(result.call, 'bar');
+      const result = FunctionCallSchema.parse({ '@call': 'bar' });
+      assert.equal(result['@call'], 'bar');
       assert.equal(result.args, undefined);
     });
 
     it('args 应支持 DataBinding 作为值', () => {
       const result = FunctionCallSchema.parse({
-        call: 'fn',
-        args: { ref: { path: '/data' } },
+        '@call': 'fn',
+        args: { ref: { '@path': '/data' } },
       });
-      assert.deepEqual(result.args, { ref: { path: '/data' } });
+      assert.deepEqual(result.args, { ref: { '@path': '/data' } });
     });
 
     it('应拒绝未知属性（对齐规范 unevaluatedProperties: false）', () => {
-      assert.throws(() => FunctionCallSchema.parse({ call: 'openUrl', args: { url: 'x' }, extra: 'field' }));
+      assert.throws(() => FunctionCallSchema.parse({ '@call': 'openUrl', args: { url: 'x' }, extra: 'field' }));
     });
 
     it('应拒绝 @index 携带 catalogId（系统函数）', () => {
-      assert.throws(() => FunctionCallSchema.parse({ call: '@index', catalogId: 'some-catalog' }));
+      assert.throws(() => FunctionCallSchema.parse({ '@call': '@index', catalogId: 'some-catalog' }));
     });
 
     it('应拒绝 @index 携带 offset 之外的参数', () => {
-      assert.throws(() => FunctionCallSchema.parse({ call: '@index', args: { offset: 1, other: 2 } }));
+      assert.throws(() => FunctionCallSchema.parse({ '@call': '@index', args: { offset: 1, other: 2 } }));
     });
 
     it('应接受 @index 仅携带 offset', () => {
-      const result = FunctionCallSchema.parse({ call: '@index', args: { offset: 1 } });
-      assert.equal((result as { call: string }).call, '@index');
+      const result = FunctionCallSchema.parse({ '@call': '@index', args: { offset: 1 } });
+      assert.equal(result['@call'], '@index');
     });
   });
 
@@ -108,31 +115,47 @@ describe('common-types', () => {
       assert.deepEqual(result, obj);
     });
 
-    it('应拒绝 object 字面量中包含 path（#2229 歧义防护）', () => {
-      assert.throws(() => DynamicValueSchema.parse({ path: '/x', extra: 1 }));
+    it('应接受含普通 path/call 键的字面量对象（v1.0 不再拦截）', () => {
+      const obj = { path: '/var/log/system.log', call: 'incoming' };
+      const result = DynamicValueSchema.parse(obj);
+      assert.deepEqual(result, obj);
     });
 
-    it('含 call 的对象应匹配 FunctionCall 分支（合法）', () => {
-      const result = DynamicValueSchema.parse({ call: 'fn', args: { x: 1 } });
-      assert.equal((result as { call: string }).call, 'fn');
+    it('应接受 @@ 前缀加倍转义的字面量键', () => {
+      const obj = { '@@path': '/static/file', '@@type': 'Resource' };
+      const result = DynamicValueSchema.parse(obj) as Record<string, unknown>;
+      assert.deepEqual(result, obj);
+    });
+
+    it('应拒绝未识别的单 @ 保留键（^@([^@]|$)）', () => {
+      assert.throws(() => DynamicValueSchema.parse({ '@if': true, branch: 'active' }));
+    });
+
+    it('应拒绝裸 @ 键', () => {
+      assert.throws(() => DynamicValueSchema.parse({ '@': 'reserved' }));
+    });
+
+    it('含 @call 的对象应匹配 FunctionCall 分支（合法）', () => {
+      const result = DynamicValueSchema.parse({ '@call': 'fn', args: { x: 1 } });
+      assert.equal((result as { '@call': string })['@call'], 'fn');
     });
 
     it('应接受 DataBinding', () => {
-      const result = DynamicValueSchema.parse({ path: '/x' });
-      assert.deepEqual(result, { path: '/x' });
+      const result = DynamicValueSchema.parse({ '@path': '/x' });
+      assert.deepEqual(result, { '@path': '/x' });
     });
 
     it('应接受 FunctionCall', () => {
-      const result = DynamicValueSchema.parse({ call: 'fn', args: { x: 1 } });
-      assert.equal((result as { call: string }).call, 'fn');
+      const result = DynamicValueSchema.parse({ '@call': 'fn', args: { x: 1 } });
+      assert.equal((result as { '@call': string })['@call'], 'fn');
     });
 
     it('应拒绝 FunctionCall 携带额外属性（规范 oneOf 严格性）', () => {
-      assert.throws(() => DynamicValueSchema.parse({ call: 'openUrl', args: { url: 'x' }, extra: 'field' }));
+      assert.throws(() => DynamicValueSchema.parse({ '@call': 'openUrl', args: { url: 'x' }, extra: 'field' }));
     });
 
     it('应拒绝 DataBinding 携带额外属性（规范 oneOf 严格性）', () => {
-      assert.throws(() => DynamicValueSchema.parse({ path: '/my/data', extra: 'field' }));
+      assert.throws(() => DynamicValueSchema.parse({ '@path': '/my/data', extra: 'field' }));
     });
   });
 
@@ -145,18 +168,18 @@ describe('common-types', () => {
     });
 
     it('应接受 DataBinding', () => {
-      const result = DynamicStringSchema.parse({ path: '/name' });
-      assert.deepEqual(result, { path: '/name' });
+      const result = DynamicStringSchema.parse({ '@path': '/name' });
+      assert.deepEqual(result, { '@path': '/name' });
     });
 
     it('应接受 FunctionCall', () => {
-      const result = DynamicStringSchema.parse({ call: 'getName' });
-      assert.equal((result as { call: string }).call, 'getName');
+      const result = DynamicStringSchema.parse({ '@call': 'getName' });
+      assert.equal((result as { '@call': string })['@call'], 'getName');
     });
   });
 
   // ==========================================================================
-  // ChildListSchema
+  // ChildListSchema（结构指针 path 保持不变）
   // ==========================================================================
   describe('ChildListSchema', () => {
     it('应接受字符串数组', () => {
@@ -164,7 +187,7 @@ describe('common-types', () => {
       assert.deepEqual(result, ['a', 'b']);
     });
 
-    it('应接受 TemplateChildList 对象', () => {
+    it('应接受 TemplateChildList 对象（结构 path 不加 @）', () => {
       const result = ChildListSchema.parse({ componentId: 'tpl', path: '/items' });
       assert.deepEqual(result, { componentId: 'tpl', path: '/items' });
     });
@@ -200,12 +223,12 @@ describe('common-types', () => {
 
     it('应解析 hidden 动态布尔（字面量/数据绑定/函数调用）', () => {
       assert.equal(AccessibilityAttributesSchema.parse({ hidden: true }).hidden, true);
-      assert.deepEqual(AccessibilityAttributesSchema.parse({ hidden: { path: '/ui/hidden' } }).hidden, {
-        path: '/ui/hidden',
+      assert.deepEqual(AccessibilityAttributesSchema.parse({ hidden: { '@path': '/ui/hidden' } }).hidden, {
+        '@path': '/ui/hidden',
       });
       assert.deepEqual(
-        AccessibilityAttributesSchema.parse({ hidden: { call: 'shouldHide', args: { id: 1 } } }).hidden,
-        { call: 'shouldHide', args: { id: 1 } },
+        AccessibilityAttributesSchema.parse({ hidden: { '@call': 'shouldHide', args: { id: 1 } } }).hidden,
+        { '@call': 'shouldHide', args: { id: 1 } },
       );
     });
 
@@ -241,16 +264,16 @@ describe('common-types', () => {
     });
 
     it('应接受 functionCall 形式', () => {
-      const action = { functionCall: { call: 'doSomething', args: { key: 'val' } } };
+      const action = { functionCall: { '@call': 'doSomething', args: { key: 'val' } } };
       const result = ActionSchema.parse(action);
-      assert.equal((result as { functionCall: { call: string } }).functionCall.call, 'doSomething');
+      assert.equal((result as { functionCall: { '@call': string } }).functionCall['@call'], 'doSomething');
     });
 
     it('应拒绝同时包含 event 和 functionCall（strict）', () => {
       assert.throws(() =>
         ActionSchema.parse({
           event: { name: 'x' },
-          functionCall: { call: 'y' },
+          functionCall: { '@call': 'y' },
         }),
       );
     });
@@ -265,19 +288,19 @@ describe('common-types', () => {
   // ==========================================================================
   describe('CheckRuleSchema', () => {
     it('应解析合法校验规则（FunctionCall condition，无 message）', () => {
-      const rule = { condition: { call: 'required', args: { value: { path: '/name' } } } };
+      const rule = { condition: { '@call': 'required', args: { value: { '@path': '/name' } } } };
       const result = CheckRuleSchema.parse(rule);
       assert.deepEqual(result, rule);
     });
 
     it('condition 应接受 DataBinding', () => {
-      const rule = { condition: { path: '/required' }, message: '必填' };
+      const rule = { condition: { '@path': '/required' }, message: '必填' };
       const result = CheckRuleSchema.parse(rule);
-      assert.deepEqual(result.condition, { path: '/required' });
+      assert.deepEqual(result.condition, { '@path': '/required' });
     });
 
     it('message 为可选（#2220 fallback）', () => {
-      const result = CheckRuleSchema.parse({ condition: { call: 'required', args: {} } });
+      const result = CheckRuleSchema.parse({ condition: { '@call': 'required', args: {} } });
       assert.equal(result.message, undefined);
     });
 
@@ -286,7 +309,7 @@ describe('common-types', () => {
     });
 
     it('应拒绝额外属性（strict）', () => {
-      assert.throws(() => CheckRuleSchema.parse({ condition: { path: '/x' }, message: 'err', extra: 1 }));
+      assert.throws(() => CheckRuleSchema.parse({ condition: { '@path': '/x' }, message: 'err', extra: 1 }));
     });
   });
 
@@ -352,15 +375,44 @@ describe('common-types', () => {
   });
 
   // ==========================================================================
+  // 保留协议指令工具（v1.0 #2692 / #2891）
+  // ==========================================================================
+  describe('保留协议指令工具', () => {
+    it('isSingleAtKey 识别未转义的单 @ 键', () => {
+      assert.equal(isSingleAtKey('@path'), true);
+      assert.equal(isSingleAtKey('@'), true);
+      assert.equal(isSingleAtKey('@if'), true);
+      assert.equal(isSingleAtKey('@@path'), false);
+      assert.equal(isSingleAtKey('path'), false);
+    });
+
+    it('unescapeObjectKey 对 @@ 前缀加倍去转义', () => {
+      assert.equal(unescapeObjectKey('@@path'), '@path');
+      assert.equal(unescapeObjectKey('@@'), '@');
+      assert.equal(unescapeObjectKey('path'), 'path');
+    });
+
+    it('assertNoUnknownReservedKeys 接受已识别指令并拒绝未知单 @ 键', () => {
+      assert.doesNotThrow(() => assertNoUnknownReservedKeys(['@path', '@call', '@@type', 'plain']));
+      assert.throws(() => assertNoUnknownReservedKeys(['@if']));
+      assert.throws(() => assertNoUnknownReservedKeys(['@']));
+    });
+  });
+
+  // ==========================================================================
   // 工具函数
   // ==========================================================================
   describe('isDataBinding', () => {
-    it('应为 {path: "/x"} 返回 true', () => {
-      assert.equal(isDataBinding({ path: '/x' }), true);
+    it('应为 {@path: "/x"} 返回 true', () => {
+      assert.equal(isDataBinding({ '@path': '/x' }), true);
     });
 
     it('应为 FunctionCall 返回 false', () => {
-      assert.equal(isDataBinding({ call: 'fn' }), false);
+      assert.equal(isDataBinding({ '@call': 'fn' }), false);
+    });
+
+    it('应为普通 {path} 字面量返回 false', () => {
+      assert.equal(isDataBinding({ path: '/x' }), false);
     });
 
     it('应为 null 返回 false', () => {
@@ -375,26 +427,30 @@ describe('common-types', () => {
       assert.equal(isDataBinding('hello'), false);
     });
 
-    it('应为同时包含 path 和 call 的对象返回 false', () => {
-      assert.equal(isDataBinding({ path: '/x', call: 'fn' }), false);
+    it('应为同时包含 @path 和 @call 的对象返回 false', () => {
+      assert.equal(isDataBinding({ '@path': '/x', '@call': 'fn' }), false);
     });
   });
 
   describe('isFunctionCall', () => {
-    it('应为 {call: "fn"} 返回 true', () => {
-      assert.equal(isFunctionCall({ call: 'fn' }), true);
+    it('应为 {@call: "fn"} 返回 true', () => {
+      assert.equal(isFunctionCall({ '@call': 'fn' }), true);
     });
 
     it('应为 DataBinding 返回 false', () => {
-      assert.equal(isFunctionCall({ path: '/x' }), false);
+      assert.equal(isFunctionCall({ '@path': '/x' }), false);
+    });
+
+    it('应为普通 {call} 字面量返回 false', () => {
+      assert.equal(isFunctionCall({ call: 'fn' }), false);
     });
 
     it('应为 null 返回 false', () => {
       assert.equal(isFunctionCall(null), false);
     });
 
-    it('应为同时包含 call 和 path 的对象返回 false', () => {
-      assert.equal(isFunctionCall({ call: 'fn', path: '/x' }), false);
+    it('应为同时包含 @call 和 @path 的对象返回 false', () => {
+      assert.equal(isFunctionCall({ '@call': 'fn', '@path': '/x' }), false);
     });
 
     it('应为数字返回 false', () => {

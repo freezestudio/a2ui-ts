@@ -67,7 +67,7 @@ function makeCallRendererFunction(overrides = {}) {
     callRendererFunction: {
       functionCallId: 'call-1',
       callFunction: {
-        call: 'computeTotal',
+        '@call': 'computeTotal',
         catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
         args: { x: 1 },
       },
@@ -237,11 +237,11 @@ describe('agent-to-renderer', () => {
       const msg = makeCallRendererFunction();
       const result = CallRendererFunctionMessageSchema.parse(msg);
       assert.equal(result.callRendererFunction.functionCallId, 'call-1');
-      assert.equal(result.callRendererFunction.callFunction.call, 'computeTotal');
+      assert.equal(result.callRendererFunction.callFunction['@call'], 'computeTotal');
     });
 
     it('应拒绝缺少 functionCallId', () => {
-      const msg = { version: SPEC_VERSION, callRendererFunction: { callFunction: { call: 'fn' } } };
+      const msg = { version: SPEC_VERSION, callRendererFunction: { callFunction: { '@call': 'fn' } } };
       assert.throws(() => CallRendererFunctionMessageSchema.parse(msg));
     });
 
@@ -249,7 +249,7 @@ describe('agent-to-renderer', () => {
       const msg = makeCallRendererFunction({
         callRendererFunction: {
           functionCallId: 'call-1',
-          callFunction: { call: 'fn', args: {} },
+          callFunction: { '@call': 'fn', args: {} },
         },
       });
       assert.throws(() => CallRendererFunctionMessageSchema.parse(msg));

@@ -53,10 +53,10 @@ describe('SurfaceManager 生命周期', () => {
 describe('数据绑定与函数调用', () => {
   it('resolveDynamicValue 解析嵌套 data binding + function call', () => {
     const dataModel = { sensor: { displacement: 12.345 } };
-    expect(resolveDynamicValue({ path: 'sensor/displacement' }, dataModel)).toBe(12.345);
+    expect(resolveDynamicValue({ '@path': 'sensor/displacement' }, dataModel)).toBe(12.345);
     expect(
       resolveDynamicValue(
-        { call: 'formatNumber', args: { value: { path: 'sensor/displacement' }, decimals: 2 } },
+        { '@call': 'formatNumber', args: { value: { '@path': 'sensor/displacement' }, decimals: 2 } },
         dataModel,
       ),
     ).toBe('12.35');
@@ -71,7 +71,9 @@ describe('数据绑定与函数调用', () => {
   });
 
   it('rendererOnly 函数不允许 agent 远程调用', () => {
-    expect(() => callFunction({ call: '@index', args: {} }, {}, 0, { caller: 'agent' })).toThrow('不允许 agent 调用');
+    expect(() => callFunction({ '@call': '@index', args: {} }, {}, 0, { caller: 'agent' })).toThrow(
+      '不允许 agent 调用',
+    );
   });
 
   it('handleCallRendererFunction 对 rendererOnly 函数返回 INVALID_FUNCTION_CALL', () => {
@@ -80,7 +82,7 @@ describe('数据绑定与函数调用', () => {
     manager.handleCallRendererFunction(
       {
         functionCallId: 'f1',
-        call: 'capitalize',
+        '@call': 'capitalize',
         catalogId: 'https://freezestudio.dev/a2ui/v1.0/catalogs/extended.json',
         args: { value: 'abc' },
       },

@@ -39,7 +39,7 @@ export const looseMessageSchema = z.object({
     .object({
       functionCallId: z.string(),
       callFunction: z.object({
-        call: z.string(),
+        '@call': z.string(),
         catalogId: z.string(),
         args: z.record(z.string(), z.unknown()).optional(),
       }),
@@ -257,7 +257,7 @@ export function processMessage(
       surfaceManager.handleCallRendererFunction(
         {
           functionCallId: callId,
-          call: crf.callFunction.call,
+          '@call': crf.callFunction['@call'],
           catalogId: crf.callFunction.catalogId,
           args: crf.callFunction.args,
         },

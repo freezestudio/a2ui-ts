@@ -1,5 +1,6 @@
 import { computed, Signal } from '@angular/core';
 import { z } from 'zod';
+import { isSafeRegex } from '@freezestudio/a2ui-shared';
 import { SurfaceManager } from './renderer/surface-manager.js';
 import { resolvePath } from './renderer/data-binding.js';
 
@@ -47,7 +48,7 @@ export function createBinding<T>(
     const surfaces = surfaceManager.surfaces();
     const surface = surfaces.get(surfaceId);
     if (!surface) return undefined;
-    return resolvePath({ path }, surface.dataModel) as T | undefined;
+    return resolvePath({ '@path': path }, surface.dataModel) as T | undefined;
   });
 
   const error = computed(() => {
@@ -82,29 +83,36 @@ export function createBinding<T>(
 function evaluateCondition(condition: unknown, value: unknown): boolean {
   if (!condition || typeof condition !== 'object') return !!condition;
   const cond = condition as Record<string, unknown>;
-  if (cond['call'] === 'required') {
+  const call = cond['@call'];
+  const args = (cond['args'] as Record<string, unknown> | undefined) ?? {};
+  const pattern = cond['pattern'] ?? args['pattern'];
+  if (call === 'required') {
     return value !== null && value !== undefined && value !== '';
   }
-  if (cond['call'] === 'email') {
+  if (call === 'email') {
     if (typeof value !== 'string' || !value) return false;
     return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
   }
-  if (cond['call'] === 'regex' && typeof cond['pattern'] === 'string') {
+  if (call === 'regex' && typeof pattern === 'string') {
     if (typeof value !== 'string') return false;
+    if (!isSafeRegex(pattern)) {
+      console.debug('[DynamicBinding] 正则表达式不安全（潜在 ReDoS）:', pattern);
+      return false;
+    }
     try {
-      return new RegExp(cond['pattern']).test(value);
+      return new RegExp(pattern).test(value);
     } catch (err) {
-      console.debug('[DynamicBinding] 正则表达式无效:', cond['pattern'], err);
+      console.debug('[DynamicBinding] 正则表达式无效:', pattern, err);
       return false;
     }
   }
-  if (cond['call'] === 'and' && Array.isArray(cond['values'])) {
+  if (call === 'and' && Array.isArray(cond['values'])) {
     return (cond['values'] as unknown[]).every((v) => evaluateCondition(v, value));
   }
-  if (cond['call'] === 'or' && Array.isArray(cond['values'])) {
+  if (call === 'or' && Array.isArray(cond['values'])) {
     return (cond['values'] as unknown[]).some((v) => evaluateCondition(v, value));
   }
-  if (cond['call'] === 'not') {
+  if (call === 'not') {
     return !evaluateCondition(cond['value'], value);
   }
   return true;

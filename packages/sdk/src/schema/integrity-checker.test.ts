@@ -64,7 +64,7 @@ describe('checkFunctionCallDepth', () => {
 
   it('单层函数调用 → 无错误', () => {
     const components: Comp[] = [
-      { id: 'root', component: 'Text', text: { call: 'capitalize', args: { value: 'hello' } } },
+      { id: 'root', component: 'Text', text: { '@call': 'capitalize', args: { value: 'hello' } } },
     ];
     const errors = checkFunctionCallDepth(components);
     assert.equal(errors.length, 0);
@@ -72,9 +72,9 @@ describe('checkFunctionCallDepth', () => {
 
   it('超深函数调用嵌套 → 报错', () => {
     // 构造 7 层嵌套函数调用（超过 MAX_FUNC_CALL_DEPTH = 5）
-    let deepCall: Record<string, unknown> = { call: 'f6', args: { value: 'x' } };
+    let deepCall: Record<string, unknown> = { '@call': 'f6', args: { value: 'x' } };
     for (let i = 5; i >= 0; i--) {
-      deepCall = { call: `f${i}`, args: { value: deepCall } };
+      deepCall = { '@call': `f${i}`, args: { value: deepCall } };
     }
     const components: Comp[] = [{ id: 'root', component: 'Text', text: deepCall }];
     const errors = checkFunctionCallDepth(components);
@@ -110,13 +110,13 @@ describe('validatePathSyntax', () => {
 
 describe('checkPathSyntax', () => {
   it('组件中合法路径 → 无错误', () => {
-    const components: Comp[] = [{ id: 'root', component: 'TextField', value: { path: '/data/name' } }];
+    const components: Comp[] = [{ id: 'root', component: 'TextField', value: { '@path': '/data/name' } }];
     const errors = checkPathSyntax(components);
     assert.equal(errors.length, 0);
   });
 
   it('组件中非法路径 → 报错', () => {
-    const components: Comp[] = [{ id: 'root', component: 'TextField', value: { path: 'invalid/path' } }];
+    const components: Comp[] = [{ id: 'root', component: 'TextField', value: { '@path': 'invalid/path' } }];
     const errors = checkPathSyntax(components);
     assert.ok(errors.length > 0);
     assert.ok(errors.some((e) => e.message.includes('无效的路径语法')));

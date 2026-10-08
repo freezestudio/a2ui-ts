@@ -391,17 +391,17 @@ function collectFunctionCalls(components: Array<Record<string, unknown>>): Locat
       return;
     }
     const record = value as Record<string, unknown>;
-    if (typeof record['call'] === 'string') {
+    if (typeof record['@call'] === 'string') {
       found.push({
         raw: record,
-        call: record['call'],
+        call: record['@call'],
         explicitCatalogId: typeof record['catalogId'] === 'string' ? record['catalogId'] : undefined,
         componentId,
         path,
       });
     }
     for (const [key, child] of Object.entries(record)) {
-      if (key === 'call' || key === 'args' || key === 'catalogId') continue;
+      if (key === '@call' || key === 'args' || key === 'catalogId') continue;
       walk(child, componentId, `${path}.${key}`);
     }
   };

@@ -51,7 +51,7 @@ describe('官方规范 v1.0 renderer_to_agent 一致性（run_tests.py 同源）
 
     const agentFn = A2uiClientMessageSchema.safeParse({
       version: 'v1.0',
-      callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { call: 'fn' } },
+      callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { '@call': 'fn' } },
     });
     expect(agentFn.success).toBe(true);
   });
@@ -68,7 +68,7 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
         callRendererFunction: {
           functionCallId: 'call-1',
           callFunction: {
-            call: 'formatString',
+            '@call': 'formatString',
             catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
             args: { value: 'hello' },
           },

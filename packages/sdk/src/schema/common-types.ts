@@ -4,6 +4,15 @@
  */
 
 import { z } from 'zod';
+import {
+  RESERVED_DIRECTIVES,
+  isSingleAtKey,
+  unescapeObjectKey,
+  assertNoUnknownReservedKeys,
+} from '@freezestudio/a2ui-shared';
+
+// 保留协议指令工具由 @freezestudio/a2ui-shared 提供，此处 re-export 以保持公共 API
+export { RESERVED_DIRECTIVES, isSingleAtKey, unescapeObjectKey, assertNoUnknownReservedKeys };
 
 // ============================================================================
 // 厂商扩展接缝（v1.0 #2187 Vendor Extension Seam）
@@ -87,9 +96,12 @@ export type ComponentCommon = z.infer<typeof ComponentCommonSchema>;
 
 /**
  * 数据绑定 — 指向 DataModel 中值的 JSON Pointer 路径
+ *
+ * v1.0 (#2692 / #2891)：保留协议指令前缀 `@`，数据绑定键为 `@path`。
+ * 普通 `path` 键不再被拦截，视为字面量对象键（见 DynamicValueSchema）。
  */
 export const DataBindingSchema = z.strictObject({
-  path: z.string(),
+  '@path': z.string(),
 });
 export type DataBinding = z.infer<typeof DataBindingSchema>;
 
@@ -109,7 +121,7 @@ export const MAX_FUNCTION_CALL_ARGS = 1_000;
 
 export const FunctionCallSchema = z
   .strictObject({
-    call: z.string().min(1, '函数名不能为空'),
+    '@call': z.string().min(1, '函数名不能为空'),
     catalogId: z.string().optional(),
     args: z
       .record(z.string(), z.unknown())
@@ -120,7 +132,7 @@ export const FunctionCallSchema = z
       .optional(),
   })
   .superRefine((fc, ctx) => {
-    if (fc.call === '@index') {
+    if (fc['@call'] === '@index') {
       if (fc.catalogId !== undefined) {
         ctx.addIssue({
           code: 'custom',
@@ -140,17 +152,17 @@ export const FunctionCallSchema = z
         }
       }
     }
-  }) satisfies z.ZodType<{ call: string; catalogId?: string; args?: Record<string, unknown> }>;
+  }) satisfies z.ZodType<{ '@call': string; catalogId?: string; args?: Record<string, unknown> }>;
 export type FunctionCall = z.infer<typeof FunctionCallSchema>;
 
 /**
  * @index 系统函数（v1.0 新增）
  * 在模板列表渲染中返回当前项的 0-based 索引
  */
-export const IndexSystemFunctionSchema = z.object({
-  call: z.literal('@index'),
+export const IndexSystemFunctionSchema = z.strictObject({
+  '@call': z.literal('@index'),
   args: z
-    .object({
+    .strictObject({
       offset: z.lazy(() => DynamicNumberSchema).optional(),
     })
     .optional(),
@@ -163,16 +175,20 @@ export type IndexSystemFunction = z.infer<typeof IndexSystemFunctionSchema>;
 
 /**
  * 动态值 — 可以是字面量、数据绑定或函数调用
- * v1.0 #2229: 支持 object/array 字面量（object 需为普通字面量，不含 path/call）
+ * v1.0 #2229: 支持 object/array 字面量（object 需为普通字面量，不含保留指令键）
+ *
+ * v1.0 (#2692 / #2891)：动态对象中任何未转义的单 `@` 键都是保留指令：
+ * - 合法的只有 `@path`（DataBinding）与 `@call`（FunctionCall）；
+ * - 普通对象中若要表达以 `@` 开头的字面量键，必须前缀加倍转义（`"@@path"` → `"@path"`）。
  */
 export const DynamicValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),
   z.array(z.unknown()),
-  z
-    .record(z.string(), z.unknown())
-    .refine((v) => !('path' in v) && !('call' in v), { message: 'object 字面量不能包含 path/call' }),
+  z.record(z.string(), z.unknown()).refine((v) => Object.keys(v).every((k) => !isSingleAtKey(k)), {
+    message: 'dynamic object 不能包含未转义的单 @ 保留键（字面量 @ 键请用 @@ 前缀加倍转义）',
+  }),
   DataBindingSchema,
   FunctionCallSchema,
 ]);
@@ -326,12 +342,24 @@ export type FunctionResponse = z.infer<typeof FunctionResponseSchema>;
 
 /** 判断是否为 DataBinding */
 export function isDataBinding(value: unknown): value is DataBinding {
-  return typeof value === 'object' && value !== null && 'path' in value && !('call' in value);
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '@path' in value &&
+    typeof (value as Record<string, unknown>)['@path'] === 'string' &&
+    !('@call' in value)
+  );
 }
 
 /** 判断是否为 FunctionCall */
 export function isFunctionCall(value: unknown): value is FunctionCall {
-  return typeof value === 'object' && value !== null && 'call' in value && !('path' in value);
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '@call' in value &&
+    typeof (value as Record<string, unknown>)['@call'] === 'string' &&
+    !('@path' in value)
+  );
 }
 
 /** 判断 ChildList 是否为模板 */

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isSafeRegex, MAX_REGEX_INPUT_LENGTH } from '@freezestudio/a2ui-shared';
 import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
 
@@ -32,6 +33,13 @@ export const regexFunction: FunctionApi = createFunctionApi(
     execute: (args) => {
       const value = toStr(args.value);
       const pattern = toStr(args.pattern);
+      // ReDoS 防护（CWE-1333）：拒绝灾难性回溯模式与超长输入
+      if (!isSafeRegex(pattern)) {
+        return { valid: false, message: '正则表达式不安全（潜在 ReDoS 风险）' };
+      }
+      if (value.length > MAX_REGEX_INPUT_LENGTH) {
+        return { valid: false, message: `输入长度超过上限 (${MAX_REGEX_INPUT_LENGTH})` };
+      }
       try {
         return new RegExp(pattern).test(value) ? { valid: true } : { valid: false, message: '格式不匹配' };
       } catch (err) {

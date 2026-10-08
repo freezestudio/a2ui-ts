@@ -196,7 +196,7 @@ export class SurfaceManager {
   handleCallRendererFunction(
     call: {
       functionCallId: string;
-      call: string;
+      '@call': string;
       catalogId: string;
       args?: Record<string, unknown>;
     },
@@ -208,13 +208,14 @@ export class SurfaceManager {
   ): void {
     if (!onResponse) return;
 
-    const allowedCallers = getFunctionAllowedCallers(call.call, call.catalogId);
+    const callName = call['@call'];
+    const allowedCallers = getFunctionAllowedCallers(callName, call.catalogId);
     if (!allowedCallers) {
       onResponse({
         functionCallId: call.functionCallId,
         error: {
           code: 'INVALID_FUNCTION_CALL',
-          message: `Function '${call.call}' is not registered in catalog '${call.catalogId}'.`,
+          message: `Function '${callName}' is not registered in catalog '${call.catalogId}'.`,
         },
       });
       return;
@@ -222,13 +223,13 @@ export class SurfaceManager {
     if (allowedCallers === 'rendererOnly') {
       onResponse({
         functionCallId: call.functionCallId,
-        error: { code: 'INVALID_FUNCTION_CALL', message: `Function '${call.call}' is rendererOnly.` },
+        error: { code: 'INVALID_FUNCTION_CALL', message: `Function '${callName}' is rendererOnly.` },
       });
       return;
     }
 
     try {
-      const result = callFunction({ call: call.call, catalogId: call.catalogId, args: call.args }, {}, 0, {
+      const result = callFunction({ '@call': callName, catalogId: call.catalogId, args: call.args }, {}, 0, {
         caller: 'agent',
       });
       onResponse({ functionCallId: call.functionCallId, value: result });

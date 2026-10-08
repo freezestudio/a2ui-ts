@@ -14,19 +14,19 @@ import { z } from 'zod';
 
 const DATA_BINDING_SCHEMA: Record<string, unknown> = {
   type: 'object',
-  properties: { path: { type: 'string' } },
-  required: ['path'],
+  properties: { '@path': { type: 'string' } },
+  required: ['@path'],
   additionalProperties: false,
 };
 
 const FUNCTION_CALL_SCHEMA: Record<string, unknown> = {
   type: 'object',
   properties: {
-    call: { type: 'string', minLength: 1 },
+    '@call': { type: 'string', minLength: 1 },
     catalogId: { type: 'string' },
     args: { type: 'object' },
   },
-  required: ['call'],
+  required: ['@call'],
   unevaluatedProperties: false,
 };
 
@@ -48,7 +48,11 @@ const KNOWN_EXTERNAL_DEFS: Record<string, Record<string, unknown>> = {
       { type: 'number' },
       { type: 'boolean' },
       { type: 'array' },
-      { type: 'object', not: { anyOf: [{ required: ['path'] }, { required: ['call'] }] } },
+      {
+        type: 'object',
+        propertyNames: { not: { pattern: '^@([^@]|$)' } },
+        not: { anyOf: [{ required: ['@path'] }, { required: ['@call'] }] },
+      },
       DATA_BINDING_SCHEMA,
       FUNCTION_CALL_SCHEMA,
     ],
@@ -292,23 +296,43 @@ export function validateValue(
 
   // 对象属性递归校验
   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    const props = schema['properties'];
-    if (props && typeof props === 'object') {
-      const obj = value as Record<string, unknown>;
-      const propSchema = props as Record<string, Record<string, unknown>>;
-      // 必填检查
-      const required = schema['required'];
-      if (Array.isArray(required)) {
-        for (const key of required) {
-          if (!(key in obj)) {
-            issues.push({
-              path: path === '' ? `/${String(key)}` : `${path}/${String(key)}`,
-              message: `缺少必填字段 ${String(key)}`,
-            });
-            return false;
-          }
+    const obj = value as Record<string, unknown>;
+
+    // required — JSON Schema 语义独立于 properties 存在
+    const required = schema['required'];
+    if (Array.isArray(required)) {
+      for (const key of required) {
+        if (!(key in obj)) {
+          issues.push({
+            path: path === '' ? `/${String(key)}` : `${path}/${String(key)}`,
+            message: `缺少必填字段 ${String(key)}`,
+          });
+          return false;
         }
       }
+    }
+
+    // propertyNames — 对象的每个键必须匹配子 schema
+    // （v1.0 保留协议指令：^@([^@]|$) 的单 @ 键被拒绝，@@ 前缀加倍转义则放行）
+    const propertyNames = schema['propertyNames'];
+    if (propertyNames && typeof propertyNames === 'object') {
+      for (const key of Object.keys(obj)) {
+        if (
+          !validateValue(
+            propertyNames as Record<string, unknown>,
+            key,
+            path === '' ? `/${key}` : `${path}/${key}`,
+            issues,
+          )
+        ) {
+          valid = false;
+        }
+      }
+    }
+
+    const props = schema['properties'];
+    if (props && typeof props === 'object') {
+      const propSchema = props as Record<string, Record<string, unknown>>;
       // 属性递归
       for (const [key, sub] of Object.entries(propSchema)) {
         if (key in obj) {

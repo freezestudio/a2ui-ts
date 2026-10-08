@@ -3,7 +3,7 @@ import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
 
 const CapitalizeArgsSchema = z.object({
-  value: z.union([z.string(), z.object({ path: z.string() })]),
+  value: z.union([z.string(), z.object({ '@path': z.string() })]),
 });
 
 /** 将字符串首字母大写 */
@@ -14,7 +14,7 @@ export const capitalizeFunction: FunctionApi = createFunctionApi(
     properties: {
       value: {
         description: '要转换的字符串',
-        oneOf: [{ type: 'string' }, { type: 'object', properties: { path: { type: 'string' } } }],
+        oneOf: [{ type: 'string' }, { type: 'object', properties: { '@path': { type: 'string' } } }],
       },
     },
     required: ['value'],

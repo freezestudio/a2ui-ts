@@ -28,4 +28,7 @@ export { toStr, toFloat } from './type-utils.js';
 export { getLocaleRules, registerLocaleRules, CURRENCY_SYMBOLS } from './locale-config.js';
 export type { LocaleFormattingRules } from './locale-config.js';
 export { deepMerge, deepClone, FORBIDDEN_KEYS, isSafeKey } from './object-utils.js';
+export { RESERVED_DIRECTIVES, isSingleAtKey, unescapeObjectKey, assertNoUnknownReservedKeys } from './reserved-keys.js';
+export { isSafeRegex, MAX_REGEX_INPUT_LENGTH } from './safe-regex.js';
+export type { SafeRegexOptions } from './safe-regex.js';
 export { normalizeSmartQuotes, removeTrailingCommas, fixPartialJsonFragment, CUTTABLE_KEYS } from './json-healer.js';

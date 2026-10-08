@@ -115,7 +115,7 @@ export class A2UIChoicePicker extends CatalogComponent {
   protected selectedValues = computed(() => {
     const val = this.component()['value'];
     if (Array.isArray(val)) return val.filter((v): v is string => typeof v === 'string');
-    if (typeof val === 'object' && val && ('path' in val || 'call' in val)) {
+    if (typeof val === 'object' && val && ('@path' in val || '@call' in val)) {
       const resolved = this.resolveValue(val);
       return Array.isArray(resolved) ? resolved.filter((v): v is string => typeof v === 'string') : [];
     }

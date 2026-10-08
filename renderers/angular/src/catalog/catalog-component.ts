@@ -154,8 +154,8 @@ export abstract class CatalogComponent {
   /** 从组件的 `value` 属性解析绑定的 DataModel 路径 */
   protected valuePath(): string | null {
     const binding = this.component()['value'];
-    if (binding && typeof binding === 'object' && 'path' in binding) {
-      return (binding as Record<string, unknown>)['path'] as string;
+    if (binding && typeof binding === 'object' && '@path' in binding) {
+      return (binding as Record<string, unknown>)['@path'] as string;
     }
     return null;
   }

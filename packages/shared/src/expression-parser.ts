@@ -27,14 +27,18 @@ class Scanner {
   }
 
   peek(offset = 0): string {
-    const idx = this.pos + offset;
-    if (idx >= this.input.length) return '\0';
-    return this.input[idx];
+    const targetPos = this.pos + offset;
+    if (targetPos >= this.input.length) return '\0';
+    // 按码点读取，正确处理代理对（非 BMP 字符）
+    const codePoint = this.input.codePointAt(targetPos);
+    if (codePoint === undefined) return '\0';
+    return String.fromCodePoint(codePoint);
   }
 
-  advance(count = 1): string {
-    const chars = this.input.slice(this.pos, this.pos + count);
-    this.pos += count;
+  advance(count?: number): string {
+    const step = count ?? (this.peek() === '\0' ? 1 : this.peek().length);
+    const chars = this.input.slice(this.pos, this.pos + step);
+    this.pos += step;
     return chars;
   }
 
@@ -57,7 +61,7 @@ class Scanner {
   matchesKeyword(keyword: string): boolean {
     if (this.input.startsWith(keyword, this.pos)) {
       const nextChar = this.peek(keyword.length);
-      if (!/[a-zA-Z0-9_]/.test(nextChar)) {
+      if (!isIdContinue(nextChar)) {
         this.advance(keyword.length);
         return true;
       }
@@ -70,6 +74,17 @@ class Scanner {
       this.advance();
     }
   }
+}
+
+/** UAX #31 标识符续字符（支持非 ASCII，如 señor / 日本） */
+const XID_CONTINUE_REGEX = /^\p{XID_Continue}$/u;
+
+function isIdContinue(input: string): boolean {
+  // '\0'（结束哨兵）与多码点序列均不是标识符续字符
+  if (input.length === 0 || input === '\0' || Array.from(input).length !== 1) {
+    return false;
+  }
+  return XID_CONTINUE_REGEX.test(input);
 }
 
 // ============================================================================
@@ -269,7 +284,7 @@ export class ExpressionParser {
     while (!scanner.isAtEnd()) {
       const c = scanner.peek();
       // '@' 支持系统标识符（如模板内 ${@index(offset:1)}）
-      if (this.isAlnum(c) || '/._-@'.includes(c)) {
+      if (isIdContinue(c) || '/._-@'.includes(c)) {
         scanner.advance();
       } else {
         break;
@@ -317,7 +332,7 @@ export class ExpressionParser {
   /** 扫描标识符 */
   scanIdentifier(scanner: Scanner): string {
     const start = scanner.pos;
-    while (!scanner.isAtEnd() && (this.isAlnum(scanner.peek()) || scanner.peek() === '_')) {
+    while (!scanner.isAtEnd() && isIdContinue(scanner.peek())) {
       scanner.advance();
     }
     return scanner.input.slice(start, scanner.pos);
@@ -367,11 +382,6 @@ export class ExpressionParser {
 
     const numStr = scanner.input.slice(start, scanner.pos);
     return numStr.includes('.') ? parseFloat(numStr) : parseInt(numStr, 10);
-  }
-
-  /** 是否为字母数字 */
-  private isAlnum(c: string): boolean {
-    return /[a-zA-Z0-9]/.test(c);
   }
 
   /** 是否为数字 */

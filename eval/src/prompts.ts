@@ -101,7 +101,7 @@ export const prompts: TestPrompt[] = [
    - submitRow: Row, children: ["submitBtn", "submitBtnText"]
    - submitBtn: Button, child="submitBtnText", action event name="submit"
    - submitBtnText: Text, text="提交"
-   - emailField 的 checks 设为 [{condition:{call:"regex",args:{value:{$path:"/email"}...}}]
+   - emailField 的 checks 设为 [{condition:{@call:"regex",args:{value:{@path:"/email"}...}}]
 
 核心要求 message array 必须包含 2 条消息：[createSurface, updateComponents]`,
   },
@@ -260,22 +260,22 @@ export const prompts: TestPrompt[] = [
 2. 使用 updateComponents 创建组件：
    - root: Column, children: ["orderHeader", "receiverInfo", "itemsTitle", "itemsList", "totalRow"]
    - orderHeader: Row, children: ["orderIdText", "statusText"]
-   - orderIdText: Text, text={ path: "/orderId" }
-   - statusText: Text, text={ path: "/status" }
+   - orderIdText: Text, text={ @path: "/orderId" }
+   - statusText: Text, text={ @path: "/status" }
    - receiverInfo: Card, child="receiverContent"
    - receiverContent: Column, children: ["nameText", "addressText", "phoneText"]
-   - nameText: Text, text={ path: "/receiver/name" }
-   - addressText: Text, text={ path: "/receiver/address" }
-   - phoneText: Text, text={ path: "/receiver/phone" }
+   - nameText: Text, text={ @path: "/receiver/name" }
+   - addressText: Text, text={ @path: "/receiver/address" }
+   - phoneText: Text, text={ @path: "/receiver/phone" }
    - itemsTitle: Text, text="商品列表", variant="body"
    - itemsList: List, direction="vertical", children={ componentId: "itemTemplate", path: "/items" }
    - itemTemplate: Row, children: ["itemName", "itemQty", "itemPrice"]
-   - itemName: Text, text={ path: "/name" }
-   - itemQty: Text, text={ path: "/quantity" }
-   - itemPrice: Text, text={ path: "/price" }
+   - itemName: Text, text={ @path: "/name" }
+   - itemQty: Text, text={ @path: "/quantity" }
+   - itemPrice: Text, text={ @path: "/price" }
    - totalRow: Row, children: ["totalLabel", "totalValue"]
    - totalLabel: Text, text="总计:", variant="body"
-   - totalValue: Text, text={ path: "/total" }
+   - totalValue: Text, text={ @path: "/total" }
 
 核心要求：
 - 所有数据绑定路径必须以 / 开头（绝对 JSON Pointer）
@@ -310,7 +310,7 @@ export const prompts: TestPrompt[] = [
     promptText: `生成一个包含 callRendererFunction 消息的 A2UI JSON。
 1. 创建 surface（ID: "notifications"）
 2. 使用 updateComponents 创建组件：Column 根组件包含两个子组件 titleEl（Text, text="新消息通知"）和 sendBtn（Button, child 引用 buttonLabel 组件，buttonLabel 为 Text, text="发送测试通知"）
-3. 最后在同一个 JSON 数组中添加一条 callRendererFunction 消息：callRendererFunction.functionCallId="call-001", callRendererFunction.callFunction.call="getScreenResolution", callRendererFunction.callFunction.catalogId="https://example.com/a2ui/v1.0/device-catalog.json", callRendererFunction.callFunction.args.screenIndex=0
+3. 最后在同一个 JSON 数组中添加一条 callRendererFunction 消息：callRendererFunction.functionCallId="call-001", callRendererFunction.callFunction.@call="getScreenResolution", callRendererFunction.callFunction.catalogId="https://example.com/a2ui/v1.0/device-catalog.json", callRendererFunction.callFunction.args.screenIndex=0
 
 核心要求 message array 必须包含 3 条消息：[createSurface, updateComponents, callRendererFunction]`,
   },
@@ -320,7 +320,7 @@ export const prompts: TestPrompt[] = [
     promptText: `生成一个包含用户激活函数（openUrl）的 A2UI JSON。
 1. 创建 surface（ID: "notifications"）
 2. 使用 updateComponents 创建组件：Column 根组件包含两个子组件 titleEl（Text, text="新消息通知"）和 sendBtn（Button, child 引用 buttonLabel 组件，buttonLabel 为 Text, text="打开示例链接"）
-3. sendBtn 的 action 使用 functionCall 形式：action.functionCall.call="openUrl", action.functionCall.args.url="https://example.com/notification"
+3. sendBtn 的 action 使用 functionCall 形式：action.functionCall.@call="openUrl", action.functionCall.args.url="https://example.com/notification"
 
 注意：openUrl 声明 requiresUserActivation，只能通过组件 action.functionCall 由用户交互触发，禁止用 callRendererFunction 消息直接调用。
 
@@ -346,8 +346,8 @@ export const prompts: TestPrompt[] = [
    - title: Text, text="商品列表"
    - productList: List, children={ componentId: "product-item", path: "/products" }
    - product-item: Row, children: ["nameText", "priceText"]
-   - nameText: Text, text={ path: "name" }（模板项内的相对路径，解析为 /products/N/name）
-   - priceText: Text, text={ path: "price" }（解析为 /products/N/price）
+   - nameText: Text, text={ @path: "name" }（模板项内的相对路径，解析为 /products/N/name）
+   - priceText: Text, text={ @path: "price" }（解析为 /products/N/price）
 
 核心要求：模板项内使用相对路径；模板外使用以 / 开头的绝对 JSON Pointer`,
   },
@@ -359,7 +359,7 @@ export const prompts: TestPrompt[] = [
 2. 使用 updateComponents 创建组件：
    - root: Column, children: ["title", "detail", "retryBtn"]
    - title: Text, text="出错了"（h2 变体）
-   - detail: Text, text={ path: "/errorMessage" }（绑定数据模型）
+   - detail: Text, text={ @path: "/errorMessage" }（绑定数据模型）
    - retryBtn: Button, child 引用 retryBtnLabel, action 设为 event name="retry"
    - retryBtnLabel: Text, text="重试"
    - Button 的 action 使用 event 格式：{ "event": { "name": "retry" } }

@@ -31,11 +31,11 @@ export const ChoicePickerComponentSchema: ComponentApi = {
         description: '当前选中的值列表',
         oneOf: [
           { type: 'array', items: { type: 'string' } },
-          { type: 'object', properties: { path: { type: 'string' } } },
+          { type: 'object', properties: { '@path': { type: 'string' } }, required: ['@path'] },
           {
             type: 'object',
-            properties: { call: { type: 'string' }, args: { type: 'object', additionalProperties: true } },
-            required: ['call'],
+            properties: { '@call': { type: 'string' }, args: { type: 'object', additionalProperties: true } },
+            required: ['@call'],
           },
         ],
       },

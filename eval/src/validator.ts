@@ -439,12 +439,12 @@ export class Validator {
 
       const crf = msg.callRendererFunction as Record<string, unknown> | undefined;
       const callFn = crf?.callFunction as Record<string, unknown> | undefined;
-      const fnName = callFn?.call as string | undefined;
+      const fnName = callFn?.['@call'] as string | undefined;
       const callCatalogId = callFn?.catalogId as string | undefined;
       const isBasicCatalog = callCatalogId === 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
       if (fnName && isBasicCatalog && !validFunctions.has(fnName)) {
         errors.push({
-          path: `[${i}].callRendererFunction.callFunction.call`,
+          path: `[${i}].callRendererFunction.callFunction.@call`,
           message: `callRendererFunction 调用了未知 basic catalog 函数: "${fnName}"`,
         });
       }
@@ -466,10 +466,10 @@ export class Validator {
       if (
         typeof value === 'object' &&
         value !== null &&
-        'call' in value &&
-        typeof (value as Record<string, unknown>).call === 'string'
+        '@call' in value &&
+        typeof (value as Record<string, unknown>)['@call'] === 'string'
       ) {
-        callback((value as Record<string, unknown>).call as string, currentPath);
+        callback((value as Record<string, unknown>)['@call'] as string, currentPath);
         const args = (value as Record<string, unknown>).args;
         if (typeof args === 'object' && args !== null) {
           this.walkForFunctionCalls(args as Record<string, unknown>, callback, `${currentPath}.args`);
@@ -520,10 +520,10 @@ export class Validator {
         continue;
       }
 
-      if (typeof callFn.call !== 'string') {
+      if (typeof callFn['@call'] !== 'string') {
         errors.push({
-          path: `[${i}].callRendererFunction.callFunction.call`,
-          message: 'callFunction.call 必须是字符串',
+          path: `[${i}].callRendererFunction.callFunction.@call`,
+          message: 'callFunction.@call 必须是字符串',
         });
       }
 
@@ -606,7 +606,7 @@ export class Validator {
     return errors;
   }
 
-  /** 递归遍历组件属性，查找 DataBinding（{ path: string } 结构） */
+  /** 递归遍历组件属性，查找 DataBinding（{ @path: string } 结构） */
   private walkForDataBindings(
     obj: Record<string, unknown>,
     callback: (path: string, fieldPath: string, compId: string) => void,
@@ -625,10 +625,10 @@ export class Validator {
       if (
         typeof value === 'object' &&
         value !== null &&
-        'path' in value &&
-        typeof (value as Record<string, unknown>).path === 'string'
+        '@path' in value &&
+        typeof (value as Record<string, unknown>)['@path'] === 'string'
       ) {
-        callback((value as Record<string, unknown>).path as string, currentPath, compId ?? '?');
+        callback((value as Record<string, unknown>)['@path'] as string, currentPath, compId ?? '?');
       } else if (Array.isArray(value)) {
         for (let idx = 0; idx < value.length; idx++) {
           const item = value[idx];
@@ -672,10 +672,10 @@ export class Validator {
 
           if (hasFunctionCall) {
             const fc = action.functionCall as Record<string, unknown>;
-            if (typeof fc.call !== 'string') {
+            if (typeof fc['@call'] !== 'string') {
               errors.push({
-                path: `[${msgIndex}].components.${String((comp.id as string) ?? '?')}.${fieldPath}.functionCall.call`,
-                message: 'Action.functionCall.call 必须是字符串',
+                path: `[${msgIndex}].components.${String((comp.id as string) ?? '?')}.${fieldPath}.functionCall.@call`,
+                message: 'Action.functionCall.@call 必须是字符串',
               });
             }
           }

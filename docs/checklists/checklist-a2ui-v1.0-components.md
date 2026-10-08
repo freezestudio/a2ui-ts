@@ -366,7 +366,7 @@ interface ImageProps {
 }
 
 interface IconProps {
-  name: DynamicString; // 图标名称（v1.0 预定义 60+ 标准图标名）或 { path: "svg..." } 自定义路径
+  name: DynamicString; // 图标名称（v1.0 预定义 60+ 标准图标名）或 { @path: "svg..." } 自定义路径
 }
 ```
 
