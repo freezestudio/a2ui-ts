@@ -101,7 +101,7 @@ export const prompts: TestPrompt[] = [
    - submitRow: Row, children: ["submitBtn", "submitBtnText"]
    - submitBtn: Button, child="submitBtnText", action event name="submit"
    - submitBtnText: Text, text="提交"
-   - emailField 的 checks 设为 [{condition:{@call:"regex",args:{value:{@path:"/email"}...}}]
+   - emailField 的 @checks 设为 [{condition:{@call:"regex",args:{value:{@path:"/email"}...}}]
 
 核心要求 message array 必须包含 2 条消息：[createSurface, updateComponents]`,
   },

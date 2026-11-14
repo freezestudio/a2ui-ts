@@ -24,11 +24,20 @@ export {
   parseJsonPointer,
   resolvePath,
 } from './path-utils.js';
-export { toStr, toFloat } from './type-utils.js';
+export { toStr, toFloat, coerceDynamicBoolean, coerceValidationResult, isValidationResult } from './type-utils.js';
+export type { ValidationResultLike } from './type-utils.js';
 export { getLocaleRules, registerLocaleRules, CURRENCY_SYMBOLS } from './locale-config.js';
 export type { LocaleFormattingRules } from './locale-config.js';
 export { deepMerge, deepClone, FORBIDDEN_KEYS, isSafeKey } from './object-utils.js';
 export { RESERVED_DIRECTIVES, isSingleAtKey, unescapeObjectKey, assertNoUnknownReservedKeys } from './reserved-keys.js';
 export { isSafeRegex, MAX_REGEX_INPUT_LENGTH } from './safe-regex.js';
 export type { SafeRegexOptions } from './safe-regex.js';
+export {
+  analyzeRegex,
+  parseRegexSubset,
+  countCodePoints,
+  MAX_REGEX_PATTERN_CODE_POINTS,
+  MAX_REGEX_VALUE_CODE_POINTS,
+} from './regex-subset.js';
+export type { RegexAnalysisResult, RegexNode, RegexRejection, CodePointRange } from './regex-subset.js';
 export { normalizeSmartQuotes, removeTrailingCommas, fixPartialJsonFragment, CUTTABLE_KEYS } from './json-healer.js';

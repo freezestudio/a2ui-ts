@@ -48,7 +48,7 @@ export class DemoApp {
     // 声明式生成演示界面
     this.renderer.processMessages([
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'demo',
           catalogId: BASIC_CATALOG_ID,

@@ -29,7 +29,7 @@ export const TextFieldComponentSchema: ComponentApi = {
         type: 'number',
         description: '组件在布局中的权重值',
       },
-      checks: {
+      '@checks': {
         type: 'array',
         description: '校验规则列表',
         items: {
@@ -42,6 +42,6 @@ export const TextFieldComponentSchema: ComponentApi = {
         },
       },
     },
-    required: ['component', 'label'],
+    required: ['component', 'label', 'value'],
   },
 };

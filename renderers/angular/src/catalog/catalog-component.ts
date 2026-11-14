@@ -93,7 +93,7 @@ export abstract class CatalogComponent {
     'aria-live'?: 'off' | 'polite' | 'assertive';
     'aria-hidden'?: 'true' | 'false';
   }>(() => {
-    const a11y = this.component()['accessibility'];
+    const a11y = this.component()['@accessibility'];
     if (!a11y || typeof a11y !== 'object') return {};
     const attrs: {
       'aria-label'?: string;
@@ -142,7 +142,7 @@ export abstract class CatalogComponent {
     // 快照模式只读：不写回实时状态
     if (this.snapshotSurface()) return;
     this.renderer.processMessage({
-      version: 'v1.0',
+      version: '1.0',
       updateDataModel: {
         surfaceId: this.surface().surfaceId,
         path,

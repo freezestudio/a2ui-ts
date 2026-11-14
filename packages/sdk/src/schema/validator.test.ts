@@ -7,7 +7,7 @@ import { Catalog } from '../catalog/catalog.js';
 // 构造合法的 CreateSurface 消息
 function makeCreateSurfaceMessage(overrides?: Record<string, unknown>): Record<string, unknown> {
   return {
-    version: 'v1.0',
+    version: '1.0',
     createSurface: {
       surfaceId: 'surface-1',
       catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
@@ -23,7 +23,7 @@ function makeUpdateComponentsMessage(
   surfaceId = 'surface-1',
 ): UpdateComponentsMessage {
   return {
-    version: 'v1.0',
+    version: '1.0',
     updateComponents: {
       surfaceId,
       components: components as never,
@@ -43,7 +43,7 @@ function makeValidComponents(): Array<Record<string, unknown>> {
 function makeTestCatalog(catalogId: string): Catalog {
   return new Catalog({
     catalogId,
-    version: 'v1.0',
+    version: '1.0',
     components: [
       {
         name: 'Text',
@@ -106,14 +106,14 @@ describe('A2uiValidator', () => {
     });
 
     it('缺少必填字段 → invalid', () => {
-      const msg = { version: 'v1.0' };
+      const msg = { version: '1.0' };
       const result = validator.validateServerToClientMessage(msg);
       assert.equal(result.valid, false);
     });
 
     it('非法的额外属性 → invalid（strict schema）', () => {
       const msg = {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 's1',
           catalogId: 'c1',
@@ -193,7 +193,7 @@ describe('A2uiValidator', () => {
     const catB = makeTestCatalog('https://example.com/catalogs/b/catalog.json');
 
     it('resolveComponentCatalog：组件级 catalogId 优先于 surface 默认', () => {
-      const comp = { id: 'root', component: 'Text', catalogId: catB.catalogId };
+      const comp = { id: 'root', component: 'Text', '@catalogId': catB.catalogId };
       const { catalog, error } = resolveComponentCatalog(comp, [catA, catB], catA.catalogId);
       assert.equal(error, undefined);
       assert.equal(catalog?.catalogId, catB.catalogId);
@@ -214,7 +214,7 @@ describe('A2uiValidator', () => {
     });
 
     it('resolveComponentCatalog：catalogId 未注册 → 报错', () => {
-      const comp = { id: 'root', component: 'Text', catalogId: 'https://example.com/unknown/catalog.json' };
+      const comp = { id: 'root', component: 'Text', '@catalogId': 'https://example.com/unknown/catalog.json' };
       const { catalog, error } = resolveComponentCatalog(comp, [catA, catB], catA.catalogId);
       assert.equal(catalog, undefined);
       assert.ok(error && error.includes('不在可用 catalogs'));
@@ -222,8 +222,8 @@ describe('A2uiValidator', () => {
 
     it('validateComponentsWithCatalogs：混合目录合法消息 → valid', () => {
       const components = [
-        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
-        { id: 't1', component: 'Text', text: 'hello', catalogId: catB.catalogId },
+        { id: 'root', component: 'Column', children: ['t1'], '@catalogId': catA.catalogId },
+        { id: 't1', component: 'Text', text: 'hello', '@catalogId': catB.catalogId },
       ];
       const msg = makeUpdateComponentsMessage(components);
       const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
@@ -235,7 +235,7 @@ describe('A2uiValidator', () => {
     it('validateComponentsWithCatalogs：组件 catalog 未注册 → invalid', () => {
       const components = [
         { id: 'root', component: 'Column', children: ['t1'] },
-        { id: 't1', component: 'Text', text: 'hi', catalogId: 'https://example.com/unknown/catalog.json' },
+        { id: 't1', component: 'Text', text: 'hi', '@catalogId': 'https://example.com/unknown/catalog.json' },
       ];
       const msg = makeUpdateComponentsMessage(components);
       const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
@@ -250,14 +250,14 @@ describe('A2uiValidator', () => {
       const msg = makeUpdateComponentsMessage(components);
       const result = validator.validateComponentsWithCatalogs(msg, [catA, catB]);
       assert.equal(result.valid, false);
-      assert.ok(result.errors.some((e) => e.message.includes('未声明 catalogId')));
+      assert.ok(result.errors.some((e) => e.message.includes('@catalogId')));
     });
 
     it('validateComponentsWithCatalogs：按解析出的 catalog 校验组件属性', () => {
       // Text 组件声明 catalogId=catB，但 text 缺失（catB 的 Text 必填 text）→ invalid
       const components = [
-        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
-        { id: 't1', component: 'Text', catalogId: catB.catalogId },
+        { id: 'root', component: 'Column', children: ['t1'], '@catalogId': catA.catalogId },
+        { id: 't1', component: 'Text', '@catalogId': catB.catalogId },
       ];
       const msg = makeUpdateComponentsMessage(components);
       const result = validator.validateComponentsWithCatalogs(msg, [catA, catB], {
@@ -270,7 +270,7 @@ describe('A2uiValidator', () => {
     // 函数调用 catalogId 覆盖（#2715：参数按实际运行的 catalog 校验，而非 surface 默认）
     const fnCatalogB = new Catalog({
       catalogId: catB.catalogId,
-      version: 'v1.0',
+      version: '1.0',
       components: [],
       functions: [
         {
@@ -289,7 +289,7 @@ describe('A2uiValidator', () => {
     // Text.text 允许 FunctionCall，便于把调用放在组件属性中
     const catAWithFn = new Catalog({
       catalogId: catA.catalogId,
-      version: 'v1.0',
+      version: '1.0',
       components: [
         {
           name: 'Text',
@@ -321,12 +321,12 @@ describe('A2uiValidator', () => {
 
     it('函数调用 catalogId 覆盖：按覆盖 catalog 校验参数 → valid', () => {
       const components = [
-        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        { id: 'root', component: 'Column', children: ['t1'], '@catalogId': catA.catalogId },
         {
           id: 't1',
           component: 'Text',
           text: { '@call': 'ping', catalogId: catB.catalogId, args: { url: 'https://example.com' } },
-          catalogId: catA.catalogId,
+          '@catalogId': catA.catalogId,
         },
       ];
       const msg = makeUpdateComponentsMessage(components);
@@ -338,12 +338,12 @@ describe('A2uiValidator', () => {
 
     it('函数调用 catalogId 覆盖：参数不满足覆盖 catalog 的函数 schema → invalid', () => {
       const components = [
-        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        { id: 'root', component: 'Column', children: ['t1'], '@catalogId': catA.catalogId },
         {
           id: 't1',
           component: 'Text',
           text: { '@call': 'ping', catalogId: catB.catalogId, args: { url: 123 } },
-          catalogId: catA.catalogId,
+          '@catalogId': catA.catalogId,
         },
       ];
       const msg = makeUpdateComponentsMessage(components);
@@ -356,12 +356,12 @@ describe('A2uiValidator', () => {
 
     it('函数调用 catalogId 不可达 → invalid', () => {
       const components = [
-        { id: 'root', component: 'Column', children: ['t1'], catalogId: catA.catalogId },
+        { id: 'root', component: 'Column', children: ['t1'], '@catalogId': catA.catalogId },
         {
           id: 't1',
           component: 'Text',
           text: { '@call': 'ping', catalogId: 'https://example.com/unknown/catalog.json', args: { url: 'x' } },
-          catalogId: catA.catalogId,
+          '@catalogId': catA.catalogId,
         },
       ];
       const msg = makeUpdateComponentsMessage(components);
@@ -371,5 +371,44 @@ describe('A2uiValidator', () => {
       assert.equal(result.valid, false);
       assert.ok(result.errors.some((e) => e.message.includes('不在可用 catalogs')));
     });
+  });
+});
+
+describe('过渡期兼容 legacyEnvelopeKeys', () => {
+  const legacyValidator = new A2uiValidator();
+
+  it('默认拒绝裸信封键', () => {
+    const msg = {
+      version: '1.0',
+      updateComponents: {
+        surfaceId: 's1',
+        components: [{ id: 'root', component: 'Text', text: 'hi', metadata: { extensions: {} } }],
+      },
+    };
+    const result = legacyValidator.validateServerToClientMessage(msg);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some((e) => e.message.includes('@metadata')));
+  });
+
+  it('显式启用后把裸键归一化为 @ 键', () => {
+    const msg = {
+      version: '1.0',
+      updateComponents: {
+        surfaceId: 's1',
+        components: [
+          {
+            id: 'root',
+            component: 'Text',
+            text: 'hi',
+            metadata: { extensions: {} },
+            accessibility: { label: 'hi' },
+          },
+        ],
+      },
+    };
+    const result = legacyValidator.validateServerToClientMessage(msg, { legacyEnvelopeKeys: true });
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
+    // 不修改调用方对象
+    assert.equal('metadata' in (msg.updateComponents.components[0] as Record<string, unknown>), true);
   });
 });

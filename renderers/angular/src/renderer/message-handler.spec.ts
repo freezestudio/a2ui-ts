@@ -15,25 +15,25 @@ describe('message-handler', () => {
   });
 
   it('isValidMessage 识别 6 种合法消息', () => {
-    expect(isValidMessage({ version: 'v1.0', createSurface: { surfaceId: 's' } })).toBe(true);
+    expect(isValidMessage({ version: '1.0', createSurface: { surfaceId: 's' } })).toBe(true);
     expect(
       isValidMessage({
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'Text', text: 'x' }] },
       }),
     ).toBe(true);
-    expect(isValidMessage({ version: 'v1.0', updateDataModel: { surfaceId: 's', value: 1 } })).toBe(true);
-    expect(isValidMessage({ version: 'v1.0', deleteSurface: { surfaceId: 's' } })).toBe(true);
+    expect(isValidMessage({ version: '1.0', updateDataModel: { surfaceId: 's', value: 1 } })).toBe(true);
+    expect(isValidMessage({ version: '1.0', deleteSurface: { surfaceId: 's' } })).toBe(true);
     expect(
       isValidMessage({
-        version: 'v1.0',
+        version: '1.0',
         callRendererFunction: {
           functionCallId: '1',
           callFunction: { '@call': 'x', catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json' },
         },
       }),
     ).toBe(true);
-    expect(isValidMessage({ version: 'v1.0', agentFunctionResponse: { functionCallId: 'a', value: 1 } })).toBe(true);
+    expect(isValidMessage({ version: '1.0', agentFunctionResponse: { functionCallId: 'a', value: 1 } })).toBe(true);
   });
 
   it('isValidMessage 拒绝无版本或未知类型的消息', () => {
@@ -47,7 +47,7 @@ describe('message-handler', () => {
     it('创建 surface 并附带初始组件与数据模型', () => {
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           createSurface: {
             surfaceId: 's1',
             components: [{ id: 'root', component: 'Column', children: [] }],
@@ -65,18 +65,18 @@ describe('message-handler', () => {
   describe('deleteSurface → createSurface 重建（固定 surfaceId 生命周期）', () => {
     it('deleteSurface 后同 id createSurface 可重建', () => {
       processMessage(
-        { version: 'v1.0', createSurface: { surfaceId: 'main', components: [{ id: 'root', component: 'Column' }] } },
+        { version: '1.0', createSurface: { surfaceId: 'main', components: [{ id: 'root', component: 'Column' }] } },
         sm,
       );
       expect(sm.surfaces.value.has('main')).toBe(true);
 
-      processMessage({ version: 'v1.0', deleteSurface: { surfaceId: 'main' } }, sm);
+      processMessage({ version: '1.0', deleteSurface: { surfaceId: 'main' } }, sm);
       expect(sm.surfaces.value.has('main')).toBe(false);
 
       // 协议允许：deleteSurface 后同 id 重新 createSurface
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           createSurface: {
             surfaceId: 'main',
             components: [{ id: 'root', component: 'Column', children: ['x'] }],
@@ -91,7 +91,7 @@ describe('message-handler', () => {
     });
 
     it('deleteSurface 对不存在 surface 幂等', () => {
-      processMessage({ version: 'v1.0', deleteSurface: { surfaceId: 'ghost' } }, sm);
+      processMessage({ version: '1.0', deleteSurface: { surfaceId: 'ghost' } }, sm);
       expect(sm.surfaces.value.size).toBe(0);
     });
   });
@@ -101,7 +101,7 @@ describe('message-handler', () => {
       const sendError = vi.fn();
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           updateComponents: { surfaceId: 's1', components: [{ id: 'a', component: 'Text', text: 'x' }] },
         },
         sm,
@@ -119,10 +119,10 @@ describe('message-handler', () => {
       const renderer = {
         sendError,
       };
-      processMessage({ version: 'v1.0', createSurface: { surfaceId: 's1' } }, sm);
+      processMessage({ version: '1.0', createSurface: { surfaceId: 's1' } }, sm);
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           updateComponents: {
             surfaceId: 's1',
             components: [{ component: 'Text' } as never],
@@ -143,10 +143,10 @@ describe('message-handler', () => {
       const renderer = {
         sendError,
       };
-      processMessage({ version: 'v1.0', createSurface: { surfaceId: 's1' } }, sm);
+      processMessage({ version: '1.0', createSurface: { surfaceId: 's1' } }, sm);
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           updateComponents: {
             surfaceId: 's1',
             components: [{ id: 't1', component: 'Text', text: 123 } as never],
@@ -167,10 +167,10 @@ describe('message-handler', () => {
       const renderer = {
         sendError,
       };
-      processMessage({ version: 'v1.0', createSurface: { surfaceId: 's1' } }, sm);
+      processMessage({ version: '1.0', createSurface: { surfaceId: 's1' } }, sm);
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           updateComponents: {
             surfaceId: 's1',
             components: [{ id: 't1', component: 'Text', text: 'hello' }],
@@ -189,7 +189,7 @@ describe('message-handler', () => {
       const onResponse = vi.fn();
       processMessage(
         {
-          version: 'v1.0',
+          version: '1.0',
           callRendererFunction: {
             functionCallId: 'f1',
             callFunction: {

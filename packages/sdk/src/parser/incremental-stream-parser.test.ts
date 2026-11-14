@@ -8,7 +8,7 @@ function makeComponent(id: string, type: string, extra?: Record<string, unknown>
 }
 
 const msg = (body: Record<string, unknown>): string => {
-  const wrapper = { version: 'v1.0', ...body };
+  const wrapper = { version: '1.0', ...body };
   return `<a2ui-json>${JSON.stringify(wrapper)}</a2ui-json>`;
 };
 
@@ -50,7 +50,7 @@ describe('IncrementalStreamParser', () => {
           ],
         },
       };
-      const json = JSON.stringify({ version: 'v1.0', ...data });
+      const json = JSON.stringify({ version: '1.0', ...data });
       const fullInput = `<a2ui-json>${json}</a2ui-json>`;
       const chunks = splitChunks(fullInput, 25);
 
@@ -78,7 +78,7 @@ describe('IncrementalStreamParser', () => {
           ],
         },
       };
-      const json = JSON.stringify({ version: 'v1.0', ...data });
+      const json = JSON.stringify({ version: '1.0', ...data });
       const full = `<a2ui-json>${json}</a2ui-json>`;
       parser.processChunk(full);
       const final = parser.finish();
@@ -102,7 +102,7 @@ describe('IncrementalStreamParser', () => {
       const data = {
         createSurface: { surfaceId: 's1', components: [makeComponent('root', 'Column', { children: ['btn1'] })] },
       };
-      const json = JSON.stringify({ version: 'v1.0', ...data });
+      const json = JSON.stringify({ version: '1.0', ...data });
       parser.processChunk(`<a2ui-json>${json.slice(0, json.length - 2)}`);
       const partialsFallback = parser.processChunk(json.slice(-2));
       const hasPlaceholder = partialsFallback.some(
@@ -134,7 +134,7 @@ describe('IncrementalStreamParser', () => {
   describe('组件嗅探', () => {
     it('createSurface 未闭合时不 yield（防止兜底 default surface），闭合后立即嗅探', () => {
       const parser = new IncrementalStreamParser();
-      const head = '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","components":[';
+      const head = '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","components":[';
       const comp = '{"id":"root","component":"Column","children":["txt"]}';
       const collected: IncrementalResponsePart[] = [];
       collected.push(...parser.processChunk(head));
@@ -155,7 +155,7 @@ describe('IncrementalStreamParser', () => {
 
     it('嵌套对象应正确识别组件边界', () => {
       const parser = new IncrementalStreamParser();
-      const head = '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","components":[';
+      const head = '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","components":[';
       const root = '{"id":"root","component":"Column","children":["a","b"]}';
       const a = ',{"id":"a","component":"Text","text":"A"}';
       const b = ',{"id":"b","component":"Text","text":"B"}]}}';
@@ -196,7 +196,7 @@ describe('IncrementalStreamParser', () => {
       const data = {
         updateComponents: { surfaceId: 's1', components: [makeComponent('root', 'Row', { children: ['x'] })] },
       };
-      const json = JSON.stringify({ version: 'v1.0', ...data });
+      const json = JSON.stringify({ version: '1.0', ...data });
       const chunks = splitChunks(json, 30);
       const head = `<a2ui-json>${chunks[0]}`;
       const partials1 = parser.processChunk(head).filter((p) => p.type === 'a2ui_partial');
@@ -223,10 +223,10 @@ describe('IncrementalStreamParser', () => {
     it('catalogId 晚到的组件在闭合前不下发（避免按 surface catalog 误校验）', () => {
       const parser = new IncrementalStreamParser();
       parser.processChunk(
-        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
+        '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
       );
       const beforeClose = parser.processChunk(
-        '{"version":"v1.0","updateComponents":{"surfaceId":"main","components":[' +
+        '{"version":"1.0","updateComponents":{"surfaceId":"main","components":[' +
           '{"id":"root","component":"Column","children":["m1"]},' +
           '{"id":"m1","component":"CustomMetric","value":42',
       );
@@ -252,10 +252,10 @@ describe('IncrementalStreamParser', () => {
     it('catalogId 在被引用的同级组件闭合前不下发（含拆分跨块）', () => {
       const parser = new IncrementalStreamParser();
       parser.processChunk(
-        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
+        '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"main","catalogId":"https://a2ui.org/catalogs/basic"}},',
       );
       const steps = [
-        '{"version":"v1.0","updateComponents":{"surfaceId":"main","components":[{"id":"root","component":"CustomMetric","value":42,"catal',
+        '{"version":"1.0","updateComponents":{"surfaceId":"main","components":[{"id":"root","component":"CustomMetric","value":42,"catal',
         'ogId"',
         ': ',
         '"https://a2ui.org/cat',
@@ -279,7 +279,7 @@ describe('IncrementalStreamParser', () => {
     it('被引用但尚未开始的组件仍下发 placeholder（前向引用）', () => {
       const parser = new IncrementalStreamParser();
       parser.processChunk(
-        '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":[' +
+        '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":[' +
           '{"id":"root","component":"Column","children":["later"]}',
       );
       const parts = parser.processChunk(']}}');
@@ -316,7 +316,7 @@ describe('IncrementalStreamParser', () => {
 
       // 第一块：root + txt 初始内容（分块模拟流式）
       const first = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 's1',
           components: [
@@ -331,7 +331,7 @@ describe('IncrementalStreamParser', () => {
 
       // 第二块：txt 内容更新为 'hello world'，其余不变
       const second = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 's1',
           components: [
@@ -362,7 +362,7 @@ describe('IncrementalStreamParser', () => {
       const parser = new IncrementalStreamParser();
       const wrap = (body: Record<string, unknown>): string => `<a2ui-json>${JSON.stringify(body)}</a2ui-json>`;
       const first = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 's1',
           components: [makeComponent('root', 'Row', { children: ['a'] }), makeComponent('a', 'Text', { text: 'x' })],
@@ -372,7 +372,7 @@ describe('IncrementalStreamParser', () => {
         parser.processChunk(chunk);
       }
       const second = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 's1',
           components: [makeComponent('root', 'Row', { children: ['a'] }), makeComponent('a', 'Text', { text: 'x' })],
@@ -394,13 +394,13 @@ describe('IncrementalStreamParser', () => {
       const parser = new IncrementalStreamParser();
       const wrap = (body: Record<string, unknown>): string => `<a2ui-json>${JSON.stringify(body)}</a2ui-json>`;
       const comps = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's1', components: [makeComponent('root', 'Row', { children: [] })] },
       };
       for (const chunk of splitChunks(wrap(comps), 30)) {
         parser.processChunk(chunk);
       }
-      const dm = { version: 'v1.0', updateDataModel: { surfaceId: 's1', path: '/risk', value: 0.85 } };
+      const dm = { version: '1.0', updateDataModel: { surfaceId: 's1', path: '/risk', value: 0.85 } };
       const withDelta: IncrementalResponsePart[] = [];
       for (const chunk of splitChunks(wrap(dm), 20)) {
         for (const p of parser.processChunk(chunk)) {

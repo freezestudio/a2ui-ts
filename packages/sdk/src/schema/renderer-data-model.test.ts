@@ -9,7 +9,7 @@ describe('renderer-data-model', () => {
   describe('RendererDataModelSchema', () => {
     it('应解析合法的 {version, surfaces}', () => {
       const payload: RendererDataModel = {
-        version: 'v1.0',
+        version: '1.0',
         surfaces: {
           main: { user_id: '12345', email: 'user@example.com' },
         },
@@ -18,7 +18,7 @@ describe('renderer-data-model', () => {
     });
 
     it('应解析空 surfaces', () => {
-      const payload = { version: 'v1.0', surfaces: {} };
+      const payload = { version: '1.0', surfaces: {} };
       assert.deepEqual(RendererDataModelSchema.parse(payload), payload);
     });
 
@@ -31,11 +31,11 @@ describe('renderer-data-model', () => {
     });
 
     it('应拒绝缺少 surfaces', () => {
-      assert.throws(() => RendererDataModelSchema.parse({ version: 'v1.0' }));
+      assert.throws(() => RendererDataModelSchema.parse({ version: '1.0' }));
     });
 
     it('应拒绝额外顶层属性（对齐 additionalProperties: false）', () => {
-      assert.throws(() => RendererDataModelSchema.parse({ version: 'v1.0', surfaces: {}, extra: 1 }));
+      assert.throws(() => RendererDataModelSchema.parse({ version: '1.0', surfaces: {}, extra: 1 }));
     });
   });
 
@@ -44,11 +44,11 @@ describe('renderer-data-model', () => {
   // ==========================================================================
   describe('isRendererDataModel', () => {
     it('合法载荷返回 true', () => {
-      assert.equal(isRendererDataModel({ version: 'v1.0', surfaces: { s: { a: 1 } } }), true);
+      assert.equal(isRendererDataModel({ version: '1.0', surfaces: { s: { a: 1 } } }), true);
     });
 
     it('非法载荷返回 false', () => {
-      assert.equal(isRendererDataModel({ version: 'v1.0' }), false);
+      assert.equal(isRendererDataModel({ version: '1.0' }), false);
       assert.equal(isRendererDataModel(null), false);
       assert.equal(isRendererDataModel('str'), false);
     });

@@ -4,6 +4,7 @@ import { TextComponentSchema } from '../basic-catalog/components/text.js';
 import { ButtonComponentSchema } from '../basic-catalog/components/button.js';
 import { RowComponentSchema } from '../basic-catalog/components/row.js';
 import { createFullCatalog } from '../basic-catalog/index.js';
+import { CheckRuleSchema } from '../schema/common-types.js';
 
 const collect = (schema: Record<string, unknown>, value: unknown): string[] => {
   const issues: ComponentValidationIssue[] = [];
@@ -90,7 +91,7 @@ describe('validateComponentProps — 组件属性校验', () => {
     ).toEqual([]);
   });
 
-  it('Button 组件：checks 非法时拒绝', () => {
+  it('Button 组件：@checks 属于信封字段，组件属性校验跳过', () => {
     const valid = {
       id: 'b1',
       component: 'Button',
@@ -98,11 +99,14 @@ describe('validateComponentProps — 组件属性校验', () => {
       action: { event: { name: 'submit' } },
     };
     expect(validateComponentProps(valid, ButtonComponentSchema.schema)).toEqual([]);
-    const issues = validateComponentProps(
-      { ...valid, checks: [{ condition: { '@path': '/x' }, message: 42 }] },
-      ButtonComponentSchema.schema,
-    );
-    expect(issues.length).toBeGreaterThan(0);
+    // @checks 由协议信封 CheckRuleSchema 校验，不在 catalog 属性校验范围内
+    expect(
+      validateComponentProps(
+        { ...valid, '@checks': [{ condition: { '@path': '/x' }, message: 42 }] },
+        ButtonComponentSchema.schema,
+      ),
+    ).toEqual([]);
+    expect(CheckRuleSchema.safeParse({ condition: { '@path': '/x' }, message: 42 }).success).toBe(false);
   });
 
   it('Row 组件：children 数组或模板', () => {

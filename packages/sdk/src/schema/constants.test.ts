@@ -14,8 +14,8 @@ import {
 
 describe('constants', () => {
   describe('SPEC_VERSION', () => {
-    it('应为 v1.0', () => {
-      assert.equal(SPEC_VERSION, 'v1.0');
+    it('应为 1.0', () => {
+      assert.equal(SPEC_VERSION, '1.0');
     });
   });
 

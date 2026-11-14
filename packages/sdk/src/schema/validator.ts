@@ -12,6 +12,7 @@
 
 import { z } from 'zod';
 import { A2uiClientMessageSchema, A2uiMessageSchema } from './index.js';
+import { LEGACY_COMPONENT_MIXIN_KEYS } from './common-types.js';
 import type { UpdateComponentsMessage } from './index.js';
 import { checkComponentIntegrity, checkFunctionCallDepth, checkPathSyntax } from './integrity-checker.js';
 import { extractRefFields, analyzeTopology, topologyConfigSchema } from './topology-analyzer.js';
@@ -63,6 +64,14 @@ export const validationConfigSchema = z.object({
   runIntegrityCheck: z.boolean().optional(),
   /** 拓扑分析配置 */
   topologyConfig: topologyConfigSchema.optional(),
+  /**
+   * 过渡期兼容：把组件根层的裸 `metadata` / `catalogId` / `accessibility` /
+   * `checks` 归一化为 v1.0 规定的 `@metadata` / `@catalogId` / `@accessibility` /
+   * `@checks`。默认关闭（wire schema 严格只接受 `@` 形式）。
+   *
+   * 注意：该开关仅用于接受旧生产者载荷；无法区分 catalog 自定义同名属性。
+   */
+  legacyEnvelopeKeys: z.boolean().optional(),
 });
 export type ValidationConfig = z.infer<typeof validationConfigSchema>;
 
@@ -98,7 +107,10 @@ export class A2uiValidator {
    * 校验单条 Agent 到 Renderer 消息（Zod 解析）
    * 支持单条消息和消息数组
    */
-  validateServerToClientMessage(data: unknown): ValidationResult {
+  validateServerToClientMessage(data: unknown, config?: ValidationConfig): ValidationResult {
+    if (config?.legacyEnvelopeKeys) {
+      data = normalizeLegacyEnvelopeKeys(data);
+    }
     // 数组格式：逐条校验
     if (Array.isArray(data)) {
       const allErrors: ValidationError[] = [];
@@ -134,6 +146,10 @@ export class A2uiValidator {
    */
   validateComponents(message: UpdateComponentsMessage, config: ValidationConfig = STRICT_VALIDATION): ValidationResult {
     const errors: ValidationError[] = [];
+
+    if (config.legacyEnvelopeKeys) {
+      message = normalizeLegacyEnvelopeKeys(message) as UpdateComponentsMessage;
+    }
 
     // 1. 先校验消息信封
     const envelopeResult = this.validateServerToClientMessage(message);
@@ -186,7 +202,7 @@ export class A2uiValidator {
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
-      const result = this.validateServerToClientMessage(msg);
+      const result = this.validateServerToClientMessage(msg, config);
 
       if (!result.valid) {
         for (const err of result.errors) {
@@ -276,6 +292,9 @@ export class A2uiValidator {
     catalogs: Catalog[],
     options: { surfaceDefaultCatalogId?: string; config?: ValidationConfig } = {},
   ): ValidationResult {
+    if (options.config?.legacyEnvelopeKeys) {
+      message = normalizeLegacyEnvelopeKeys(message) as UpdateComponentsMessage;
+    }
     const baseResult = this.validateComponents(message, options.config ?? STRICT_VALIDATION);
     const errors: ValidationError[] = [...baseResult.errors];
 
@@ -402,6 +421,8 @@ function collectFunctionCalls(components: Array<Record<string, unknown>>): Locat
     }
     for (const [key, child] of Object.entries(record)) {
       if (key === '@call' || key === 'args' || key === 'catalogId') continue;
+      // `@metadata` 是厂商扩展通道，其内容不是协议 FunctionCall，跳过
+      if (key === '@metadata') continue;
       walk(child, componentId, `${path}.${key}`);
     }
   };
@@ -409,7 +430,7 @@ function collectFunctionCalls(components: Array<Record<string, unknown>>): Locat
   for (const comp of components) {
     const compId = typeof comp['id'] === 'string' ? comp['id'] : '';
     for (const [key, value] of Object.entries(comp)) {
-      if (key === 'id' || key === 'component') continue;
+      if (key === 'id' || key === 'component' || key === '@metadata' || key === '@catalogId') continue;
       walk(value, compId, key);
     }
   }
@@ -420,7 +441,7 @@ function collectFunctionCalls(components: Array<Record<string, unknown>>): Locat
  * 解析组件所属 Catalog（v1.0 #2079 mixable catalogs）
  *
  * 解析顺序（对齐规范 evolution_guide.md）：
- *   1. 组件显式 catalogId（ComponentCommon.catalogId）
+ *   1. 组件显式 catalogId（v1.0 信封键 `@catalogId`）
  *   2. surface 默认 catalogId（createSurface.catalogId）
  *   3. 两者皆缺 → 返回 error（不回退到 capabilities 声明的 catalogs）
  *
@@ -434,13 +455,18 @@ export function resolveComponentCatalog(
   catalogs: Catalog[],
   surfaceDefaultCatalogId?: string,
 ): { catalog: Catalog | undefined; error?: string } {
-  const explicit = typeof comp['catalogId'] === 'string' ? (comp['catalogId'] as string) : undefined;
+  const explicit =
+    typeof comp['@catalogId'] === 'string'
+      ? (comp['@catalogId'] as string)
+      : typeof comp['catalogId'] === 'string'
+        ? (comp['catalogId'] as string)
+        : undefined;
   const catalogId = explicit ?? surfaceDefaultCatalogId;
 
   if (!catalogId) {
     return {
       catalog: undefined,
-      error: '组件未声明 catalogId，且 surface 未提供默认 catalogId（解析顺序：组件级 → surface 默认 → 报错）',
+      error: '组件未声明 @catalogId，且 surface 未提供默认 catalogId（解析顺序：组件级 → surface 默认 → 报错）',
     };
   }
 
@@ -454,6 +480,47 @@ export function resolveComponentCatalog(
   return { catalog };
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * 过渡期兼容：把组件根层的裸信封键归一化为 v1.0 规定的 `@` 键。
+ *
+ * 仅在显式启用 `legacyEnvelopeKeys` 时由 `A2uiValidator` 调用；
+ * 不改变 wire schema 的严格性，也不修改调用方传入的对象。
+ */
+export function normalizeLegacyEnvelopeKeys<T>(data: T): T {
+  if (Array.isArray(data)) {
+    return data.map((item) => normalizeLegacyEnvelopeKeys(item)) as T;
+  }
+  if (!isPlainObject(data)) return data;
+
+  const message: Record<string, unknown> = { ...data };
+  for (const envelope of ['createSurface', 'updateComponents'] as const) {
+    const payload = message[envelope];
+    if (!isPlainObject(payload) || !Array.isArray(payload['components'])) continue;
+    message[envelope] = {
+      ...payload,
+      components: (payload['components'] as unknown[]).map((comp) => normalizeComponentEnvelope(comp)),
+    };
+  }
+  return message as T;
+}
+
+function normalizeComponentEnvelope(comp: unknown): unknown {
+  if (!isPlainObject(comp)) return comp;
+  const normalized: Record<string, unknown> = { ...comp };
+  for (const key of LEGACY_COMPONENT_MIXIN_KEYS) {
+    const atKey = `@${key}`;
+    if (key in normalized && !(atKey in normalized)) {
+      normalized[atKey] = normalized[key];
+      delete normalized[key];
+    }
+  }
+  return normalized;
+}
+
 /** 格式化 Zod 错误为 ValidationError 数组 */
 function formatZodErrors(error: z.ZodError): ValidationError[] {
   return error.issues.map((issue) => ({
@@ -461,10 +528,6 @@ function formatZodErrors(error: z.ZodError): ValidationError[] {
     message: issue.message,
   }));
 }
-
-/**
- * 创建校验器实例
- */
 export function createValidator(): A2uiValidator {
   return new A2uiValidator();
 }

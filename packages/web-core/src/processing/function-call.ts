@@ -4,8 +4,10 @@ import {
   evaluateExpression,
   assertNoUnknownReservedKeys,
   unescapeObjectKey,
-  isSafeRegex,
-  MAX_REGEX_INPUT_LENGTH,
+  analyzeRegex,
+  countCodePoints,
+  MAX_REGEX_VALUE_CODE_POINTS,
+  coerceDynamicBoolean,
 } from '@freezestudio/a2ui-shared';
 import { A2uiFunctionError, A2uiSecurityError } from '../common/errors.js';
 import { createRendererLogger } from '../common/logger.js';
@@ -328,15 +330,16 @@ function fnRegex(args: Record<string, unknown>): ValidationResult {
   const value = toStr(args['value']);
   const pattern = toStr(args['pattern']);
   if (!pattern) return { valid: false, message: '缺少正则表达式模式' };
-  // ReDoS 防护（CWE-1333）
-  if (!isSafeRegex(pattern)) {
-    return { valid: false, message: '正则表达式不安全（潜在 ReDoS 风险）' };
+  // A2UI regex 方言 + 静态安全检查（上游 #3854）
+  const analysis = analyzeRegex(pattern);
+  if (!analysis.ok) {
+    return { valid: false, message: `正则表达式不受支持（${analysis.reason}）` };
   }
-  if (value.length > MAX_REGEX_INPUT_LENGTH) {
-    return { valid: false, message: `输入长度超过上限 (${MAX_REGEX_INPUT_LENGTH})` };
+  if (countCodePoints(value) > MAX_REGEX_VALUE_CODE_POINTS) {
+    return { valid: false, message: `输入长度超过上限 (${MAX_REGEX_VALUE_CODE_POINTS})` };
   }
   try {
-    return new RegExp(pattern).test(value) ? { valid: true } : { valid: false, message: '格式不匹配' };
+    return new RegExp(pattern, 'u').test(value) ? { valid: true } : { valid: false, message: '格式不匹配' };
   } catch {
     return { valid: false, message: '正则表达式无效' };
   }
@@ -494,17 +497,17 @@ function fnOpenUrl(args: Record<string, unknown>): string {
 function fnAnd(args: Record<string, unknown>): boolean {
   const values = args['values'];
   if (!Array.isArray(values)) return false;
-  return values.every(Boolean);
+  return values.every((v) => coerceDynamicBoolean(v));
 }
 
 function fnOr(args: Record<string, unknown>): boolean {
   const values = args['values'];
   if (!Array.isArray(values)) return false;
-  return values.some(Boolean);
+  return values.some((v) => coerceDynamicBoolean(v));
 }
 
 function fnNot(args: Record<string, unknown>): boolean {
-  return !args['value'];
+  return !coerceDynamicBoolean(args['value']);
 }
 function fnAdd(args: Record<string, unknown>): number {
   return toFloat(args['a'] ?? args['value']) + toFloat(args['b'] ?? 0);

@@ -40,7 +40,7 @@ export class A2UIComponent {
 
   protected resolvedComponent = computed(() => {
     const comp = this.component();
-    const componentCatalogId = comp['catalogId'] as string | undefined;
+    const componentCatalogId = comp['@catalogId'] as string | undefined;
 
     if (componentCatalogId) {
       const resolved = this.catalogRegistry.resolve(componentCatalogId, comp.component);

@@ -1,4 +1,5 @@
 import { Injectable, Signal, computed, signal } from '@angular/core';
+import { coerceValidationResult } from '@freezestudio/a2ui-shared';
 import { DataContext } from './data-context.js';
 import type { SurfaceManager, A2UIDescriptor, Surface } from './surface-manager.js';
 import type { DataBinding } from './data-binding.js';
@@ -66,32 +67,25 @@ export class ComponentBinder {
         continue;
       }
 
-      if (key === 'checks' && Array.isArray(value)) {
+      if (key === '@checks' && Array.isArray(value)) {
         // 响应式 CheckRule 校验（协议 L936-1010；v1.0 #2220 condition 求值为 ValidationResult）
         // 订阅每条 condition，注入 isValid（全部通过）与 validationErrors（失败消息列表）
         const checks = value as Array<{ condition?: unknown; message?: string }>;
         const conditionSignals = checks.map((c) => ctx.resolve(c.condition, index));
-        const isPassed = (r: unknown): boolean =>
-          r !== null && typeof r === 'object' && 'valid' in r ? Boolean(r['valid']) : Boolean(r);
+        const results = computed(() => checks.map((c, i) => coerceValidationResult(conditionSignals[i](), c.message)));
         bound[key] = {
           value: signal(value),
           raw: value,
         };
         bound['isValid'] = {
-          value: computed(() => (checks.length === 0 ? true : conditionSignals.every((s) => isPassed(s())))),
+          value: computed(() => results().every((r) => r.valid)),
           raw: undefined,
         };
         bound['validationErrors'] = {
-          // #2220：message 可选（fallback），ValidationResult.message 优先
           value: computed(() =>
-            checks
-              .map((c, i) => {
-                const r = conditionSignals[i]();
-                if (isPassed(r)) return null;
-                const vr = r !== null && typeof r === 'object' && 'valid' in r ? (r as Record<string, unknown>) : null;
-                return (vr?.['message'] as string) ?? c.message ?? '校验未通过';
-              })
-              .filter((m): m is string => m !== null),
+            results()
+              .filter((r) => !r.valid)
+              .map((r) => r.message ?? '校验未通过'),
           ),
           raw: undefined,
         };

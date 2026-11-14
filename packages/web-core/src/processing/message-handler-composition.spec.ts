@@ -83,7 +83,10 @@ describe('message-handler 组合约束接入（UNALLOWED_PARENT/UNALLOWED_CHILD�
         createSurface: {
           surfaceId: 's2',
           catalogId: CUSTOM_CATALOG,
-          components: [comp('card', 'Card', { child: 'tf' }), comp('tf', 'TextField', { label: 'x' })],
+          components: [
+            comp('card', 'Card', { child: 'tf' }),
+            comp('tf', 'TextField', { label: 'x', value: { '@path': '/x' } }),
+          ],
         },
       },
       manager,

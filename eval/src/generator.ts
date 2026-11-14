@@ -21,14 +21,14 @@ const MOCK_RESPONSES: Record<string, string> = {
   loginForm: JSON.stringify(
     [
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'login-surface',
           catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
         },
       },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'login-surface',
           components: [
@@ -61,14 +61,14 @@ const MOCK_RESPONSES: Record<string, string> = {
   dashboard: JSON.stringify(
     [
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'dashboard-surface',
           catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
         },
       },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'dashboard-surface',
           components: [
@@ -101,14 +101,14 @@ const MOCK_RESPONSES: Record<string, string> = {
   deleteSurface: JSON.stringify(
     [
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'temp-surface',
           catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
         },
       },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'temp-surface',
           components: [
@@ -119,7 +119,7 @@ const MOCK_RESPONSES: Record<string, string> = {
         },
       },
       {
-        version: 'v1.0',
+        version: '1.0',
         deleteSurface: {
           surfaceId: 'temp-surface',
         },
@@ -134,14 +134,14 @@ const MOCK_RESPONSES: Record<string, string> = {
 const DEFAULT_MOCK_RESPONSE = JSON.stringify(
   [
     {
-      version: 'v1.0',
+      version: '1.0',
       createSurface: {
         surfaceId: 'default-surface',
         catalogId: 'https://a2ui.org/specification/v1_0/catalogs/minimal/catalog.json',
       },
     },
     {
-      version: 'v1.0',
+      version: '1.0',
       updateComponents: {
         surfaceId: 'default-surface',
         components: [

@@ -37,6 +37,7 @@ export const looseMessageSchema = z.object({
   deleteSurface: z.object({ surfaceId: z.string() }).optional(),
   callRendererFunction: z
     .object({
+      surfaceId: z.string().optional(),
       functionCallId: z.string(),
       callFunction: z.object({
         '@call': z.string(),
@@ -199,6 +200,11 @@ export function processMessage(
       });
       return;
     }
+    // v1.0 (#3678)：同一 createSurface 同时携带 dataModel 与 components 时，
+    // 先应用 dataModel，使组件首次解析即可绑定初始数据。
+    if (cs.dataModel) {
+      surfaceManager.handleUpdateDataModel(cs.surfaceId, undefined, cs.dataModel);
+    }
     if (cs.components) {
       const compErrors = validateComponentsDetailed(cs.components, cs.catalogId);
       if (compErrors.length > 0) {
@@ -206,9 +212,6 @@ export function processMessage(
       } else {
         surfaceManager.handleUpdateComponents(cs.surfaceId, cs.components);
       }
-    }
-    if (cs.dataModel) {
-      surfaceManager.handleUpdateDataModel(cs.surfaceId, undefined, cs.dataModel);
     }
   } else if (message.updateComponents) {
     const uc = message.updateComponents;
@@ -256,6 +259,7 @@ export function processMessage(
     if (callId) {
       surfaceManager.handleCallRendererFunction(
         {
+          surfaceId: crf.surfaceId,
           functionCallId: callId,
           '@call': crf.callFunction['@call'],
           catalogId: crf.callFunction.catalogId,

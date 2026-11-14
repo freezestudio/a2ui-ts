@@ -42,7 +42,7 @@ export type Surface = z.infer<typeof surfaceSchema>;
  * 启用 sendDataModel 的 surface 通过 A2A 元数据 a2uiRendererDataModel 发送给 Agent。
  */
 export type RendererDataModel = {
-  version: 'v1.0';
+  version: '1.0';
   surfaces: Record<string, Record<string, unknown>>;
 };
 
@@ -182,7 +182,7 @@ export class SurfaceManager {
         result[id] = surface.dataModel;
       }
     }
-    return Object.keys(result).length > 0 ? { version: 'v1.0', surfaces: result } : undefined;
+    return Object.keys(result).length > 0 ? { version: '1.0', surfaces: result } : undefined;
   }
 
   getComponentMap(surface: Surface): Map<string, A2UIDescriptor> {
@@ -195,6 +195,8 @@ export class SurfaceManager {
 
   handleCallRendererFunction(
     call: {
+      /** v1.0 (#3110)：可选求值上下文 surface；缺省为空根上下文 */
+      surfaceId?: string;
       functionCallId: string;
       '@call': string;
       catalogId: string;
@@ -209,6 +211,22 @@ export class SurfaceManager {
     if (!onResponse) return;
 
     const callName = call['@call'];
+    let dataModel: Record<string, unknown> = {};
+    if (call.surfaceId !== undefined) {
+      const surface = this.surfaces.value.get(call.surfaceId);
+      if (!surface) {
+        onResponse({
+          functionCallId: call.functionCallId,
+          error: {
+            code: 'INVALID_FUNCTION_CALL',
+            message: `Surface '${call.surfaceId}' does not exist for callRendererFunction.`,
+          },
+        });
+        return;
+      }
+      dataModel = surface.dataModel;
+    }
+
     const allowedCallers = getFunctionAllowedCallers(callName, call.catalogId);
     if (!allowedCallers) {
       onResponse({
@@ -229,7 +247,7 @@ export class SurfaceManager {
     }
 
     try {
-      const result = callFunction({ '@call': callName, catalogId: call.catalogId, args: call.args }, {}, 0, {
+      const result = callFunction({ '@call': callName, catalogId: call.catalogId, args: call.args }, dataModel, 0, {
         caller: 'agent',
       });
       onResponse({ functionCallId: call.functionCallId, value: result });

@@ -100,7 +100,7 @@ function evaluateCondition(condition: unknown, value: unknown): boolean {
       return false;
     }
     try {
-      return new RegExp(pattern).test(value);
+      return new RegExp(pattern, 'u').test(value);
     } catch (err) {
       console.debug('[DynamicBinding] 正则表达式无效:', pattern, err);
       return false;

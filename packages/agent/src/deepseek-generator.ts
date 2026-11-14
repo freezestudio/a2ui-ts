@@ -23,6 +23,8 @@ export class DeepSeekGenerator extends Generator {
 1. 组件通过 children/child 中的 ID 引用，禁止将文字直接放在 children 数组中
 2. 数据绑定路径使用绝对 JSON Pointer（以 / 开头，如 /user/name）
 3. 根据场景需求选择合适的消息类型：createSurface、updateComponents、updateDataModel、deleteSurface、callRendererFunction、agentFunctionResponse（v1.0 #2210 双向函数调用）
+4. 每条消息的 version 必须为 "1.0"（不带 v 前缀）
+5. 组件信封键使用 @catalogId / @accessibility / @metadata / @checks；id 与 component 保持不加前缀；TextField 必须提供 value
 输出必须使用 <a2ui-json> 和 </a2ui-json> 标签包裹。`,
       includeSchema: true,
       includeExamples: true,

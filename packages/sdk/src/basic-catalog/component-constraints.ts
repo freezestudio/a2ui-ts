@@ -3,7 +3,7 @@
  * 同时被 catalog 定义和 validator 引用，避免硬编码重复
  *
  * 每个条目：组件名 → { 属性名 → 允许的值列表 }
- * 共有的属性: {id: '', accessibility: {label: '', description: ''}}
+ * 共有的属性: {id: '', '@accessibility': {label: '', description: ''}}
  */
 export const COMPONENT_CONSTRAINTS: Record<string, Record<string, readonly string[]>> = {
   Text: {

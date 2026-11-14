@@ -36,6 +36,8 @@ export {
   ListReferenceSchema,
   CheckRuleSchema,
   CheckableSchema,
+  AT_COMPONENT_MIXIN_KEYS,
+  LEGACY_COMPONENT_MIXIN_KEYS,
   ValidationResultSchema,
   ActionEventSchema,
   ActionSchema,

@@ -25,6 +25,7 @@ export {
   validationResultSchema,
   validationConfigSchema,
   resolveComponentCatalog,
+  normalizeLegacyEnvelopeKeys,
   type ValidationError,
   type ValidationResult,
   type ValidationConfig,
@@ -259,4 +260,4 @@ export {
 } from './state/index.js';
 
 export const VERSION = '1.0.0';
-export const PROTOCOL_VERSION = 'v1_0';
+export const PROTOCOL_VERSION = '1.0';

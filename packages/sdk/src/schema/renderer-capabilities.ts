@@ -86,7 +86,10 @@ export const InlineCatalogSchema = z.strictObject({
   components: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
   /** 函数定义（以函数名为 key 的 JSON Schema 映射，v1.0） */
   functions: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
-  /** 仅允许 anyComponent / anyFunction */
+  /**
+   * `anyComponent` / `anyFunction` 为协议保留键；
+   * v1.0 (#2724) 起还允许叶子定义（design token / value union 等），但不得定义组件。
+   */
   $defs: z.record(z.string(), z.unknown()).optional(),
 });
 export type InlineCatalog = z.infer<typeof InlineCatalogSchema>;

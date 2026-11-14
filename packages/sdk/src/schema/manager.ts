@@ -210,7 +210,7 @@ export class A2uiSchemaManager {
     // 注意：不使用 ``` 包裹，避免与 LLMSaveLogger 的外层 ``` 形成嵌套冲突
     sections.push('# 输出格式');
     sections.push(
-      '你必须在响应中包含 A2UI JSON，使用 `<a2ui-json>` 和 `</a2ui-json>` 标签包裹你的 A2UI 消息数组（每条消息必须包含 version: "v1.0" 字段）。',
+      '你必须在响应中包含 A2UI JSON，使用 `<a2ui-json>` 和 `</a2ui-json>` 标签包裹你的 A2UI 消息数组（每条消息必须包含 version: "1.0" 字段）。',
     );
     sections.push('');
     sections.push('示例响应结构：');
@@ -228,7 +228,7 @@ export class A2uiSchemaManager {
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "createSurface": {
       "surfaceId": "dashboard-001",
       "catalogId": "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json",
@@ -248,7 +248,7 @@ export class A2uiSchemaManager {
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "dashboard-001",
       "components": [
@@ -281,7 +281,7 @@ export class A2uiSchemaManager {
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "updateDataModel": {
       "surfaceId": "dashboard-001",
       "path": "/sensors",
@@ -299,7 +299,7 @@ export class A2uiSchemaManager {
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "callRendererFunction": {
       "functionCallId": "call-screen-001",
       "callFunction": {
@@ -321,7 +321,7 @@ export class A2uiSchemaManager {
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "agentFunctionResponse": {
       "functionCallId": "call-agent-fn-001",
       "value": {
@@ -339,7 +339,7 @@ functionCallId 必须与 Renderer 发送的 callAgentFunction.functionCallId 匹
 \`\`\`json
 [
   {
-    "version": "v1.0",
+    "version": "1.0",
     "deleteSurface": {
       "surfaceId": "temp-surface"
     }

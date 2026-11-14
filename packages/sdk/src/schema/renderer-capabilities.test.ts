@@ -81,7 +81,7 @@ describe('renderer-capabilities', () => {
   describe('A2uiClientCapabilitiesSchema', () => {
     it('应解析 v1.0 能力声明', () => {
       const caps = {
-        'v1.0': {
+        '1.0': {
           supportedCatalogIds: ['https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json'],
         },
       };
@@ -90,7 +90,7 @@ describe('renderer-capabilities', () => {
 
     it('getV10Capabilities 提取 v1.0 声明', () => {
       const caps = A2uiClientCapabilitiesSchema.parse({
-        'v1.0': { supportedCatalogIds: ['https://example.com/catalog.json'] },
+        '1.0': { supportedCatalogIds: ['https://example.com/catalog.json'] },
       });
       assert.equal(getV10Capabilities(caps)?.supportedCatalogIds.length, 1);
     });

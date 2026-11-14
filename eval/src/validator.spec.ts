@@ -17,7 +17,7 @@ function makeResult(components: unknown[]): GeneratedResult {
     runNumber: 1,
     rawText: `<a2ui-json>${JSON.stringify([
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'main',
           catalogId: 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',

@@ -81,14 +81,25 @@ export type AccessibilityAttributes = z.infer<typeof AccessibilityAttributesSche
 
 /**
  * 组件公共基础属性
+ *
+ * v1.0 (#4044 / #4037)：组件信封 mixin 使用保留 `@` 命名空间，
+ * 避免与 catalog 自定义属性（metadata/catalogId/accessibility/checks）冲突。
+ * `id` / `component` 保持不加前缀；消息/指令专用信封（createSurface.catalogId、
+ * FunctionCall.catalogId、action.metadata 等）也不加前缀。
  */
 export const ComponentCommonSchema = z.object({
   id: ComponentIdSchema,
-  catalogId: z.string().optional(),
-  accessibility: AccessibilityAttributesSchema.optional(),
-  metadata: MetadataSchema,
+  '@catalogId': z.string().optional(),
+  '@accessibility': AccessibilityAttributesSchema.optional(),
+  '@metadata': MetadataSchema,
 });
 export type ComponentCommon = z.infer<typeof ComponentCommonSchema>;
+
+/** v1.0 组件信封 mixin 的 `@` 键集合（组件根层专用）。 */
+export const AT_COMPONENT_MIXIN_KEYS = ['@metadata', '@catalogId', '@accessibility', '@checks'] as const;
+
+/** v1.0 过渡期前使用的裸信封键（仅用于可选兼容归一化）。 */
+export const LEGACY_COMPONENT_MIXIN_KEYS = ['metadata', 'catalogId', 'accessibility', 'checks'] as const;
 
 // ============================================================================
 // 数据绑定
@@ -278,7 +289,8 @@ export type ValidationResult = z.infer<typeof ValidationResultSchema>;
  * 可校验属性
  */
 export const CheckableSchema = z.object({
-  checks: z.array(CheckRuleSchema).optional(),
+  /** v1.0 (#4044)：校验规则信封键为 `@checks`（裸 `checks` 留给 catalog 自定义属性）。 */
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 export type Checkable = z.infer<typeof CheckableSchema>;
 

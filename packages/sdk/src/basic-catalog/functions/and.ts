@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
 import { DynamicBooleanSchema } from '../../schema/common-types.js';
+import { coerceDynamicBoolean } from '@freezestudio/a2ui-shared';
 
-/** 将值转为布尔值 */
+/** 将值按 A2UI v1.0 DynamicBoolean 规则转为布尔值 */
 function toBool(val: unknown): boolean {
-  return Boolean(val);
+  return coerceDynamicBoolean(val);
 }
 
 /** and — 逻辑与 */
@@ -17,7 +18,7 @@ export const andFunction: FunctionApi = createFunctionApi(
       values: {
         type: 'array',
         description: '要进行逻辑与运算的布尔值列表',
-        items: { $ref: '#/$defs/DynamicBoolean' },
+        items: { $ref: 'common_types.json#/$defs/DynamicBoolean' },
         minItems: 2,
       },
     },

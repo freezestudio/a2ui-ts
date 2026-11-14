@@ -12,8 +12,8 @@ export const A2UI_EXTENSION_URI_V1_0 = 'https://a2ui.org/a2a-extension/a2ui/v1.0
 /** @deprecated 使用 A2UI_EXTENSION_URI_V1_0 */
 export const A2UI_EXTENSION_URI = A2UI_EXTENSION_URI_V1_0;
 
-/** @deprecated 使用 'v1.0' */
-export const A2UI_EXTENSION_VERSION = 'v1.0';
+/** @deprecated 使用 '1.0'（v1.0 wire 协议版本号；扩展 URI 仍为 .../v1.0） */
+export const A2UI_EXTENSION_VERSION = '1.0';
 
 /** A2UI Agent 能力参数 */
 export const a2uiServerCapabilitiesSchema = z.object({

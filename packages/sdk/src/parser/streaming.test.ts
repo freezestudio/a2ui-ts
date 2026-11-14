@@ -5,7 +5,7 @@ import type { ResponsePart } from '../parser/streaming.js';
 
 // 合法的 A2UI v1.0 CreateSurface 消息
 const VALID_CREATE_SURFACE = JSON.stringify({
-  version: 'v1.0',
+  version: '1.0',
   createSurface: {
     surfaceId: 'test-surface',
     catalogId: 'test-catalog',

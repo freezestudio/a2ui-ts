@@ -6,7 +6,7 @@
  *   type / properties / required / enum / const / oneOf / items / minItems / maxItems
  *   minimum / maximum / minLength / maxLength / pattern / additionalProperties
  *
- * 组件公共字段（id / component / catalogId / weight / accessibility）由协议信封与
+ * 组件公共字段（id / component / @catalogId / weight / @accessibility / @metadata）由协议信封与
  * 完整性检查负责，本校验器只校验组件特定属性。
  */
 
@@ -68,15 +68,15 @@ const KNOWN_EXTERNAL_DEFS: Record<string, Record<string, unknown>> = {
   },
   Checkable: {
     type: 'object',
-    properties: { checks: { type: 'array', items: { type: 'object' } } },
+    properties: { '@checks': { type: 'array', items: { type: 'object' } } },
   },
   ComponentCommon: {
     type: 'object',
     properties: {
       id: { type: 'string' },
-      catalogId: { type: 'string' },
-      accessibility: { type: 'object' },
-      metadata: { type: 'object' },
+      '@catalogId': { type: 'string' },
+      '@accessibility': { type: 'object' },
+      '@metadata': { type: 'object' },
       weight: { type: 'number' },
     },
     required: ['id'],
@@ -91,6 +91,57 @@ function resolveKnownRef(ref: unknown): Record<string, unknown> | undefined {
   if (typeof ref !== 'string') return undefined;
   const key = ref.split('/$defs/').pop()?.split('#').pop();
   return key ? KNOWN_EXTERNAL_DEFS[key] : undefined;
+}
+
+/**
+ * 内联 Catalog 本地 `$defs` 引用（v1.0 #2724）。
+ *
+ * 组件属性或叶子定义可用 `#/$defs/<TypeName>` 引用 Catalog 级叶子定义；
+ * `anyComponent` / `anyFunction` 不在 leaf defs 中，保持原样交由宿主校验。
+ * 无法解析的引用原样保留（由宿主 AJV 权威校验）。
+ */
+export function inlineLocalDefs(
+  schema: Record<string, unknown>,
+  defs: Record<string, Record<string, unknown>>,
+  seen: ReadonlySet<string> = new Set(),
+): Record<string, unknown> {
+  if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
+    return schema;
+  }
+
+  const ref = schema['$ref'];
+  if (typeof ref === 'string' && ref.startsWith('#/$defs/')) {
+    const name = ref.slice('#/$defs/'.length);
+    const target = defs[name];
+    if (target && !seen.has(name)) {
+      const inlined = inlineLocalDefs(target, defs, new Set([...seen, name]));
+      // 保留引用处的兄弟注解（description 等），覆盖目标定义中的同名字段
+      for (const [key, value] of Object.entries(schema)) {
+        if (key !== '$ref') inlined[key] = value;
+      }
+      return inlined;
+    }
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(schema)) {
+    result[key] = inlineLocalDefsValue(value, defs, seen);
+  }
+  return result;
+}
+
+function inlineLocalDefsValue(
+  value: unknown,
+  defs: Record<string, Record<string, unknown>>,
+  seen: ReadonlySet<string>,
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => inlineLocalDefsValue(item, defs, seen));
+  }
+  if (typeof value === 'object' && value !== null) {
+    return inlineLocalDefs(value as Record<string, unknown>, defs, seen);
+  }
+  return value;
 }
 
 function validateFormat(schema: Record<string, unknown>, value: string): string | null {
@@ -442,8 +493,11 @@ export function extractFunctionArgsSchema(schema: Record<string, unknown>): Reco
 /**
  * 校验组件属性是否符合组件 Schema
  *
- * 跳过组件公共字段（id / component / catalogId / weight / accessibility / metadata），
- * 这些字段由协议信封与完整性检查负责。
+ * 跳过组件信封字段（id / component / @catalogId / @accessibility / @metadata / @checks），
+ * 这些字段由协议信封与完整性检查负责。其余属性（含 weight）按 catalog schema 校验。
+ *
+ * v1.0 (#4037 / #4044)：catalog 可以自行声明裸 `metadata` / `catalogId` /
+ * `accessibility` / `checks` 属性；它们不是信封 mixin。
  *
  * @param comp - 组件对象（含 id / component 与特定属性）
  * @param schema - 组件 Schema（ComponentApi.schema）
@@ -461,33 +515,32 @@ export function validateComponentProps(
     return issues;
   }
 
-  // metadata 为 v1.0 #2187 厂商扩展接缝，非渲染属性，跳过常规必填/类型校验
-  const COMMON_FIELDS = new Set(['id', 'component', 'catalogId', 'weight', 'accessibility', 'metadata']);
+  const ENVELOPE_FIELDS = new Set(['id', 'component', '@catalogId', '@accessibility', '@metadata', '@checks']);
 
-  // 必填检查（跳过公共字段）
+  // 必填检查（跳过信封字段）
   const required = normalized['required'];
   if (Array.isArray(required)) {
     for (const key of required) {
-      if (COMMON_FIELDS.has(String(key))) continue;
+      if (ENVELOPE_FIELDS.has(String(key))) continue;
       if (!(key in comp)) {
         issues.push({ path: `/${String(key)}`, message: `缺少必填属性 ${String(key)}` });
       }
     }
   }
 
-  // 属性递归校验（跳过公共字段）
+  // 属性递归校验（跳过信封字段）
   for (const [key, sub] of Object.entries(props)) {
-    if (COMMON_FIELDS.has(key)) continue;
+    if (ENVELOPE_FIELDS.has(key)) continue;
     if (key in comp) {
       validateValue(sub, comp[key], `/${key}`, issues);
     }
   }
 
   // 协议信封 unevaluatedProperties: false 语义（对齐 agent_to_renderer.json#/$defs/Component）：
-  // 组件属性必须是 ComponentCommon 公共字段或该 catalog 组件 schema 声明的属性，
+  // 组件属性必须是 ComponentCommon 信封字段或该 catalog 组件 schema 声明的属性，
   // 其余一律视为未知属性拒绝（不等同 schema 级 additionalProperties，此处无条件执行）。
   for (const key of Object.keys(comp)) {
-    if (COMMON_FIELDS.has(key)) continue;
+    if (ENVELOPE_FIELDS.has(key)) continue;
     if (!(key in props)) {
       issues.push({
         path: `/${key}`,

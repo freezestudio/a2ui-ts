@@ -354,7 +354,7 @@ describe('agent-to-renderer', () => {
       const msg = makeUpdateComponents({
         updateComponents: {
           surfaceId: 's1',
-          components: [{ id: 'root', component: 'Text', metadata: { unknownProp: true } }],
+          components: [{ id: 'root', component: 'Text', '@metadata': { unknownProp: true } }],
         },
       });
       assert.throws(() => A2uiMessageSchema.parse(msg));
@@ -364,7 +364,7 @@ describe('agent-to-renderer', () => {
       const msg = makeUpdateComponents({
         updateComponents: {
           surfaceId: 's1',
-          components: [{ id: 'root', component: 'Text', metadata: { extensions: { '123bad': true } } }],
+          components: [{ id: 'root', component: 'Text', '@metadata': { extensions: { '123bad': true } } }],
         },
       });
       assert.throws(() => A2uiMessageSchema.parse(msg));
@@ -382,7 +382,12 @@ describe('agent-to-renderer', () => {
         updateComponents: {
           surfaceId: 's1',
           components: [
-            { id: 'root', component: 'Text', text: 'hi', metadata: { extensions: { custom_theme: { dark: true } } } },
+            {
+              id: 'root',
+              component: 'Text',
+              text: 'hi',
+              '@metadata': { extensions: { custom_theme: { dark: true } } },
+            },
           ],
         },
       });

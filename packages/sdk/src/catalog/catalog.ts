@@ -10,6 +10,7 @@ import {
   validateValue,
   normalizeCatalogSchema,
   extractFunctionArgsSchema,
+  inlineLocalDefs,
   type ComponentValidationIssue,
 } from './component-validator.js';
 import { SURFACE_COMPONENT, type CompositionConstraints } from '../schema/composition-checker.js';
@@ -35,8 +36,11 @@ export class Catalog {
    */
   readonly catalogId: string;
 
-  /** Catalog 版本 'v1_0'*/
+  /** 版本 'v1_0'（规范目录版本；wire 协议版本为 '1.0'） */
   readonly version: string;
+
+  /** Catalog 级叶子 `$defs`（design token / value union 等；不含 anyComponent/anyFunction） */
+  readonly defs: Record<string, Record<string, unknown>>;
 
   /** 组件映射表（按名称索引） */
   private _components: Map<string, ComponentApi>;
@@ -44,9 +48,16 @@ export class Catalog {
   /** 函数映射表（按名称精确索引） */
   private _functions: Map<string, FunctionApi>;
 
-  constructor(options: { catalogId: string; version: string; components: ComponentApi[]; functions: FunctionApi[] }) {
+  constructor(options: {
+    catalogId: string;
+    version: string;
+    components: ComponentApi[];
+    functions: FunctionApi[];
+    defs?: Record<string, Record<string, unknown>>;
+  }) {
     this.catalogId = options.catalogId;
     this.version = options.version;
+    this.defs = options.defs ?? {};
     this._components = new Map();
     this._functions = new Map();
 
@@ -253,6 +264,7 @@ export class Catalog {
       version: this.version,
       components,
       functions,
+      defs: this.defs,
     });
   }
 
@@ -347,6 +359,7 @@ export class Catalog {
     $id?: string;
     protocolVersion?: string;
     version?: string;
+    metadata?: Record<string, unknown>;
     components?: Record<string, Record<string, unknown>>;
     functions?: Record<string, Record<string, unknown>>;
     $defs?: Record<string, unknown>;
@@ -354,11 +367,19 @@ export class Catalog {
     const catalogId = data.catalogId ?? data.$id ?? 'unknown';
     const UAX31 = /^[\p{XID_Start}_][\p{XID_Continue}]*$/u;
 
+    // v1.0 (#2724)：$defs 允许叶子定义（design token / value union / payload 结构），
+    // 但禁止在其中定义组件（含 allOf 包裹）。anyComponent / anyFunction 仍为协议保留键。
+    const defs: Record<string, Record<string, unknown>> = {};
     if (data.$defs) {
-      for (const key of Object.keys(data.$defs)) {
-        if (key !== 'anyComponent' && key !== 'anyFunction') {
-          throw new Error(`Catalog "${catalogId}" 的 $defs 只允许 anyComponent/anyFunction，发现 "${key}"`);
+      for (const [key, value] of Object.entries(data.$defs)) {
+        if (key === 'anyComponent' || key === 'anyFunction') continue;
+        if (!UAX31.test(key)) {
+          throw new Error(`Catalog "${catalogId}" 的 $defs 名称 "${key}" 不符合 UAX #31`);
         }
+        if (isComponentDefinition(value)) {
+          throw new Error(`Catalog "${catalogId}" 的 $defs 不得定义组件 schema（发现 "${key}"）`);
+        }
+        defs[key] = value as Record<string, unknown>;
       }
     }
 
@@ -374,7 +395,7 @@ export class Catalog {
         const description = schema.description as string | undefined;
         components.push({
           name,
-          schema: normalizeCatalogSchema(schema),
+          schema: normalizeCatalogSchema(inlineLocalDefs(schema, defs)),
           description,
           deprecated: schema['deprecated'] === true,
           deprecatedReason:
@@ -389,11 +410,26 @@ export class Catalog {
         if (!UAX31.test(funcKey)) {
           throw new Error(`Catalog "${catalogId}" 的函数名 "${funcKey}" 不符合 UAX #31`);
         }
-        const description = schema.description as string | undefined;
-        const parameters = extractFunctionArgsSchema(schema);
-        const rawReturnType = schema['returnType'];
-        const rawAllowedCallers = schema['allowedCallers'];
-        const rawRequiresActivation = schema['requiresUserActivation'];
+        const inlined = inlineLocalDefs(schema, defs);
+        const description = inlined.description as string | undefined;
+        const parameters = extractFunctionArgsSchema(inlined);
+        const rawReturnType = inlined['returnType'];
+        const rawAllowedCallers = inlined['allowedCallers'];
+        const rawRequiresActivation = inlined['requiresUserActivation'];
+
+        if (
+          rawAllowedCallers !== undefined &&
+          rawAllowedCallers !== 'rendererOnly' &&
+          rawAllowedCallers !== 'agentOnly' &&
+          rawAllowedCallers !== 'rendererOrAgent'
+        ) {
+          throw new Error(`Catalog "${catalogId}" 的函数 "${funcKey}" 的 allowedCallers 非法`);
+        }
+        if (rawRequiresActivation === true && rawAllowedCallers !== undefined && rawAllowedCallers !== 'rendererOnly') {
+          throw new Error(
+            `Catalog "${catalogId}" 的函数 "${funcKey}" 声明 requiresUserActivation=true 时 allowedCallers 必须为 rendererOnly`,
+          );
+        }
 
         functions.push({
           name: funcKey,
@@ -411,26 +447,48 @@ export class Catalog {
               ? rawReturnType
               : undefined,
           allowedCallers:
-            rawAllowedCallers === 'rendererOnly' ||
-            rawAllowedCallers === 'agentOnly' ||
-            rawAllowedCallers === 'rendererOrAgent'
-              ? rawAllowedCallers
-              : rawAllowedCallers === undefined
-                ? 'rendererOnly'
+            rawAllowedCallers === undefined
+              ? 'rendererOnly'
+              : rawAllowedCallers === 'rendererOnly' ||
+                  rawAllowedCallers === 'agentOnly' ||
+                  rawAllowedCallers === 'rendererOrAgent'
+                ? rawAllowedCallers
                 : undefined,
           requiresUserActivation: rawRequiresActivation === true,
-          deprecated: schema['deprecated'] === true,
+          deprecated: inlined['deprecated'] === true,
           deprecatedReason:
-            typeof schema['x-deprecated-reason'] === 'string' ? schema['x-deprecated-reason'] : undefined,
+            typeof inlined['x-deprecated-reason'] === 'string' ? inlined['x-deprecated-reason'] : undefined,
         });
       }
     }
 
     return new Catalog({
       catalogId,
-      version: data.protocolVersion ?? data.version ?? 'v1.0',
+      version: data.protocolVersion ?? data.version ?? '1.0',
       components,
       functions,
+      defs,
     });
   }
+}
+
+/**
+ * 判断一个 `$defs` 条目是否是组件 schema。
+ * 规范要求 UI 组件只能声明在顶层 `components`，不得藏在 `$defs`（含 allOf 包裹）。
+ */
+function isComponentDefinition(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const schema = value as Record<string, unknown>;
+  const props = schema['properties'];
+  if (typeof props === 'object' && props !== null && !Array.isArray(props)) {
+    const component = (props as Record<string, unknown>)['component'];
+    if (typeof component === 'object' && component !== null && !Array.isArray(component)) {
+      if ('const' in (component as Record<string, unknown>)) return true;
+    }
+  }
+  const allOf = schema['allOf'];
+  if (Array.isArray(allOf)) {
+    return allOf.some((branch) => isComponentDefinition(branch));
+  }
+  return false;
 }

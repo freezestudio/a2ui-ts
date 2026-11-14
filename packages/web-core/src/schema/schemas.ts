@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const VersionSchema = z.literal('v1.0');
+const VersionSchema = z.literal('1.0');
 
 export const ComponentIdSchema = z.string().min(1);
 export type ComponentId = z.infer<typeof ComponentIdSchema>;
@@ -101,6 +101,8 @@ export const CallRendererFunctionPayloadSchema = z.strictObject({
 export const CallRendererFunctionMessageSchema = z.strictObject({
   version: VersionSchema,
   callRendererFunction: z.strictObject({
+    /** v1.0 (#3110)：可选求值上下文 surface */
+    surfaceId: z.string().optional(),
     functionCallId: z.string(),
     callFunction: CallRendererFunctionPayloadSchema,
   }),
@@ -159,10 +161,10 @@ export const ComponentBase = z
   .object({
     id: z.string(),
     component: z.string(),
-    catalogId: z.string().optional(),
+    '@catalogId': z.string().optional(),
     weight: z.number().optional(),
-    accessibility: AccessibilityAttributesSchema.optional(),
-    metadata: MetadataSchema,
+    '@accessibility': AccessibilityAttributesSchema.optional(),
+    '@metadata': MetadataSchema,
   })
   .strict(); // v1.0 组件信封 unevaluatedProperties:false：拼写错误必须被拒绝
 
@@ -178,7 +180,7 @@ export const ButtonComponentSchema = ComponentBase.extend({
   child: z.string(),
   variant: z.enum(['default', 'primary', 'borderless']).optional(),
   action: ActionSchema,
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const ImageComponentSchema = ComponentBase.extend({
@@ -211,17 +213,17 @@ export const CardComponentSchema = ComponentBase.extend({
 export const TextFieldComponentSchema = ComponentBase.extend({
   component: z.literal('TextField'),
   label: DynamicStringSchema,
-  value: z.union([z.string(), DataBindingSchema, FunctionCallSchema]).optional(),
+  value: z.union([z.string(), DataBindingSchema, FunctionCallSchema]),
   variant: z.enum(['shortText', 'longText', 'number', 'obscured']).optional(),
   placeholder: DynamicStringSchema.optional(),
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const CheckBoxComponentSchema = ComponentBase.extend({
   component: z.literal('CheckBox'),
   label: DynamicStringSchema,
   value: DynamicBooleanSchema,
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const SliderComponentSchema = ComponentBase.extend({
@@ -231,7 +233,7 @@ export const SliderComponentSchema = ComponentBase.extend({
   max: z.number(),
   value: DynamicNumberSchema,
   steps: z.number().int().min(1).optional(),
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const ChoicePickerComponentSchema = ComponentBase.extend({
@@ -242,7 +244,7 @@ export const ChoicePickerComponentSchema = ComponentBase.extend({
   variant: z.enum(['mutuallyExclusive', 'multipleSelection']).optional(),
   displayStyle: z.enum(['checkbox', 'chips']).optional(),
   filterable: z.boolean().optional(),
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const DateTimeInputComponentSchema = ComponentBase.extend({
@@ -253,7 +255,7 @@ export const DateTimeInputComponentSchema = ComponentBase.extend({
   min: DynamicStringSchema.optional(),
   max: DynamicStringSchema.optional(),
   label: DynamicStringSchema.optional(),
-  checks: z.array(CheckRuleSchema).optional(),
+  '@checks': z.array(CheckRuleSchema).optional(),
 });
 
 export const DividerComponentSchema = ComponentBase.extend({
@@ -492,7 +494,7 @@ export type ClientActionPayload = z.infer<typeof ClientActionPayloadSchema>;
 /** Renderer 动作消息 */
 export const A2uiClientActionMessageSchema = z
   .strictObject({
-    version: z.literal('v1.0'),
+    version: z.literal('1.0'),
     action: ClientActionPayloadSchema,
   })
   .refine((obj) => Object.keys(obj).length === 2, { message: '消息只能包含 version 和一个操作类型' });
@@ -512,7 +514,7 @@ export const CallAgentFunctionPayloadSchema = z.strictObject({
 /** callAgentFunction 消息 */
 export const A2uiClientCallAgentFunctionMessageSchema = z
   .strictObject({
-    version: z.literal('v1.0'),
+    version: z.literal('1.0'),
     callAgentFunction: CallAgentFunctionPayloadSchema,
   })
   .refine((obj) => Object.keys(obj).length === 2, { message: '消息只能包含 version 和一个操作类型' });
@@ -531,7 +533,7 @@ export const RendererFunctionResponsePayloadSchema = z
 /** rendererFunctionResponse 消息 */
 export const A2uiRendererFunctionResponseMessageSchema = z
   .strictObject({
-    version: z.literal('v1.0'),
+    version: z.literal('1.0'),
     rendererFunctionResponse: RendererFunctionResponsePayloadSchema,
   })
   .refine((obj) => Object.keys(obj).length === 2, { message: '消息只能包含 version 和一个操作类型' });
@@ -560,7 +562,7 @@ export type ClientErrorPayload = z.infer<typeof ClientErrorPayloadSchema>;
 /** Renderer 错误消息 */
 export const A2uiClientErrorMessageSchema = z
   .strictObject({
-    version: z.literal('v1.0'),
+    version: z.literal('1.0'),
     error: ClientErrorPayloadSchema,
   })
   .refine((obj) => Object.keys(obj).length === 2, { message: '消息只能包含 version 和一个操作类型' });

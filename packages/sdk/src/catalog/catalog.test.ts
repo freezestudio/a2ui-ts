@@ -305,3 +305,62 @@ describe('Catalog', () => {
     });
   });
 });
+
+describe('Catalog.fromJson — v1.0 叶子 $defs（上游 #2724）', () => {
+  it('允许叶子定义并通过 #/$defs 引用解析', () => {
+    const catalog = Catalog.fromJson({
+      catalogId: 'leaf-defs',
+      $defs: {
+        anyComponent: { oneOf: [{ $ref: '#/components/Text' }] },
+        anyFunction: { oneOf: [] },
+        ColorToken: { type: 'string', enum: ['primary', 'secondary'] },
+      },
+      components: {
+        Text: {
+          type: 'object',
+          properties: {
+            component: { const: 'Text' },
+            text: { type: 'string' },
+            color: { $ref: '#/$defs/ColorToken' },
+          },
+          required: ['component', 'text'],
+        },
+      },
+    });
+    assert.deepEqual(Object.keys(catalog.defs), ['ColorToken']);
+    // 引用被内联，color 只接受枚举值
+    const ok = catalog.validateComponent({ id: 't', component: 'Text', text: 'hi', color: 'primary' });
+    assert.deepEqual(ok, []);
+    const bad = catalog.validateComponent({ id: 't', component: 'Text', text: 'hi', color: 'unknown' });
+    assert.ok(bad.length > 0);
+  });
+
+  it('拒绝在 $defs 中定义组件', () => {
+    assert.throws(() => {
+      Catalog.fromJson({
+        catalogId: 'bad-defs',
+        $defs: {
+          anyComponent: { oneOf: [] },
+          anyFunction: { oneOf: [] },
+          HiddenComponent: {
+            type: 'object',
+            properties: { component: { const: 'Hidden' } },
+            required: ['component'],
+          },
+        },
+      });
+    }, /不得定义组件/);
+  });
+
+  it('拒绝 allOf 包裹的组件定义', () => {
+    assert.throws(() => {
+      Catalog.fromJson({
+        $defs: {
+          Hidden: {
+            allOf: [{ type: 'object', properties: { component: { const: 'Hidden' } } }],
+          },
+        },
+      });
+    }, /不得定义组件/);
+  });
+});

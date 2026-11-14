@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { createFunctionApi } from '../../catalog/types.js';
 import type { FunctionApi } from '../../catalog/types.js';
+import { coerceDynamicBoolean } from '@freezestudio/a2ui-shared';
 
-/** 将值转为布尔值 */
+/** 将值按 A2UI v1.0 DynamicBoolean 规则转为布尔值 */
 function toBool(val: unknown): boolean {
-  return Boolean(val);
+  return coerceDynamicBoolean(val);
 }
 
 /** not — 逻辑非 */

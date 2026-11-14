@@ -167,7 +167,7 @@ export class A2UIRendererService {
     path?: string;
     functionCallId?: string;
   }): void {
-    const payload = { version: 'v1.0' as const, error };
+    const payload = { version: '1.0' as const, error };
     const validation = A2uiClientErrorMessageSchema.safeParse(payload);
     if (!validation.success) {
       logger.warn('sendError 载荷校验失败，已拦截', {
@@ -193,7 +193,7 @@ export class A2UIRendererService {
     context: Record<string, unknown>;
   }): unknown {
     const payload = {
-      version: 'v1.0' as const,
+      version: '1.0' as const,
       action: {
         ...action,
         timestamp: new Date().toISOString(),

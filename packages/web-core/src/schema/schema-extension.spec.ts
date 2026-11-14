@@ -40,7 +40,7 @@ describe('registerComponentSchemas（自定义 catalog 扩展校验）', () => {
 
   it('validateComponents 与消息校验链路可用', () => {
     const msg = A2uiMessageSchema.safeParse({
-      version: 'v1.0',
+      version: '1.0',
       createSurface: {
         surfaceId: 's1',
         components: [{ id: 'r1', component: 'RiskPanel', riskIndex: 80 }],

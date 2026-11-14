@@ -25,6 +25,15 @@ const A2UI_OPEN_TAG = '<a2ui-json>';
 const A2UI_CLOSE_TAG = '</a2ui-json>';
 const OPEN_TAG_LEN = A2UI_OPEN_TAG.length;
 const CLOSE_TAG_LEN = A2UI_CLOSE_TAG.length;
+/** 协议消息键（用于识别消息信封；不依赖 version 字符串前缀） */
+const MESSAGE_KEYS = [
+  'createSurface',
+  'updateComponents',
+  'updateDataModel',
+  'deleteSurface',
+  'callRendererFunction',
+  'agentFunctionResponse',
+] as const;
 const MAX_TEXT_BUFFER = 200;
 
 export class IncrementalStreamParser {
@@ -183,7 +192,8 @@ export class IncrementalStreamParser {
     const rec = obj as Record<string, unknown>;
     if (isComponentLike(rec)) {
       this.cacheComponent(rec as Record<string, unknown> & { id: string; component: string });
-    } else if (typeof rec['version'] === 'string' && (rec['version'] as string).startsWith('v')) {
+    } else if (typeof rec['version'] === 'string' && MESSAGE_KEYS.some((key) => key in rec)) {
+      // v1.0 wire 版本为 '1.0'（旧草案为 'v1.0'）；同时以消息键判断，避免误识别普通对象
       this.detectMessageType(rec);
     }
   }

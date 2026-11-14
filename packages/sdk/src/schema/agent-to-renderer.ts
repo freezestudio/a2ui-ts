@@ -13,6 +13,7 @@ import {
   MetadataSchema,
   FunctionResponseSchema,
   AccessibilityAttributesSchema,
+  LEGACY_COMPONENT_MIXIN_KEYS,
 } from './common-types.js';
 import { SURFACE_COMPONENT } from './composition-checker.js';
 
@@ -24,23 +25,39 @@ import { SURFACE_COMPONENT } from './composition-checker.js';
  * 组件 Payload — 从 catalog 的 anyComponent 验证
  *
  * 信封级校验（对齐规范 agent_to_renderer.json#/$defs/Component）：
- * - ComponentCommon：id 必填，catalogId / accessibility / metadata 可选
+ * - ComponentCommon：id 必填，@catalogId / @accessibility / @metadata 可选
  * - `component` 出现时禁止为协议保留的 "Surface"（component.not.const: "Surface"）；
  *   组件类型本身由 catalog 校验（anyComponent），信封层不强制
  * - 其余组件特定属性（text / children / action 等）依赖 catalog 校验，此处宽松透传
+ *
+ * v1.0 (#4044)：信封 mixin 只接受 `@` 前缀形式；裸 `metadata` / `catalogId` /
+ * `accessibility` / `checks` 在组件根层被拒绝（过渡期兼容由
+ * `A2uiValidator` 的可选 `legacyEnvelopeKeys` 入口归一化提供）。
  */
-export const ComponentPayloadSchema = z.looseObject({
-  id: ComponentIdSchema,
-  component: z
-    .string()
-    .refine((c) => c !== SURFACE_COMPONENT, {
-      message: `协议保留组件名 "${SURFACE_COMPONENT}" 禁止出现在消息组件中（仅作为隐式 surface 根容器）`,
-    })
-    .optional(),
-  catalogId: z.string().optional(),
-  accessibility: AccessibilityAttributesSchema.optional(),
-  metadata: MetadataSchema,
-});
+export const ComponentPayloadSchema = z
+  .looseObject({
+    id: ComponentIdSchema,
+    component: z
+      .string()
+      .refine((c) => c !== SURFACE_COMPONENT, {
+        message: `协议保留组件名 "${SURFACE_COMPONENT}" 禁止出现在消息组件中（仅作为隐式 surface 根容器）`,
+      })
+      .optional(),
+    '@catalogId': z.string().optional(),
+    '@accessibility': AccessibilityAttributesSchema.optional(),
+    '@metadata': MetadataSchema,
+  })
+  .superRefine((comp, ctx) => {
+    for (const key of LEGACY_COMPONENT_MIXIN_KEYS) {
+      if (key in comp) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `v1.0 组件信封键必须使用 @ 前缀：'${key}' → '@${key}'`,
+        });
+      }
+    }
+  });
 export type ComponentPayload = z.infer<typeof ComponentPayloadSchema>;
 
 /**
@@ -136,6 +153,8 @@ export type DeleteSurfaceMessage = z.infer<typeof DeleteSurfaceMessageSchema>;
  * Agent 主动向 Renderer 发起函数调用
  */
 export const CallRendererFunctionPayloadSchema = z.strictObject({
+  /** v1.0 (#3110)：可选 surfaceId，指定求值上下文；缺省使用空根数据模型。 */
+  surfaceId: z.string().optional(),
   functionCallId: CallIdSchema,
   callFunction: z.strictObject({
     '@call': z.string(),

@@ -5,7 +5,7 @@
 import type { ProtocolVersion } from '../core/types.js';
 
 /** 协议版本号 */
-export const SPEC_VERSION = 'v1.0' as const;
+export const SPEC_VERSION = '1.0' as const;
 
 /** 协议基础 URL */
 export const SPEC_BASE_URL = 'https://a2ui.org/specification' as const;
@@ -14,7 +14,7 @@ export const SPEC_BASE_URL = 'https://a2ui.org/specification' as const;
 export const A2UI_MIME_TYPE = 'application/a2ui+json' as const;
 
 /** 支持的协议版本 */
-export const SUPPORTED_VERSIONS: ProtocolVersion[] = ['v1.0'];
+export const SUPPORTED_VERSIONS: ProtocolVersion[] = ['1.0'];
 
 /** Agent → Renderer 消息类型常量（v1.0 #2210 双向函数调用重命名） */
 export const MessageType = {
