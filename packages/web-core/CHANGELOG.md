@@ -1,5 +1,34 @@
 # @freezestudio/a2ui-web-core
 
+## 5.0.0
+
+### Major Changes
+
+- 377206c: 对齐上游 A2UI v1.0 稳定版（`db430653` → `3ed960186`）：
+
+  - wire 版本号统一为 `1.0`（不再接受 `v1.0`）
+  - 组件信封键改为 `@catalogId` / `@accessibility` / `@metadata` / `@checks`
+  - `TextField.value` 必填；`callRendererFunction` 支持可选 `surfaceId`
+  - Catalog 支持叶子 `$defs` 与 `#/$defs/<Type>` 引用，禁止 `$defs` 内定义组件
+  - `DynamicBoolean` / `CheckRule` 强制转换规则
+  - 新增 A2UI 正则方言解析器与静态安全规则（`@freezestudio/a2ui-shared`）
+
+### Minor Changes
+
+- db1a062: 对齐上游 #3856 / #3579 / #4078：
+
+  - 新增结构化错误映射 `mapErrorToRendererMessage` / `extractEnvelopeErrorContext` / `normalizeJsonPointer`
+  - 新增 `RpcHandler`：`callAgentFunction` pending 关联、timeout/cancel/dispose、迟到响应忽略、`TOO_MANY_PENDING`
+  - `SurfaceManager` 新增 `onError` 错误订阅、deleteSurface 取消 pending 调用、`dispose`
+  - 新增 `processMessageSafe` / `processMessagesWithErrors`（错误不会中断消息批处理）
+  - 统一出站 `unifiedOutbound`：action / error / callAgentFunction / rendererFunctionResponse 共用一个 outboundListener（#4078）
+  - Angular 渲染器接入 RPC 生命周期，Action 求值失败发出 `EXPRESSION_ERROR` / `EXECUTION_ERROR`
+
+### Patch Changes
+
+- Updated dependencies [377206c]
+  - @freezestudio/a2ui-shared@1.4.0
+
 ## 4.0.0
 
 ### Major Changes

@@ -1,5 +1,13 @@
 # @freezestudio/a2ui-agent-generator-demo
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [377206c]
+  - @freezestudio/a2ui-sdk@5.0.0
+  - @freezestudio/a2ui-agent@1.2.0
+
 ## 0.1.2
 
 ### Patch Changes
