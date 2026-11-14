@@ -117,6 +117,82 @@ describe('A2UIRendererService — unifiedOutbound（#4078）', () => {
     expect(() => renderer.setUnifiedOutbound(true)).toThrow(/outboundListener/);
   });
 
+  it('sendError 直发的错误也走统一 outboundListener（不再丢弃）', () => {
+    const renderer = new A2UIRendererService();
+    const sent: OutboundMessage[] = [];
+    const legacy: unknown[] = [];
+    renderer.setOutboundListener((message) => {
+      sent.push(message);
+    });
+    renderer.setErrorSender((error) => {
+      legacy.push(error);
+    });
+    renderer.setUnifiedOutbound(true);
+
+    renderer.sendError({
+      code: 'VALIDATION_FAILED',
+      message: '组件校验失败',
+      surfaceId: 's1',
+      path: '/components',
+    });
+
+    expect(legacy).toHaveLength(0);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toEqual({
+      version: '1.0',
+      error: { code: 'VALIDATION_FAILED', message: '组件校验失败', surfaceId: 's1', path: '/components' },
+    });
+  });
+
+  it('message-handler 直发的 SURFACE_NOT_FOUND 也走统一出站', () => {
+    const renderer = new A2UIRendererService();
+    const sent: OutboundMessage[] = [];
+    const legacy: unknown[] = [];
+    renderer.setOutboundListener((message) => {
+      sent.push(message);
+    });
+    renderer.setErrorSender((error) => {
+      legacy.push(error);
+    });
+    renderer.setUnifiedOutbound(true);
+
+    renderer.processMessage({
+      version: '1.0',
+      updateComponents: { surfaceId: 'missing', components: [{ id: 'root', component: 'Text' }] },
+    } as never);
+
+    expect(legacy).toHaveLength(0);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      version: '1.0',
+      error: { code: 'SURFACE_NOT_FOUND', surfaceId: 'missing' },
+    });
+  });
+
+  it('统一出站下内部错误只上报一次（不重复转发）', async () => {
+    const renderer = new A2UIRendererService();
+    const sent: OutboundMessage[] = [];
+    renderer.setOutboundListener((message) => {
+      sent.push(message);
+    });
+    renderer.setUnifiedOutbound(true);
+
+    const sm = renderer.surfaceManager;
+    sm.handleCreateSurface('s1');
+    sm.handleUpdateComponents('s1', [
+      {
+        id: 'btn',
+        component: 'Button',
+        action: { functionCall: { '@call': 'openUrl', args: { url: 'javascript:alert(1)' } } },
+      },
+    ]);
+    const surface = sm.surfaces().get('s1')!;
+    await renderer.handleComponentAction(surface.components[0], surface);
+    await flush();
+
+    expect(sent).toHaveLength(1);
+  });
+
   it('关闭统一出站后恢复旧版 sender', () => {
     const renderer = new A2UIRendererService();
     const sent: OutboundMessage[] = [];

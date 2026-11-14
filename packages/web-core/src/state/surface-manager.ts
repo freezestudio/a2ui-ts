@@ -129,6 +129,16 @@ export class SurfaceManager {
     return () => this.errorListeners.delete(listener);
   }
 
+  /**
+   * 直接转发一条结构化错误到统一出站（不触发本地 onError 订阅）。
+   *
+   * 供 `sendError` 这类「发送到 agent」入口使用：未开启统一出站或已 dispose 时返回 false，
+   * 由调用方回退到旧版 error sender。
+   */
+  forwardError(error: A2uiRendererError): boolean {
+    return this.forwardOutbound({ version: '1.0', error });
+  }
+
   /** 发出结构化错误；本地订阅者与统一出站都会收到 */
   emitError(error: A2uiRendererError): void {
     for (const listener of Array.from(this.errorListeners)) {

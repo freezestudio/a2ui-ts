@@ -4,6 +4,7 @@ import { SurfaceManager } from '../state/surface-manager.js';
 import { RpcHandler, type CallAgentFunctionEnvelope } from '../rpc/rpc-handler.js';
 import { A2uiRpcError, RpcErrorCode } from '../common/errors.js';
 import { processMessagesWithErrors, processMessageSafe } from './message-handler.js';
+import type { OutboundMessage } from './outbound-envelope.js';
 
 const call = { '@call': 'refreshData', catalogId: 'geo', args: {} };
 
@@ -104,6 +105,32 @@ describe('processMessageSafe / processMessagesWithErrors', () => {
     const result = processMessageSafe({ version: '1.0', createSurface: { surfaceId: 's1' } }, manager);
     expect(result).toMatchObject({ version: '1.0', error: { code: 'INTERNAL_ERROR', surfaceId: 's1' } });
     expect(received).toHaveLength(1);
+  });
+
+  it('统一出站下恢复错误只出站一次，不再经 sendError 重复发送', () => {
+    const received: OutboundMessage[] = [];
+    const legacy: unknown[] = [];
+    const manager = new SurfaceManager({
+      outboundListener: (message) => {
+        received.push(message);
+      },
+    });
+    manager.setUnifiedOutbound(true);
+    manager.handleCreateSurface = () => {
+      throw new Error('boom');
+    };
+    const renderer = { sendError: (error: unknown) => legacy.push(error) };
+    const result = processMessageSafe(
+      { version: '1.0', createSurface: { surfaceId: 's1' } },
+      manager,
+      undefined,
+      renderer,
+    );
+
+    expect(result).toMatchObject({ version: '1.0', error: { code: 'INTERNAL_ERROR', surfaceId: 's1' } });
+    expect(legacy).toEqual([]);
+    expect(received).toHaveLength(1);
+    expect(received[0]).toMatchObject({ version: '1.0', error: { code: 'INTERNAL_ERROR' } });
   });
 
   it('批量处理收集错误且不抛出', () => {

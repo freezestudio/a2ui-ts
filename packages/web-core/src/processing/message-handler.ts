@@ -301,8 +301,11 @@ export function processMessageSafe(
     return null;
   } catch (error) {
     const mapped = mapErrorToRendererMessage(error, extractEnvelopeErrorContext(message));
+    // 本地订阅 + 统一出站；统一出站时 emitError 已转发，避免经 sendError 重复出站
     surfaceManager.emitError(mapped.error);
-    renderer?.sendError(mapped.error);
+    if (!surfaceManager.isUnifiedOutbound) {
+      renderer?.sendError(mapped.error);
+    }
     return mapped;
   }
 }

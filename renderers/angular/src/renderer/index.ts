@@ -239,9 +239,13 @@ export class A2UIRendererService {
       return;
     }
     logger.debug('sendError', { ...error });
-    if (!this._unifiedOutbound) {
-      this._sendError?.(error);
+    if (this._unifiedOutbound) {
+      // 统一出站：sendError 直发的错误（如 message-handler 的 VALIDATION_FAILED/SURFACE_NOT_FOUND）
+      // 也必须经 outboundListener 上报，不能依赖 emitError 路径
+      this._surfaceManager.core.forwardError(error);
+      return;
     }
+    this._sendError?.(error);
   }
 
   /** 内部错误上报：本地订阅 + 统一出站 + 旧版 error sender */
@@ -253,7 +257,10 @@ export class A2UIRendererService {
     functionCallId?: string;
   }): void {
     this._surfaceManager.core.emitError(error);
-    this.sendError(error);
+    // 统一出站时 emitError 已转发，避免重复出站；仅旧版模式补发 error sender
+    if (!this._unifiedOutbound) {
+      this.sendError(error);
+    }
   }
 
   /**

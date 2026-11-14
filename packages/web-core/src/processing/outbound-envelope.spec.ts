@@ -76,6 +76,34 @@ describe('SurfaceManager — unifiedOutbound（#4078）', () => {
     expect(received).toEqual([]);
   });
 
+  it('forwardError 直接出站且不触发本地 onError', () => {
+    const received: OutboundMessage[] = [];
+    const local: unknown[] = [];
+    const manager = new SurfaceManager({
+      outboundListener: (m) => {
+        received.push(m);
+      },
+    });
+    manager.onError((e) => local.push(e));
+    manager.setUnifiedOutbound(true);
+
+    const error = { code: 'VALIDATION_FAILED', surfaceId: 's1', path: '/components', message: 'bad' } as const;
+    expect(manager.forwardError(error)).toBe(true);
+    expect(received).toEqual([{ version: '1.0', error }]);
+    expect(local).toEqual([]);
+  });
+
+  it('未开启统一出站时 forwardError 返回 false', () => {
+    const received: OutboundMessage[] = [];
+    const manager = new SurfaceManager({
+      outboundListener: (m) => {
+        received.push(m);
+      },
+    });
+    expect(manager.forwardError({ code: 'INTERNAL_ERROR', message: 'x' })).toBe(false);
+    expect(received).toEqual([]);
+  });
+
   it('监听器抛出异常时不影响 emitAction/emitError 返回值', () => {
     const manager = new SurfaceManager({
       outboundListener: () => {
