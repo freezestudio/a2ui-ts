@@ -27,13 +27,16 @@
 - **Angular 接入**：`A2UIRendererService` 使用 `RpcHandler` 发送/关联 `callAgentFunction`；
   Action 求值失败发出 `EXPRESSION_ERROR`，本地函数执行失败发出 `EXECUTION_ERROR`；
   绑定时表达式失败不影响组件与兄弟组件挂载。
+- **统一出站（#4078）**：`unifiedOutbound` / `setOutboundListener` 让 action、error、
+  `callAgentFunction`、`rendererFunctionResponse` 共用一个出站监听器；默认关闭，
+  开启时缺少监听器会报错，dispose 后停止转发。
 
 ### 测试基线
 
-- 全部 **1654 用例**（shared 180 / web-core 60 / sdk 582 / angular 106 / conformance 723 / eval 3）
+- 全部 **1673 用例**（shared 180 / web-core 67 / sdk 582 / angular 112 / conformance 729 / eval 3）
 - 新增 `conformance/tests/sdk-behavior/rpc-lifecycle.test.ts`（9 用例，对齐上游
   `conformance/core/rpc_functions.yaml` 的 correlate / cancelled / disposed / no_listener /
-  late response / too_many_pending）
+  late response / too_many_pending）与 `unified-outbound.test.ts`（6 用例）
 
 ---
 

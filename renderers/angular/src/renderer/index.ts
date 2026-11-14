@@ -45,6 +45,8 @@ import {
   A2uiClientErrorMessageSchema,
   RpcHandler,
   mapErrorToRendererMessage,
+  toOutboundFunctionResponse,
+  type OutboundMessage,
   type RendererDataModel,
 } from '@freezestudio/a2ui-web-core';
 import { createRendererLogger } from './logger.js';
@@ -105,11 +107,18 @@ export class A2UIRendererService {
     | ((error: { code: string; message: string; surfaceId?: string; path?: string; functionCallId?: string }) => void)
     | null = null;
 
+  /** 统一出站（#4078）：action/error/callAgentFunction/rendererFunctionResponse 共用一个监听器 */
+  private _unifiedOutbound = false;
+  private _outboundListener: ((message: OutboundMessage) => void | Promise<void>) | null = null;
+
   /** renderer→agent RPC 生命周期（pending/timeout/cancel/dispose） */
   private readonly _rpcHandler = new RpcHandler({
     outboundListener: (message) => {
-      const dataModelPayload = this.getSendDataModelPayload();
-      const transportMetadata = dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
+      if (this._unifiedOutbound) {
+        void this._outboundListener?.(message);
+        return;
+      }
+      const transportMetadata = this._transportMetadata();
       void this._sendCallAgentFunction?.(message.callAgentFunction, transportMetadata);
     },
   });
@@ -121,6 +130,33 @@ export class A2UIRendererService {
   /** 获取 RPC 生命周期处理器（供宿主监听 pending 数或主动取消） */
   get rpcHandler(): RpcHandler {
     return this._rpcHandler;
+  }
+
+  /** 注册统一出站监听器 */
+  setOutboundListener(listener: ((message: OutboundMessage) => void | Promise<void>) | null): void {
+    this._outboundListener = listener;
+    this._surfaceManager.core.setOutboundListener(listener ?? undefined);
+  }
+
+  /**
+   * 开启统一出站；开启时必须已注册 outboundListener。
+   */
+  setUnifiedOutbound(enabled: boolean): void {
+    if (enabled && !this._outboundListener) {
+      throw new Error('unifiedOutbound requires an outboundListener.');
+    }
+    this._unifiedOutbound = enabled;
+    this._surfaceManager.core.setUnifiedOutbound(enabled);
+  }
+
+  /** 是否启用统一出站 */
+  get unifiedOutbound(): boolean {
+    return this._unifiedOutbound;
+  }
+
+  private _transportMetadata(): { a2uiRendererDataModel: RendererDataModel } | undefined {
+    const dataModelPayload = this.getSendDataModelPayload();
+    return dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
   }
 
   /**
@@ -203,7 +239,21 @@ export class A2UIRendererService {
       return;
     }
     logger.debug('sendError', { ...error });
-    this._sendError?.(error);
+    if (!this._unifiedOutbound) {
+      this._sendError?.(error);
+    }
+  }
+
+  /** 内部错误上报：本地订阅 + 统一出站 + 旧版 error sender */
+  private _reportError(error: {
+    code: string;
+    message: string;
+    surfaceId?: string;
+    path?: string;
+    functionCallId?: string;
+  }): void {
+    this._surfaceManager.core.emitError(error);
+    this.sendError(error);
   }
 
   /**
@@ -240,6 +290,9 @@ export class A2UIRendererService {
       surfaceId: action.surfaceId,
       hasDataModelMetadata: transportMetadata !== undefined,
     });
+    if (this._surfaceManager.core.emitAction(payload.action)) {
+      return undefined;
+    }
     return this._sendAction?.(payload.action, transportMetadata) ?? undefined;
   }
 
@@ -267,7 +320,20 @@ export class A2UIRendererService {
 
   /** 内部：调用 processMessageSafe 并传入 rendererFunctionResponse 回调 */
   private _p(msg: A2UIMessage): void {
-    processMessageSafe(msg, this._surfaceManager.core, this._sendRendererFunctionResponse ?? undefined, this);
+    processMessageSafe(msg, this._surfaceManager.core, (response) => this._sendFunctionResponse(response), this);
+  }
+
+  /** 发送 rendererFunctionResponse；统一出站开启时走 outboundListener */
+  private _sendFunctionResponse(response: {
+    functionCallId: string;
+    value?: unknown;
+    error?: { code: string; message: string };
+  }): void {
+    if (this._unifiedOutbound) {
+      void this._outboundListener?.(toOutboundFunctionResponse(response));
+      return;
+    }
+    this._sendRendererFunctionResponse?.(response);
   }
 
   /**
@@ -308,7 +374,7 @@ export class A2UIRendererService {
           actionType: 'action',
         });
         logger.warn('action.functionCall 执行失败', { call: fn['@call'], message: mapped.error.message });
-        this.sendError(mapped.error);
+        this._reportError(mapped.error);
       }
       return;
     }
@@ -337,7 +403,7 @@ export class A2UIRendererService {
         // v1.0 失败恢复：Action 求值失败 → EXPRESSION_ERROR；停止该 action 后续步骤
         const mapped = mapErrorToRendererMessage(error, { surfaceId: surface.surfaceId, actionType: 'action' });
         logger.warn('action.event 求值失败', { name, message: mapped.error.message });
-        this.sendError(mapped.error);
+        this._reportError(mapped.error);
       }
     }
   }
@@ -367,7 +433,7 @@ export class A2UIRendererService {
           actionType: 'callAgentFunction',
         });
         logger.warn('callAgentFunction 失败', { call: fn['@call'], code: mapped.error.code });
-        this.sendError(mapped.error);
+        this._reportError(mapped.error);
       });
   }
 

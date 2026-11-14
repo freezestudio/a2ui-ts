@@ -24,6 +24,7 @@ const ok = A2uiMessageSchema.safeParse({ version: '1.0', createSurface: { surfac
 - `A2uiMessageSchema` — v1.0 消息信封 schema（createSurface/updateComponents/updateDataModel/deleteSurface/...）
 - `processMessage` / `processMessageSafe` / `SurfaceManager` — 消息处理、结构化错误恢复与 Surface 生命周期
 - `RpcHandler` — `callAgentFunction` 生命周期（pending/timeout/cancel/dispose，迟到响应忽略）
+- `setUnifiedOutbound` / `setOutboundListener` — action/error/RPC 消息统一走一个出站监听器
 - `mapErrorToRendererMessage` — 内部错误映射为 v1.0 renderer→agent error 信封（RFC 6901 path）
 - `resolveDynamicValue` / `callFunction` — 动态值解析与本地函数执行
 - `registerComponentSchemas` — 宿主应用扩展自定义 catalog 组件 schema

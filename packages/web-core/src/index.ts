@@ -121,6 +121,15 @@ export type {
   ErrorEnvelopeContext,
 } from './processing/message-error-mapper.js';
 
+// 统一出站消息（#4078 unifiedOutbound）
+export { toOutboundActionMessage, toOutboundFunctionResponse } from './processing/outbound-envelope.js';
+export type {
+  OutboundActionMessage,
+  OutboundMessage,
+  OutboundMessageListener,
+  RendererFunctionResponseEnvelope,
+} from './processing/outbound-envelope.js';
+
 // RPC 生命周期（callAgentFunction pending/timeout/cancel/dispose）
 export { RpcHandler, DEFAULT_MAX_PENDING_CALLS, DEFAULT_RPC_TIMEOUT_MS } from './rpc/rpc-handler.js';
 export type {

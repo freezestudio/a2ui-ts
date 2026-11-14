@@ -23,7 +23,13 @@ import { z } from 'zod';
 import { setAtPath, deleteAtPath } from '../processing/data-binding.js';
 import { callFunction, getFunctionAllowedCallers } from '../processing/function-call.js';
 import type { A2uiRendererError } from '../processing/message-error-mapper.js';
-import type { FunctionCall } from '../schema/schemas.js';
+import {
+  toOutboundActionMessage,
+  toOutboundFunctionResponse,
+  type OutboundMessage,
+  type OutboundMessageListener,
+} from '../processing/outbound-envelope.js';
+import type { ClientActionPayload, FunctionCall } from '../schema/schemas.js';
 import { RpcErrorCode, A2uiRpcError } from '../common/errors.js';
 import type { CallAgentFunctionOptions, RpcHandler } from '../rpc/rpc-handler.js';
 import { createRendererLogger } from '../common/logger.js';
@@ -60,9 +66,61 @@ export class SurfaceManager {
   private errorListeners = new Set<(error: A2uiRendererError) => void>();
   private rpcHandler?: RpcHandler;
   private isDisposed = false;
+  private unifiedOutbound = false;
+  private outboundListener?: OutboundMessageListener;
 
-  constructor(options: { rpcHandler?: RpcHandler } = {}) {
+  constructor(
+    options: {
+      rpcHandler?: RpcHandler;
+      unifiedOutbound?: boolean;
+      outboundListener?: OutboundMessageListener;
+    } = {},
+  ) {
     this.rpcHandler = options.rpcHandler;
+    this.outboundListener = options.outboundListener;
+    this.unifiedOutbound = options.unifiedOutbound ?? false;
+  }
+
+  /**
+   * 开启/关闭统一出站：action / error / callAgentFunction / rendererFunctionResponse
+   * 都通过同一个 outboundListener 发出。开启时必须已注册监听器。
+   */
+  setUnifiedOutbound(enabled: boolean): void {
+    if (enabled && !this.outboundListener) {
+      throw new A2uiRpcError('unifiedOutbound requires an outboundListener.', RpcErrorCode.NO_LISTENER);
+    }
+    this.unifiedOutbound = enabled;
+  }
+
+  /** 是否启用统一出站 */
+  get isUnifiedOutbound(): boolean {
+    return this.unifiedOutbound;
+  }
+
+  /** 注册/替换统一出站监听器 */
+  setOutboundListener(listener: OutboundMessageListener | undefined): void {
+    this.outboundListener = listener;
+  }
+
+  /** 发出统一出站消息；未启用或无监听器时返回 false */
+  private forwardOutbound(message: OutboundMessage): boolean {
+    if (!this.unifiedOutbound || this.isDisposed || !this.outboundListener) return false;
+    try {
+      const result = this.outboundListener(message);
+      if (result && typeof (result as Promise<void>).catch === 'function') {
+        void (result as Promise<void>).catch((error: unknown) => {
+          logger.warn('统一出站监听器失败', { error: errorMessage(error) });
+        });
+      }
+    } catch (error) {
+      logger.warn('统一出站监听器抛出异常', { error: errorMessage(error) });
+    }
+    return true;
+  }
+
+  /** 发送 action；统一出站开启时经 outboundListener，否则返回 false 由宿主发送 */
+  emitAction(action: ClientActionPayload): boolean {
+    return this.forwardOutbound(toOutboundActionMessage(action));
   }
 
   /** 订阅出站错误（结构化 renderer→agent error 载荷） */
@@ -71,7 +129,7 @@ export class SurfaceManager {
     return () => this.errorListeners.delete(listener);
   }
 
-  /** 发出结构化错误；单个监听器异常不影响其他订阅者 */
+  /** 发出结构化错误；本地订阅者与统一出站都会收到 */
   emitError(error: A2uiRendererError): void {
     for (const listener of Array.from(this.errorListeners)) {
       try {
@@ -80,6 +138,7 @@ export class SurfaceManager {
         logger.warn('错误监听器抛出异常', { error: errorMessage(err) });
       }
     }
+    this.forwardOutbound({ version: '1.0', error });
   }
 
   /** 注入/替换 RPC 处理器 */
@@ -237,6 +296,7 @@ export class SurfaceManager {
     this.isDisposed = true;
     this.rpcHandler?.dispose(reason);
     this.errorListeners.clear();
+    this.outboundListener = undefined;
     this.surfaces.value = new Map();
   }
 
@@ -286,14 +346,18 @@ export class SurfaceManager {
       error?: { code: string; message: string };
     }) => void,
   ): void {
-    if (!onResponse) return;
+    const respond =
+      onResponse ??
+      ((response: { functionCallId: string; value?: unknown; error?: { code: string; message: string } }) => {
+        if (this.unifiedOutbound) this.forwardOutbound(toOutboundFunctionResponse(response));
+      });
 
     const callName = call['@call'];
     let dataModel: Record<string, unknown> = {};
     if (call.surfaceId !== undefined) {
       const surface = this.surfaces.value.get(call.surfaceId);
       if (!surface) {
-        onResponse({
+        respond({
           functionCallId: call.functionCallId,
           error: {
             code: 'INVALID_FUNCTION_CALL',
@@ -307,7 +371,7 @@ export class SurfaceManager {
 
     const allowedCallers = getFunctionAllowedCallers(callName, call.catalogId);
     if (!allowedCallers) {
-      onResponse({
+      respond({
         functionCallId: call.functionCallId,
         error: {
           code: 'INVALID_FUNCTION_CALL',
@@ -317,7 +381,7 @@ export class SurfaceManager {
       return;
     }
     if (allowedCallers === 'rendererOnly') {
-      onResponse({
+      respond({
         functionCallId: call.functionCallId,
         error: { code: 'INVALID_FUNCTION_CALL', message: `Function '${callName}' is rendererOnly.` },
       });
@@ -328,10 +392,10 @@ export class SurfaceManager {
       const result = callFunction({ '@call': callName, catalogId: call.catalogId, args: call.args }, dataModel, 0, {
         caller: 'agent',
       });
-      onResponse({ functionCallId: call.functionCallId, value: result });
+      respond({ functionCallId: call.functionCallId, value: result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      onResponse({
+      respond({
         functionCallId: call.functionCallId,
         error: { code: 'EXECUTION_ERROR', message },
       });
