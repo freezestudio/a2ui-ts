@@ -1,5 +1,13 @@
 # @freezestudio/a2ui-angular
 
+## 2.0.1
+
+### Patch Changes
+
+- b3f9bfc: 修复 `unifiedOutbound` 模式丢弃 `sendError()` 直发错误的问题：`VALIDATION_FAILED` / `SURFACE_NOT_FOUND` 等由 message-handler 直发的错误现在经 outboundListener 上报，同时避免内部错误重复出站（新增 `SurfaceManager.forwardError`）。
+- Updated dependencies [b3f9bfc]
+  - @freezestudio/a2ui-web-core@5.0.1
+
 ## 2.0.0
 
 ### Major Changes
