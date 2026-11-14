@@ -22,6 +22,10 @@ import { signal } from '@preact/signals-core';
 import { z } from 'zod';
 import { setAtPath, deleteAtPath } from '../processing/data-binding.js';
 import { callFunction, getFunctionAllowedCallers } from '../processing/function-call.js';
+import type { A2uiRendererError } from '../processing/message-error-mapper.js';
+import type { FunctionCall } from '../schema/schemas.js';
+import { RpcErrorCode, A2uiRpcError } from '../common/errors.js';
+import type { CallAgentFunctionOptions, RpcHandler } from '../rpc/rpc-handler.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('surface-manager');
 
@@ -52,6 +56,69 @@ export function findRootComponent(components: A2UIDescriptor[]): A2UIDescriptor 
 
 export class SurfaceManager {
   surfaces = signal<Map<string, Surface>>(new Map());
+
+  private errorListeners = new Set<(error: A2uiRendererError) => void>();
+  private rpcHandler?: RpcHandler;
+  private isDisposed = false;
+
+  constructor(options: { rpcHandler?: RpcHandler } = {}) {
+    this.rpcHandler = options.rpcHandler;
+  }
+
+  /** 订阅出站错误（结构化 renderer→agent error 载荷） */
+  onError(listener: (error: A2uiRendererError) => void): () => void {
+    this.errorListeners.add(listener);
+    return () => this.errorListeners.delete(listener);
+  }
+
+  /** 发出结构化错误；单个监听器异常不影响其他订阅者 */
+  emitError(error: A2uiRendererError): void {
+    for (const listener of Array.from(this.errorListeners)) {
+      try {
+        listener(error);
+      } catch (err) {
+        logger.warn('错误监听器抛出异常', { error: errorMessage(err) });
+      }
+    }
+  }
+
+  /** 注入/替换 RPC 处理器 */
+  setRpcHandler(handler: RpcHandler | undefined): void {
+    this.rpcHandler = handler;
+  }
+
+  /** 获取当前 RPC 处理器 */
+  getRpcHandler(): RpcHandler | undefined {
+    return this.rpcHandler;
+  }
+
+  /** 发起 renderer→agent 函数调用（需要已注入 RpcHandler） */
+  callAgentFunction<T = unknown>(
+    surfaceId: string,
+    call: FunctionCall,
+    options?: CallAgentFunctionOptions,
+  ): Promise<T> {
+    if (!this.rpcHandler) {
+      return Promise.reject(
+        new A2uiRpcError('No RpcHandler configured on SurfaceManager.', RpcErrorCode.NO_LISTENER, undefined, {
+          surfaceId,
+        }),
+      );
+    }
+    return this.rpcHandler.callAgentFunction<T>(surfaceId, call, options);
+  }
+
+  /** 处理 agent 对 callAgentFunction 的响应；迟到/未知响应被忽略 */
+  handleAgentFunctionResponse(message: {
+    agentFunctionResponse: { functionCallId: string; value?: unknown; error?: { code: string; message: string } };
+  }): boolean {
+    return this.rpcHandler?.handleAgentFunctionResponse(message) ?? false;
+  }
+
+  /** surface 是否已释放 */
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
 
   handleCreateSurface(surfaceId: string, catalogId?: string, sendDataModel?: boolean): boolean {
     logger.debug('handleCreateSurface', { surfaceId, catalogId });
@@ -149,6 +216,7 @@ export class SurfaceManager {
   handleDeleteSurface(surfaceId: string): boolean {
     const current = this.surfaces.value;
     if (!current.has(surfaceId)) return false;
+    this.rpcHandler?.cancelSurfaceCalls(surfaceId);
     const newMap = new Map(current);
     newMap.delete(surfaceId);
     this.surfaces.value = newMap;
@@ -158,8 +226,18 @@ export class SurfaceManager {
 
   clear(): void {
     const count = this.surfaces.value.size;
+    this.rpcHandler?.cancelAll('SurfaceManager cleared.');
     this.surfaces.value = new Map();
     logger.debug('清除所有 Surface', { clearedCount: count });
+  }
+
+  /** 释放管理器：取消 pending RPC、清空监听器与 surface 状态 */
+  dispose(reason?: string): void {
+    if (this.isDisposed) return;
+    this.isDisposed = true;
+    this.rpcHandler?.dispose(reason);
+    this.errorListeners.clear();
+    this.surfaces.value = new Map();
   }
 
   snapshot(): Surface[] {
@@ -255,7 +333,7 @@ export class SurfaceManager {
       const message = error instanceof Error ? error.message : String(error);
       onResponse({
         functionCallId: call.functionCallId,
-        error: { code: 'FUNCTION_EXECUTION_ERROR', message },
+        error: { code: 'EXECUTION_ERROR', message },
       });
     }
   }
@@ -274,4 +352,8 @@ export class SurfaceManager {
     }
     return false;
   }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

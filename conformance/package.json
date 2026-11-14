@@ -9,7 +9,8 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@freezestudio/a2ui-sdk": "workspace:*"
+    "@freezestudio/a2ui-sdk": "workspace:*",
+    "@freezestudio/a2ui-web-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

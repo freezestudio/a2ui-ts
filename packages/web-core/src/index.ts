@@ -9,8 +9,13 @@ export {
   A2uiStateError,
   A2uiFunctionError,
   A2uiSecurityError,
+  A2uiCatalogError,
+  A2uiIntegrityError,
+  A2uiRecursionError,
+  A2uiRpcError,
+  RpcErrorCode,
 } from './common/errors.js';
-export type { A2uiErrorPayload } from './common/errors.js';
+export type { A2uiErrorPayload, A2uiErrorDetail } from './common/errors.js';
 
 export {
   A2uiMessageSchema,
@@ -92,13 +97,38 @@ export type { ActionIntent } from './processing/function-call.js';
 
 export {
   processMessage,
+  processMessageSafe,
+  processMessagesWithErrors,
   isValidMessage,
   validateComponents,
   validateComponentsDetailed,
   resolveCatalog,
   clearAllPending,
 } from './processing/message-handler.js';
-export type { A2UIMessage, ComponentValidationIssue } from './processing/message-handler.js';
+export type { A2UIMessage, ComponentValidationIssue, MessageProcessingError } from './processing/message-handler.js';
+
+// 结构化错误映射（v1.0 renderer→agent error，RFC 6901 path）
+export {
+  extractEnvelopeErrorContext,
+  normalizeJsonPointer,
+  mapErrorToRendererMessage,
+} from './processing/message-error-mapper.js';
+export type {
+  A2uiRendererError,
+  RendererErrorMessage,
+  ValidationFailedErrorBody,
+  GenericErrorBody,
+  ErrorEnvelopeContext,
+} from './processing/message-error-mapper.js';
+
+// RPC 生命周期（callAgentFunction pending/timeout/cancel/dispose）
+export { RpcHandler, DEFAULT_MAX_PENDING_CALLS, DEFAULT_RPC_TIMEOUT_MS } from './rpc/rpc-handler.js';
+export type {
+  CallAgentFunctionEnvelope,
+  CallAgentFunctionOptions,
+  RpcHandlerOptions,
+  RpcOutboundListener,
+} from './rpc/rpc-handler.js';
 
 // 组合约束校验（allowedParents/allowedChildren + Surface，v1.0 #2155）
 export {

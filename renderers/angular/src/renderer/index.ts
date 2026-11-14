@@ -26,7 +26,13 @@
  */
 import { Injectable, Signal } from '@angular/core';
 import { SurfaceManager, Surface, A2UIDescriptor } from './surface-manager.js';
-import { processMessage, isValidMessage, clearAllPending, type A2UIMessage } from './message-handler.js';
+import {
+  processMessage,
+  processMessageSafe,
+  isValidMessage,
+  clearAllPending,
+  type A2UIMessage,
+} from './message-handler.js';
 import {
   resolveDynamicValue,
   resolveDynamicString,
@@ -37,6 +43,8 @@ import {
 import {
   A2uiClientActionMessageSchema,
   A2uiClientErrorMessageSchema,
+  RpcHandler,
+  mapErrorToRendererMessage,
   type RendererDataModel,
 } from '@freezestudio/a2ui-web-core';
 import { createRendererLogger } from './logger.js';
@@ -96,6 +104,24 @@ export class A2UIRendererService {
   private _sendError:
     | ((error: { code: string; message: string; surfaceId?: string; path?: string; functionCallId?: string }) => void)
     | null = null;
+
+  /** renderer→agent RPC 生命周期（pending/timeout/cancel/dispose） */
+  private readonly _rpcHandler = new RpcHandler({
+    outboundListener: (message) => {
+      const dataModelPayload = this.getSendDataModelPayload();
+      const transportMetadata = dataModelPayload ? { a2uiRendererDataModel: dataModelPayload } : undefined;
+      void this._sendCallAgentFunction?.(message.callAgentFunction, transportMetadata);
+    },
+  });
+
+  constructor() {
+    this._surfaceManager.core.setRpcHandler(this._rpcHandler);
+  }
+
+  /** 获取 RPC 生命周期处理器（供宿主监听 pending 数或主动取消） */
+  get rpcHandler(): RpcHandler {
+    return this._rpcHandler;
+  }
 
   /**
    * 注册 rendererFunctionResponse 发送回调（v1.0 #2210）
@@ -239,9 +265,9 @@ export class A2UIRendererService {
     return this._sendCallAgentFunction?.(call, transportMetadata) ?? undefined;
   }
 
-  /** 内部：调用 processMessage 并传入 rendererFunctionResponse 回调 */
+  /** 内部：调用 processMessageSafe 并传入 rendererFunctionResponse 回调 */
   private _p(msg: A2UIMessage): void {
-    processMessage(msg, this._surfaceManager.core, this._sendRendererFunctionResponse ?? undefined, this);
+    processMessageSafe(msg, this._surfaceManager.core, this._sendRendererFunctionResponse ?? undefined, this);
   }
 
   /**
@@ -264,7 +290,7 @@ export class A2UIRendererService {
       const fn = action['functionCall'] as FunctionCall;
       // agent 端函数：本地 FunctionRegistry 未注册 → callAgentFunction（如 refreshData）
       if (!isKnownFunction(fn['@call'], fn.catalogId)) {
-        await this.handleAgentFunction(fn, surface);
+        this.handleAgentFunction(fn, surface);
         return;
       }
       // 本地渲染端函数（requiresUserActivation 函数仅在激活 Action 内允许）
@@ -276,8 +302,13 @@ export class A2UIRendererService {
       try {
         callFunction(fn, surface.dataModel, 0, context);
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        logger.warn('action.functionCall 执行失败', { call: fn['@call'], message });
+        // v1.0 失败恢复：本地函数已执行但失败 → EXECUTION_ERROR；surface 与兄弟组件保持挂载
+        const mapped = mapErrorToRendererMessage(error, {
+          surfaceId: surface.surfaceId,
+          actionType: 'action',
+        });
+        logger.warn('action.functionCall 执行失败', { call: fn['@call'], message: mapped.error.message });
+        this.sendError(mapped.error);
       }
       return;
     }
@@ -285,22 +316,29 @@ export class A2UIRendererService {
     if (action['event']) {
       const event = action['event'] as Record<string, unknown>;
       const name = event['name'] as string;
-      const userMessage =
-        event['userMessage'] === undefined ? undefined : this.resolveDynamicString(event['userMessage'], surface);
-      const rawContext = (event['context'] || {}) as Record<string, unknown>;
+      try {
+        const userMessage =
+          event['userMessage'] === undefined ? undefined : this.resolveDynamicString(event['userMessage'], surface);
+        const rawContext = (event['context'] || {}) as Record<string, unknown>;
 
-      const resolvedContext: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(rawContext)) {
-        resolvedContext[key] = this.resolveDynamicValue(val, surface);
+        const resolvedContext: Record<string, unknown> = {};
+        for (const [key, val] of Object.entries(rawContext)) {
+          resolvedContext[key] = this.resolveDynamicValue(val, surface);
+        }
+
+        this.sendAction({
+          name,
+          userMessage,
+          surfaceId: surface.surfaceId,
+          sourceComponentId: component.id,
+          context: resolvedContext,
+        });
+      } catch (error) {
+        // v1.0 失败恢复：Action 求值失败 → EXPRESSION_ERROR；停止该 action 后续步骤
+        const mapped = mapErrorToRendererMessage(error, { surfaceId: surface.surfaceId, actionType: 'action' });
+        logger.warn('action.event 求值失败', { name, message: mapped.error.message });
+        this.sendError(mapped.error);
       }
-
-      this.sendAction({
-        name,
-        userMessage,
-        surfaceId: surface.surfaceId,
-        sourceComponentId: component.id,
-        context: resolvedContext,
-      });
     }
   }
 
@@ -310,13 +348,27 @@ export class A2UIRendererService {
    * args 中声明 `responsePath`（如 '/components/stats-summary'）时，
    * 将 agentFunctionResponse 的 value 写回 dataModel 对应路径（响应式刷新）。
    */
-  private async handleAgentFunction(fn: FunctionCall, surface: Surface): Promise<void> {
-    const functionCallId = `${fn['@call']}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    await this.sendCallAgentFunction({
-      surfaceId: surface.surfaceId,
-      functionCallId,
-      callFunction: { '@call': fn['@call'], catalogId: fn.catalogId, args: fn.args },
+  private handleAgentFunction(fn: FunctionCall, surface: Surface): void {
+    const pending = this._rpcHandler.callAgentFunction(surface.surfaceId, {
+      '@call': fn['@call'],
+      ...(fn.catalogId !== undefined ? { catalogId: fn.catalogId } : {}),
+      ...(fn.args !== undefined ? { args: fn.args } : {}),
     });
+    void pending
+      .then((value) => {
+        const responsePath = fn.args?.['responsePath'];
+        if (typeof responsePath === 'string') {
+          this._surfaceManager.core.handleUpdateDataModel(surface.surfaceId, responsePath, value);
+        }
+      })
+      .catch((error: unknown) => {
+        const mapped = mapErrorToRendererMessage(error, {
+          surfaceId: surface.surfaceId,
+          actionType: 'callAgentFunction',
+        });
+        logger.warn('callAgentFunction 失败', { call: fn['@call'], code: mapped.error.code });
+        this.sendError(mapped.error);
+      });
   }
 
   /**

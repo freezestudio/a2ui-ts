@@ -1,4 +1,5 @@
 import { computed, Signal, signal } from '@angular/core';
+import { mapErrorToRendererMessage } from '@freezestudio/a2ui-web-core';
 import { isDataBinding, isFunctionCall, resolvePath } from './data-binding.js';
 import { callFunction } from './function-call.js';
 import type { DataBinding, FunctionCall } from './data-binding.js';
@@ -10,6 +11,8 @@ export class DataContext {
   private setDataModel: (path: string, value: unknown) => void;
   /** 当前解析基准路径 */
   path: string = '/';
+  /** 表达式错误上报（实时模式） */
+  private reportExpressionError?: (message: string) => void;
 
   constructor(managerOrSurface: SurfaceManager, surfaceId: string, path?: string);
   /** 快照模式：直接传入 Surface（如导出报告历史轮次深拷贝），不回查 manager */
@@ -19,6 +22,10 @@ export class DataContext {
       // SurfaceManager 模式
       const manager = managerOrSurface as SurfaceManager;
       const surfaceId = surfaceIdOrPath as string;
+      this.reportExpressionError = (message: string) => {
+        const mapped = mapErrorToRendererMessage(new Error(message), { surfaceId });
+        manager.core.emitError({ ...mapped.error, code: 'EXPRESSION_ERROR' });
+      };
       // 必须读 Angular signal（manager.surfaces()）：Angular computed 不追踪
       // preact signal（manager.core.surfaces.value），否则绑定不响应更新
       this.getDataModel = () => manager.surfaces().get(surfaceId)?.dataModel ?? {};
@@ -44,17 +51,27 @@ export class DataContext {
       const binding = value as DataBinding;
       const absolutePath = this.resolvePath(binding['@path']);
       return computed(() => {
-        const dataModel = this.getDataModel();
-        const ctx = index !== undefined ? { '@index': index } : undefined;
-        return resolvePath({ '@path': absolutePath }, dataModel, ctx) as T;
+        try {
+          const dataModel = this.getDataModel();
+          const ctx = index !== undefined ? { '@index': index } : undefined;
+          return resolvePath({ '@path': absolutePath }, dataModel, ctx) as T;
+        } catch (error) {
+          this.reportExpressionError?.(error instanceof Error ? error.message : String(error));
+          return undefined as T;
+        }
       }) as Signal<T>;
     }
 
     if (isFunctionCall(value)) {
       return computed(() => {
-        const dataModel = this.getDataModel();
-        const ctx = index !== undefined ? { '@index': index } : undefined;
-        return callFunction(value as FunctionCall, dataModel, 0, ctx) as T;
+        try {
+          const dataModel = this.getDataModel();
+          const ctx = index !== undefined ? { '@index': index } : undefined;
+          return callFunction(value as FunctionCall, dataModel, 0, ctx) as T;
+        } catch (error) {
+          this.reportExpressionError?.(error instanceof Error ? error.message : String(error));
+          return undefined as T;
+        }
       }) as Signal<T>;
     }
 

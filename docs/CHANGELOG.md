@@ -10,6 +10,33 @@
 
 ---
 
+## [2026-11-14] RPC 生命周期与结构化错误恢复
+
+> 对齐上游 #3856（`656c26a4b`）/ #3579（`cf92be7b9`）/ #4078（`88be2caf4`）。
+
+### 新增能力
+
+- **RPC 生命周期**：`RpcHandler` 管理 renderer→agent `callAgentFunction` 的 pending 调用，
+  支持 `functionCallId` 关联、timeout / `cancelSurfaceCalls` / `dispose`、迟到响应忽略、
+  `TOO_MANY_PENDING` 上限；`SurfaceManager.deleteSurface` 自动取消该 surface 的 pending 调用。
+- **结构化错误映射**：新增 `mapErrorToRendererMessage` / `extractEnvelopeErrorContext` /
+  `normalizeJsonPointer`，把内部错误映射为 v1.0 `renderer_to_agent` error 信封，
+  路径统一为 RFC 6901 JSON Pointer。
+- **错误恢复**：新增 `processMessageSafe` / `processMessagesWithErrors`，单条消息失败不会中断
+  后续消息；`SurfaceManager.onError` 提供本地错误订阅。
+- **Angular 接入**：`A2UIRendererService` 使用 `RpcHandler` 发送/关联 `callAgentFunction`；
+  Action 求值失败发出 `EXPRESSION_ERROR`，本地函数执行失败发出 `EXECUTION_ERROR`；
+  绑定时表达式失败不影响组件与兄弟组件挂载。
+
+### 测试基线
+
+- 全部 **1654 用例**（shared 180 / web-core 60 / sdk 582 / angular 106 / conformance 723 / eval 3）
+- 新增 `conformance/tests/sdk-behavior/rpc-lifecycle.test.ts`（9 用例，对齐上游
+  `conformance/core/rpc_functions.yaml` 的 correlate / cancelled / disposed / no_listener /
+  late response / too_many_pending）
+
+---
+
 ## [2026-11-14] 对齐上游 v1.0 稳定版（wire `1.0` / `@` 信封键 / Catalog 叶子 `$defs`）
 
 > 同步官方规范副本 `db430653` → `3ed960186`（58 个触及 `specification/` 与 `catalogs/` 的提交），

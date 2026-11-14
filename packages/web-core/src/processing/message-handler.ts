@@ -9,6 +9,11 @@ import {
   type CompositionIssue,
 } from '../schema/composition-constraints.js';
 import { A2uiValidationError } from '../common/errors.js';
+import {
+  extractEnvelopeErrorContext,
+  mapErrorToRendererMessage,
+  type RendererErrorMessage,
+} from './message-error-mapper.js';
 import { createRendererLogger } from '../common/logger.js';
 const logger = createRendererLogger('message-handler');
 
@@ -269,10 +274,62 @@ export function processMessage(
       );
     }
   } else if (message.agentFunctionResponse) {
-    // agentFunctionResponse 是 agent 对 renderer 发起 callAgentFunction 的响应，
-    // 由上层（renderer）按 functionCallId 路由到等待方；此处无操作。
+    // agentFunctionResponse 是 agent 对 renderer 发起 callAgentFunction 的响应；
+    // 按 functionCallId 关联 pending 调用，迟到/未知响应由 RpcHandler 忽略。
+    const correlated = surfaceManager.handleAgentFunctionResponse(message as never);
     logger.debug('agentFunctionResponse 已接收', {
       functionCallId: message.agentFunctionResponse.functionCallId,
+      correlated,
     });
   }
+}
+
+/**
+ * 带结构化错误恢复的 processMessage：捕获异常、映射为 renderer→agent error 信封，
+ * 通过 SurfaceManager.onError 与 renderer.sendError 发出，不向调用方抛出。
+ *
+ * @returns 映射后的错误信封；无错误时返回 null
+ */
+export function processMessageSafe(
+  message: LooseMessage,
+  surfaceManager: SurfaceManager,
+  onFunctionResponse?: Parameters<typeof processMessage>[2],
+  renderer?: Parameters<typeof processMessage>[3],
+): RendererErrorMessage | null {
+  try {
+    processMessage(message, surfaceManager, onFunctionResponse, renderer);
+    return null;
+  } catch (error) {
+    const mapped = mapErrorToRendererMessage(error, extractEnvelopeErrorContext(message));
+    surfaceManager.emitError(mapped.error);
+    renderer?.sendError(mapped.error);
+    return mapped;
+  }
+}
+
+/** 批量处理消息并收集结构化错误（不抛出） */
+export interface MessageProcessingError {
+  messageIndex: number;
+  error: RendererErrorMessage;
+}
+
+export function processMessagesWithErrors(
+  messages: unknown[],
+  surfaceManager: SurfaceManager,
+  options: {
+    onFunctionResponse?: Parameters<typeof processMessage>[2];
+    renderer?: Parameters<typeof processMessage>[3];
+  } = {},
+): MessageProcessingError[] {
+  const errors: MessageProcessingError[] = [];
+  messages.forEach((raw, messageIndex) => {
+    const mapped = processMessageSafe(
+      raw as LooseMessage,
+      surfaceManager,
+      options.onFunctionResponse,
+      options.renderer,
+    );
+    if (mapped) errors.push({ messageIndex, error: mapped });
+  });
+  return errors;
 }
