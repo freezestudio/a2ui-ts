@@ -41,7 +41,7 @@ describe('SDK 行为测试数据格式验证', () => {
 describe('Streaming Parser 一致性', () => {
   it('SDK: 解析包含 <a2ui-json> 标签的响应', () => {
     const response =
-      'Hello <a2ui-json>[{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}}]</a2ui-json> World';
+      'Hello <a2ui-json>[{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}}]</a2ui-json> World';
     const parts = parseResponse(response);
 
     const a2uiParts = parts.filter((p) => p.type === 'a2ui_json');
@@ -51,7 +51,7 @@ describe('Streaming Parser 一致性', () => {
 
   it('SDK: parseResponse 解析完整响应', () => {
     const response =
-      'Text before<a2ui-json>[{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}}]</a2ui-json>Text after';
+      'Text before<a2ui-json>[{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}}]</a2ui-json>Text after';
     const parts = parseResponse(response);
     const a2uiParts = parts.filter((p) => p.type === 'a2ui_json');
     expect(a2uiParts.length).toBe(1);
@@ -60,7 +60,7 @@ describe('Streaming Parser 一致性', () => {
 
   it('SDK: 自动修复未闭合的 JSON', () => {
     const parser = createStreamParser({ autoFix: true });
-    parser.processChunk('<a2ui-json>[{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}');
+    parser.processChunk('<a2ui-json>[{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1"}');
     const parts = parser.finish();
     const a2uiParts = parts.filter((p) => p.type === 'a2ui_json');
     expect(a2uiParts.length).toBe(1);
@@ -82,9 +82,7 @@ describe('Streaming Parser 一致性', () => {
 
   it('SDK: 流式解析器 reset 恢复正常', () => {
     const parser = createStreamParser();
-    parser.processChunk(
-      '<a2ui-json>[{"version":"v1.0","createSurface":{"surfaceId":"s","catalogId":"c"}}]</a2ui-json>',
-    );
+    parser.processChunk('<a2ui-json>[{"version":"1.0","createSurface":{"surfaceId":"s","catalogId":"c"}}]</a2ui-json>');
     parser.reset();
     expect(parser.getState()).toBe('idle');
   });
@@ -142,7 +140,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 校验有效 createSurface 消息', () => {
     const result = validator.validateServerToClientMessage({
-      version: 'v1.0',
+      version: '1.0',
       createSurface: { surfaceId: 's1', catalogId: 'c1' },
     });
     expect(result.valid).toBe(true);
@@ -165,7 +163,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 校验有效 action 消息（直接使用 Zod Schema）', () => {
     const result = A2uiClientMessageSchema.safeParse({
-      version: 'v1.0',
+      version: '1.0',
       action: {
         name: 'click',
         surfaceId: 's1',
@@ -179,7 +177,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 校验有效 rendererFunctionResponse 消息（v1.0 #2210 重构）', () => {
     const result = A2uiClientMessageSchema.safeParse({
-      version: 'v1.0',
+      version: '1.0',
       rendererFunctionResponse: {
         functionCallId: 'call-1',
         value: 'result',
@@ -190,7 +188,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 校验 error 消息 — surfaceId/functionCallId 互斥', () => {
     const result = A2uiClientMessageSchema.safeParse({
-      version: 'v1.0',
+      version: '1.0',
       error: {
         code: 'RUNTIME_ERROR',
         message: 'some error',
@@ -203,8 +201,8 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 校验消息列表', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
     ];
     const result = validator.validateMessageList(messages);
     expect(result.valid).toBe(true);
@@ -212,7 +210,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: STRICT_VALIDATION 检测组件完整性 — 缺少 root', () => {
     const message = {
-      version: 'v1.0' as const,
+      version: '1.0' as const,
       updateComponents: {
         surfaceId: 's1',
         components: [{ id: 'c1', component: 'Text', text: 'hello' }],
@@ -225,7 +223,7 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: validateComponents 执行完整性检查', () => {
     const message = {
-      version: 'v1.0' as const,
+      version: '1.0' as const,
       updateComponents: {
         surfaceId: 's1',
         components: [{ id: 'root', component: 'Text', text: 'hello' }],
@@ -239,12 +237,12 @@ describe('A2uiValidator 一致性', () => {
 
   it('SDK: 所有 6 种 S2C 消息类型均可校验', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] } },
-      { version: 'v1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] } },
+      { version: '1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
       {
-        version: 'v1.0',
+        version: '1.0',
         callRendererFunction: {
           functionCallId: 'fc1',
           callFunction: {
@@ -254,7 +252,7 @@ describe('A2uiValidator 一致性', () => {
           },
         },
       },
-      { version: 'v1.0', agentFunctionResponse: { functionCallId: 'fc1', value: 'ok' } },
+      { version: '1.0', agentFunctionResponse: { functionCallId: 'fc1', value: 'ok' } },
     ];
     for (const msg of messages) {
       const result = A2uiMessageSchema.safeParse(msg);
@@ -265,7 +263,7 @@ describe('A2uiValidator 一致性', () => {
   it('SDK: 所有 4 种 C2S 消息类型均可校验', () => {
     const messages = [
       {
-        version: 'v1.0',
+        version: '1.0',
         action: {
           name: 'click',
           surfaceId: 's1',
@@ -275,11 +273,11 @@ describe('A2uiValidator 一致性', () => {
         },
       },
       {
-        version: 'v1.0',
+        version: '1.0',
         callAgentFunction: { surfaceId: 's1', functionCallId: 'fc1', callFunction: { '@call': 'fn' } },
       },
-      { version: 'v1.0', rendererFunctionResponse: { functionCallId: 'fc1', value: 'result' } },
-      { version: 'v1.0', error: { code: 'ERR', message: 'err', surfaceId: 's1' } },
+      { version: '1.0', rendererFunctionResponse: { functionCallId: 'fc1', value: 'result' } },
+      { version: '1.0', error: { code: 'ERR', message: 'err', surfaceId: 's1' } },
     ];
     for (const msg of messages) {
       const result = A2uiClientMessageSchema.safeParse(msg);
@@ -472,7 +470,7 @@ describe('组合约束校验（Surface 容器 + allowedParents/allowedChildren�
     const validator = new A2uiValidator();
     const result = validator.validateComponentsWithCatalog(
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'main',
           components: [
@@ -494,7 +492,7 @@ describe('组合约束校验（Surface 容器 + allowedParents/allowedChildren�
     const validator = new A2uiValidator();
     const result = validator.validateComponentsWithCatalog(
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'main',
           components: [
@@ -515,7 +513,7 @@ describe('组合约束校验（Surface 容器 + allowedParents/allowedChildren�
     const validator = new A2uiValidator();
     const result = validator.validateComponentsWithCatalog(
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'main',
           components: [{ id: 'root', component: 'AppLayout' }],
@@ -535,7 +533,7 @@ describe('组合约束校验（Surface 容器 + allowedParents/allowedChildren�
     const validator = new A2uiValidator();
     const result = validator.validateComponentsWithCatalog(
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: {
           surfaceId: 'main',
           components: [

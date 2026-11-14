@@ -2,7 +2,7 @@
 
 A2UI v1.0 协议的 TypeScript 参考实现（自 geo-scout 拆分独立演进）。本仓库为 pnpm monorepo，包含协议 SDK、框架无关渲染核心、Angular 渲染器、一致性测试与 LLM 评估。
 
-A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent 通过 `createSurface` / `updateDataModel` 消息动态生成并增量更新用户界面，支持双向数据绑定与本地函数求值。官方协议见 <https://a2ui.org/>，官方多语言实现（python / angular / lit / react）见 <https://github.com/a2ui-project/a2ui>；官方核心实现当前以 v0.9.1 为主版本，**本项目为官方 v1.0 协议的先行实现**。
+A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent 通过 `createSurface` / `updateDataModel` 消息动态生成并增量更新用户界面，支持双向数据绑定与本地函数求值。官方协议见 <https://a2ui.org/>，官方多语言实现（python / angular / lit / react）见 <https://github.com/a2ui-project/a2ui>；官方 v1.0 已稳定（wire 版本号 `1.0`），**本项目为其 TypeScript 参考实现**。
 
 > [!IMPORTANT]
 > **协议支持范围**：本项目严格对齐 **A2UI 规范 v1.0**。与官方渲染器为向后兼容保留 v0.8/v0.9 布局不同，本仓库（协议 SDK、渲染核心、Angular 渲染器、一致性测试）**仅支持 v1.0，不实现任何旧版协议**（v0.8 / v0.9 / v0.9.1）。
@@ -45,7 +45,7 @@ A2UI（Agent-to-User Interface）是面向 LLM/Agent 的流式 UI 协议：Agent
 
 ### 一致性测试（`conformance` — `@freezestudio/a2ui-conformance`，PRIVATE）
 
-v1.0 协议一致性核查套件（568 用例）：`harness` + `tests/`（schema-validation / sdk-behavior / v1-protocol / a2a-integration），以 `packages/sdk/resources/specification/v1_0/` 官方规范副本（只读）为基准。
+v1.0 协议一致性核查套件（714 用例）：`harness` + `tests/`（schema-validation / sdk-behavior / v1-protocol / a2a-integration），以 `packages/sdk/resources/specification/v1_0/` 官方规范副本（只读）为基准。
 
 > 📋 仓库变更记录见 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)；v1.0 协议核查表见 [`docs/checklists/`](docs/checklists/)。
 
@@ -77,7 +77,7 @@ v1.0 协议一致性核查套件（568 用例）：`harness` + `tests/`（schema
 
 ```bash
 pnpm install
-pnpm -r test    # 全仓测试：1266 用例全绿（shared 53 / web-core 11 / sdk 538 / angular 96 / conformance 568）
+pnpm -r test    # 全仓测试：1607 用例全绿（shared 180 / web-core 28 / sdk 582 / angular 100 / conformance 714 / eval 3）
 ```
 
 按包：

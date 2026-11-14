@@ -10,7 +10,38 @@
 
 ---
 
-## [2026-10-08] 对齐上游 v1.0 保留协议键 `@` 前缀迁移
+## [2026-11-14] 对齐上游 v1.0 稳定版（wire `1.0` / `@` 信封键 / Catalog 叶子 `$defs`）
+
+> 同步官方规范副本 `db430653` → `3ed960186`（58 个触及 `specification/` 与 `catalogs/` 的提交），
+> 并落实 v1.0 稳定版的第二次 wire 格式演进。
+> 全仓测试 **1607 用例全绿**（shared 180 / web-core 28 / sdk 582 / angular 100 / conformance 714 / eval 3），
+> `pnpm check` 与 `pnpm -r build` 通过。
+
+### 破坏性变更
+
+- **wire 版本号统一为 `1.0`**（上游 #3097，`d98472e5d`）：消息信封、能力映射、`rendererDataModel`、Catalog `protocolVersion` 不再接受 `v1.0`。A2A 扩展 URI 仍为 `.../a2ui/v1.0`。
+- **组件信封键改为 `@` 前缀**（上游 #4044，`24d1bf9c8`）：`@catalogId` / `@accessibility` / `@metadata` / `@checks`；裸键在 wire 层被拒绝。消息/指令级键保持裸名：`createSurface.catalogId`、`FunctionCall.catalogId`、`action.metadata`、Catalog 顶层 `catalogId/metadata`。
+  - 过渡期兼容：`A2uiValidator` 新增可选 `legacyEnvelopeKeys`，在入口把裸键归一化为 `@` 键（默认关闭）。
+- **`TextField.value` 必填**（上游 #3868，`80aaef07f`）：Basic Catalog 及本地镜像同步。
+- **Basic Catalog examples 重命名**（上游 #4093，`ae97628de`）：去除数字前缀，`scaffold-*` 标记起始示例；新增 MCP `v1` 与 VegaChart Catalog。
+- **`callRendererFunction` 可选 `surfaceId`**（上游 #3110，`4ca7353f8`）：指定求值上下文 surface；未知 surface 返回 `INVALID_FUNCTION_CALL`。
+
+### 规范/实现更新
+
+- **Catalog 叶子 `$defs`**（上游 #2724，`4767c140e`）：允许 design token / value union 等叶子定义与 `#/$defs/<Type>` 引用；禁止在 `$defs` 内定义组件（含 `allOf` 包裹）；Catalog 级 `metadata`；`Catalog.fromJson` 内联解析本地 `$ref`。
+- **`createSurface` 内联组件**（上游 #3678，`5cf333d71`）：同时携带 `dataModel` 与 `components` 时，先应用 `dataModel`。
+- **`DynamicBoolean` / `CheckRule` 强制转换**（上游 #3850 / #3799）：新增 `coerceDynamicBoolean` / `coerceValidationResult`，覆盖 `ValidationResult`、字符串、数字、`null`、对象等分支；`and`/`or`/`not` 与 Angular `@checks` 绑定同步。
+- **A2UI 正则方言 + 静态安全规则**（上游 #3820 / #3854）：移植 `regex_subset` 解析器与 4 条静态规则（256/4096 code points、嵌套量词、重叠 alternation、相邻重叠），`regex` 函数改用 `new RegExp(pattern, 'u')`。
+- **Catalog 函数约束**：`allowedCallers` 非法值在 `Catalog.fromJson` 中报错；`requiresUserActivation: true` 仅允许 `rendererOnly`。
+- 一致性测试基线：官方 `test/cases` 156 → 178；conformance 670 → 714。
+
+### 同步资源
+
+- `packages/sdk/resources/specification/v1_0/`：32 个文件更新（7 个 JSON Schema、协议/迁移文档、`testing_catalog.json`、`run_tests.py`、16 个测试用例文件）。
+- `packages/sdk/resources/catalogs/`：basic catalog、46 个示例重命名、`mcp/v1/`、新增 `vegachart/`。
+- 删除过期 `specification/v1_0/catalogs/` 旧布局副本。
+
+---
 
 > 同步官方规范副本 `fcec476bf` → `db430653`（198 commits），并原地演进 v1.0 wire 格式。
 > 全仓测试 **1428 用例全绿**（shared 56 / web-core 28 / sdk 577 / angular 100 / conformance 664 / eval 3），

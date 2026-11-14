@@ -14,7 +14,7 @@
 ```typescript
 // 每条消息必须是 { version, [消息类型key] }
 interface ServerToClientMessage {
-  version: 'v1.0'; // ★ 必填
+  version: '1.0'; // ★ 必填
   createSurface?: CreateSurfaceMessage;
   updateComponents?: UpdateComponentsMessage;
   updateDataModel?: UpdateDataModelMessage;
@@ -25,7 +25,7 @@ interface ServerToClientMessage {
 }
 
 interface ClientToServerMessage {
-  version: 'v1.0'; // ★ 必填
+  version: '1.0'; // ★ 必填
   action?: ActionMessage;
   functionResponse?: FunctionResponseMessage;
   error?: ErrorMessage;
@@ -36,9 +36,9 @@ interface ClientToServerMessage {
 
 | #   | 核查项                                                                                                                                                          | ✓   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| 1.1 | 每条消息是否都有 `"version": "v1.0"`？                                                                                                                          |     |
+| 1.1 | 每条消息是否都有 `"version": "1.0"`？                                                                                                                           |     |
 | 1.2 | 每条消息是否**恰好包含一个**操作 key（如 `createSurface`）而非多个？                                                                                            |     |
-| 1.3 | 每条消息的 Schema 是否验证了 `version` 字段的值必须为 `"v1.0"`？                                                                                                |     |
+| 1.3 | 每条消息的 Schema 是否验证了 `version` 字段的值必须为 `"1.0"`？                                                                                                 |     |
 | 1.4 | 消息 Envelope 是否使用 `oneOf` 分发 6 种消息类型（`createSurface`、`updateComponents`、`updateDataModel`、`deleteSurface`、`callFunction`、`actionResponse`）？ |     |
 | 1.5 | `callFunction` 消息中，`functionCallId` 和 `wantResponse` 是否作为**顶层兄弟字段**（与 `version` 同级，非嵌套在 `callFunction` 内部）？                         |     |
 | 1.6 | 校验失败后是否返回 error 对象而非抛异常？                                                                                                                       |     |
@@ -47,7 +47,7 @@ interface ClientToServerMessage {
 
 ### 常见误用
 
-- ❌ version 为 `"1.0"` 或 `"v1"` → ✅ 必须是 `"v1.0"`
+- ❌ version 为 `"v1.0"` 或 `"v1"` → ✅ 必须是 `"1.0"`（不带 v 前缀）
 - ❌ 一条消息包含 `createSurface` + `updateComponents` 两个 key → ✅ 分开两条
 - ❌ version 字段放在操作 key 内部 → ✅ 必须在顶层
 - ❌ `callFunction` 的 `functionCallId`/`wantResponse` 嵌套在 `callFunction` 内部 → ✅ 必须是顶层兄弟字段
@@ -62,7 +62,7 @@ interface ClientToServerMessage {
 ```typescript
 interface CreateSurfaceMessage {
   surfaceId: string; // ★ 必填，全局唯一
-  catalogId?: string; // v1.0: 可选，surface 级默认 catalog（组件级 catalogId 可覆盖，见 §mixable catalog）
+  catalogId?: string; // v1.0: 可选，surface 级默认 catalog（组件级 `@catalogId` 可覆盖，见 §mixable catalog）
   surfaceProperties?: Record<string, unknown>; // ⚠ 项目扩展：上游 v1.0 已移除（#2126），本项目保留用于 Agent 身份标识
   sendDataModel?: boolean; // default false
   components?: ComponentDef[]; // v1.0: 可内联初始组件
@@ -76,7 +76,7 @@ interface CreateSurfaceMessage {
 | ---- | ------------------------------------------------------------------------------------------------------------------ | --- |
 | 2.1  | `surfaceId` 是否全局唯一（不会重复创建同一 surfaceId）？                                                           |     |
 | 2.2  | 重复创建同一 surfaceId 是否返回 `DUPLICATE_SURFACE` 错误？                                                         |     |
-| 2.3  | `catalogId`（可选）是否为该 surface 的默认 catalog？组件级 `catalogId` 覆盖是否正确解析（mixable catalog）？       |     |
+| 2.3  | `catalogId`（可选）是否为该 surface 的默认 catalog？组件级 `@catalogId` 覆盖是否正确解析（mixable catalog）？      |     |
 | 2.4  | 如果内联了 `components`，是否有一个 `id="root"` 的组件作为根？                                                     |     |
 | 2.5  | `sendDataModel: true` 时，客户端的每次 action 是否携带了该 surface 的完整 data model？                             |     |
 | 2.6  | ⚠ 项目扩展：`surfaceProperties` 是否符合 catalog 定义的 surfaceProperties schema？（上游 v1.0 已移除，本项目保留） |     |
@@ -84,8 +84,8 @@ interface CreateSurfaceMessage {
 | 2.8  | surface 创建后，后续的 `updateComponents`/`updateDataModel` 是否指向同一个 `surfaceId`？                           |     |
 | 2.9  | `createSurface.metadata.extensions` 是否被透传且不阻断渲染（v1.0 #2187 厂商扩展接缝）？                            | ✅  |
 | 2.10 | `metadata.extensions` 键是否为 UAX #31 合法标识符（`a2ui_` 为官方保留前缀，协议 schema 不拒绝、厂商不得占用）？    | ✅  |
-| 2.11 | 组件未声明 `catalogId` 时，是否回退到 surface 级默认 catalog 解析？                                                |     |
-| 2.12 | `accessibility.live` / `accessibility.hidden` 是否支持（上游 #2209，SDK/渲染器已实现）？                           | ✅  |
+| 2.11 | 组件未声明 `@catalogId` 时，是否回退到 surface 级默认 catalog 解析？                                               |     |
+| 2.12 | `@accessibility.live` / `@accessibility.hidden` 是否支持（上游 #2209，SDK/渲染器已实现）？                         | ✅  |
 
 ### 常见误用
 
@@ -345,7 +345,7 @@ interface CallFunctionMessage {
 | 9.2 | `a2uiClientCapabilities.v1_0.supportedCatalogIds` 是否包含所有已注册 Catalog？               |     |
 | 9.3 | `a2uiClientCapabilities.v1_0.inlineCatalogs`（如果使用）的格式是否符合 `CatalogDefinition`？ |     |
 | 9.4 | 当 `createSurface.sendDataModel: true` 时，`a2uiClientDataModel` 是否在每次 action 时同步？  |     |
-| 9.5 | `a2uiClientDataModel.version` 是否设为 `"v1.0"`？                                            |     |
+| 9.5 | `a2uiClientDataModel.version` 是否设为 `"1.0"`？                                             |     |
 | 9.6 | `a2uiClientDataModel.surfaces` 是否为 `Record<surfaceId, data>`？                            |     |
 | 9.7 | 是否只同步 `sendDataModel: true` 的 surface 的数据？                                         |     |
 | 9.8 | Server 端是否检查了客户端的 `supportedCatalogIds` 再生成 A2UI JSON？                         |     |
@@ -471,11 +471,11 @@ interface CheckRule {
 | ---- | ---------------------------------------------------------------------------------------------------------------------- | --- |
 | 16.1 | `CheckRule` 是否使用 `condition` 包裹校验逻辑（`{ condition: { @call: "required", args: {...} }, message: "..." }`）？ |     |
 | 16.2 | `condition` 的类型是否为 `DynamicBoolean`（支持 FunctionCall / DataBinding / boolean 字面量三种形态）？                |     |
-| 16.3 | 多个 checks 是否按数组顺序执行（第一个 `condition` 为 false 就停止后续）？                                             |     |
-| 16.4 | Button 的 `disabled` 是否从下游组件的 checks 结果汇总（任一 fail → disabled）？                                        |     |
-| 16.5 | checks 中的函数（如 `required`、`email`、`regex`、`and`、`or`、`not`）是否在 `FunctionRegistry` 中正确注册？           |     |
-| 16.6 | checks 中是否支持嵌套逻辑（`and`/`or`/`not` 组合多个 condition）？                                                     |     |
-| 16.7 | Button checks 失败时，样式是否灰化且点击事件不触发？                                                                   |     |
+| 16.3 | 多个 `@checks` 是否按数组顺序执行（第一个 `condition` 为 false 就停止后续）？                                          |     |
+| 16.4 | Button 的 `disabled` 是否从下游组件的 `@checks` 结果汇总（任一 fail → disabled）？                                     |     |
+| 16.5 | `@checks` 中的函数（如 `required`、`email`、`regex`、`and`、`or`、`not`）是否在 `FunctionRegistry` 中正确注册？        |     |
+| 16.6 | `@checks` 中是否支持嵌套逻辑（`and`/`or`/`not` 组合多个 condition）？                                                  |     |
+| 16.7 | Button `@checks` 失败时，样式是否灰化且点击事件不触发？                                                                |     |
 
 ---
 
@@ -627,8 +627,8 @@ interface CheckRule {
 | ---- | --------------------------------------------------------------------------------- | --- |
 | 24.1 | CheckRule 是否使用 `condition` 包裹校验逻辑（而非平铺 `call` + `args`）？         |     |
 | 24.2 | `condition` 是否支持 FunctionCall、DataBinding（path）和 boolean 字面量三种形态？ |     |
-| 24.3 | Button 的 `disabled` 是否汇总 checks 中所有 `condition` 的结果？                  |     |
-| 24.4 | TextField 的 checks 是否按顺序执行，第一个 `condition` 为 false 时停止后续？      |     |
+| 24.3 | Button 的 `disabled` 是否汇总 `@checks` 中所有 `condition` 的结果？               |     |
+| 24.4 | TextField 的 `@checks` 是否按顺序执行，第一个 `condition` 为 false 时停止后续？   |     |
 
 **常见误用**：
 
@@ -645,7 +645,7 @@ interface CheckRule {
 interface CatalogDefinition {
   $schema?: string; // "https://json-schema.org/draft/2020-12/schema"
   $id?: string; // Catalog JSON Schema 唯一 ID
-  protocolVersion?: string; // ★ 规范版本（semver 格式如 "1.0"），缺省默认 "0.9"（上游 2b8f8661）
+  protocolVersion?: string; // 规范版本（wire 为 "1.0"，不带 v 前缀）；缺省视为 1.0
   title?: string;
   description?: string;
   catalogId: string; // ★ 必填，唯一标识符（URI 格式）
@@ -660,13 +660,13 @@ interface CatalogDefinition {
 }
 ```
 
-| #    | 核查项                                                                                                                                                                 | ✓   |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| 25.1 | Catalog 顶层是否**仅**包含 `$schema`、`$id`、`protocolVersion`、`title`、`description`、`catalogId`、`instructions`、`components`、`functions`、`$defs` 这 10 个 key？ |     |
-| 25.2 | `catalogId` 是否使用 URI 格式命名空间（如 `https://geo-system.com/a2ui/v1.0/geo-sensor-catalog`）？                                                                    |     |
-| 25.3 | `instructions` 字段是否包含 LLM 设计指南（布局偏好、颜色主题、组件使用惯例）？                                                                                         |     |
-| 25.4 | `catalogId` 是否与前端 `supportedCatalogIds` 中注册的 ID 完全一致（区分大小写）？                                                                                      |     |
-| 25.5 | 是否避免了在 Catalog 顶层定义自定义 key（会被验证器拒绝）？                                                                                                            |     |
+| #    | 核查项                                                                                                                                                                         | ✓   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| 25.1 | Catalog 顶层是否**仅**包含 `$schema`、`$id`、`protocolVersion`、`title`、`description`、`catalogId`、`metadata`、`instructions`、`components`、`functions`、`$defs` 这些 key？ |     |
+| 25.2 | `catalogId` 是否使用 URI 格式命名空间（如 `https://geo-system.com/a2ui/v1.0/geo-sensor-catalog`）？                                                                            |     |
+| 25.3 | `instructions` 字段是否包含 LLM 设计指南（布局偏好、颜色主题、组件使用惯例）？                                                                                                 |     |
+| 25.4 | `catalogId` 是否与前端 `supportedCatalogIds` 中注册的 ID 完全一致（区分大小写）？                                                                                              |     |
+| 25.5 | 是否避免了在 Catalog 顶层定义自定义 key（会被验证器拒绝）？                                                                                                                    |     |
 
 ### Catalog 组件/函数命名（UAX #31）
 
@@ -714,20 +714,20 @@ interface CatalogDefinition {
 
 ### protocolVersion 声明（上游 2b8f8661 新增）
 
-| #     | 核查项                                                                                            | ✓   |
-| ----- | ------------------------------------------------------------------------------------------------- | --- |
-| 25.30 | Catalog 顶层是否声明了 `protocolVersion`（如 `"1.0"`）？v1.0 catalog 必须声明，缺省视为 `"0.9"`？ |     |
-| 25.31 | `protocolVersion` 值是否符合 semver 正则（`^(0\|[1-9]\d*)\.(...)`，不携带 `v` 前缀）？            |     |
-| 25.32 | 前端 `supportedCatalogIds` 声明 catalog 时，是否与服务端加载的 catalog `protocolVersion` 一致？   |     |
+| #     | 核查项                                                                                          | ✓   |
+| ----- | ----------------------------------------------------------------------------------------------- | --- |
+| 25.30 | Catalog 顶层是否声明了 `protocolVersion`（如 `"1.0"`，不带 v 前缀）？                           |     |
+| 25.31 | `protocolVersion` 值是否符合 semver 正则（`^(0\|[1-9]\d*)\.(...)`，不携带 `v` 前缀）？          |     |
+| 25.32 | 前端 `supportedCatalogIds` 声明 catalog 时，是否与服务端加载的 catalog `protocolVersion` 一致？ |     |
 
-### Mixable Catalog / 组件级 catalogId 解析（上游 706ed4d0 新增）
+### Mixable Catalog / 组件级 `@catalogId` 解析（上游 706ed4d0 新增）
 
 | #     | 核查项                                                                                          | ✓   |
 | ----- | ----------------------------------------------------------------------------------------------- | --- |
 | 25.33 | `createSurface.catalogId` 是否为**可选**（surface 级默认 catalog，`required` 仅 `surfaceId`）？ |     |
-| 25.34 | 组件未声明 `catalogId` 时，是否回退到 surface 级默认 catalog 解析？                             |     |
-| 25.35 | 组件级 `catalogId` 覆盖时，渲染器是否按组件自己的 catalog 查找组件定义（mixable catalogs）？    |     |
-| 25.36 | 函数调用（FunctionCall）是否同样支持组件级 `catalogId` 解析？                                   |     |
+| 25.34 | 组件未声明 `@catalogId` 时，是否回退到 surface 级默认 catalog 解析？                            |     |
+| 25.35 | 组件级 `@catalogId` 覆盖时，渲染器是否按组件自己的 catalog 查找组件定义（mixable catalogs）？   |     |
+| 25.36 | 函数调用（FunctionCall）是否同样支持函数级 `catalogId` 解析？                                   |     |
 | 25.37 | 单 surface 内混用多个 catalog 时，`catalogId` 是否全部在前端 `supportedCatalogIds` 中注册？     |     |
 
 ### 组合约束 allowedParents/allowedChildren + Surface 容器（上游 d849f485 新增）
@@ -747,8 +747,8 @@ interface CatalogDefinition {
 
 | #     | 核查项                                                                                                          | ✓   |
 | ----- | --------------------------------------------------------------------------------------------------------------- | --- |
-| 25.44 | `ComponentCommon.accessibility.live` 是否支持 `"off" \| "polite" \| "assertive"` 三态枚举？                     | ✅  |
-| 25.45 | `accessibility.hidden` 是否为 `DynamicBoolean`（支持布尔字面量 / DataBinding / FunctionCall）？                 | ✅  |
+| 25.44 | `ComponentCommon` 的 `@accessibility.live` 是否支持 `"off" \| "polite" \| "assertive"` 三态枚举？               | ✅  |
+| 25.45 | `@accessibility.hidden` 是否为 `DynamicBoolean`（支持布尔字面量 / DataBinding / FunctionCall）？                | ✅  |
 | 25.46 | 渲染器是否将 `live` 映射为 WAI-ARIA `aria-live`（组件模板绑定 `[attr.aria-live]`）？                            | ✅  |
 | 25.47 | 渲染器是否将 `hidden` 映射为 WAI-ARIA `aria-hidden`（组件模板绑定 `[attr.aria-hidden]`，true/false 动态解析）？ | ✅  |
 | 25.48 | `live`/`hidden` 缺省时是否不产生 ARIA 属性（live 默认 `off`、hidden 默认 false 由浏览器语义兜底）？             | ✅  |
@@ -894,7 +894,7 @@ interface CatalogDefinition {
 | 34.2 | 是否确认了 `actionResponse` 和 `callFunction` 的支持已就绪？                                                                     |     |
 | 34.3 | 是否确认了 `createSurface` 的内联 `components` + `dataModel` 已实现？                                                            |     |
 | 34.4 | 是否确认了 Catalog 的 `$defs` 限制规则已满足？                                                                                   |     |
-| 34.5 | 是否确认了 `version` 字段统一为 `"v1.0"`（而非 `"1.0"` 或 `"v1"`）？                                                             |     |
+| 34.5 | 是否确认了 `version` 字段统一为 `"1.0"`（而非 `"v1.0"` 或 `"v1"`）？                                                             |     |
 | 34.6 | 是否确认了 `functions` 从数组改为对象 Map（keyed by function name）？                                                            |     |
 | 34.7 | 是否确认了 MIME 类型从 `application/json+a2ui` 改为 `application/a2ui+json`？                                                    |     |
 | 34.8 | 是否确认了 Icon 的自定义 SVG 属性名仍为 `svgPath`（未重命名）？                                                                  |     |

@@ -194,7 +194,7 @@ describe('SDK Zod Schema 与官方规范 Schema 一致性对比', () => {
       const surfaceDefaultCatalogId =
         data.createSurface?.catalogId ?? 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
       const msg = {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's', components },
       };
       const result = validator.validateComponentsWithCatalogs(msg as never, [catalog], {
@@ -230,7 +230,7 @@ describe('SDK Zod Schema 与官方规范 Schema 一致性对比', () => {
       const surfaceDefaultCatalogId =
         data.createSurface?.catalogId ?? 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
 
-      const msg = { version: 'v1.0', updateComponents: { surfaceId: 's', components } };
+      const msg = { version: '1.0', updateComponents: { surfaceId: 's', components } };
       const result = validator.validateComponentsWithCatalogs(msg as never, [catalog, fullCatalog], {
         surfaceDefaultCatalogId,
       });

@@ -12,7 +12,7 @@
           parts: []
           metadata:
             a2uiClientCapabilities:
-              v1.0:
+              1.0:
                 supportedCatalogIds: []
                 inlineCatalogs: []
   expect:

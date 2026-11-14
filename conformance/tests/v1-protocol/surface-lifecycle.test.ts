@@ -60,13 +60,13 @@ function validateSurfaceLifecycle(messages: unknown[]): SurfaceLifecycleResult {
 describe('Surface 生命周期校验', () => {
   it('正确序列: createSurface → updateComponents → updateDataModel → deleteSurface', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] },
       },
-      { version: 'v1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
     ];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(true);
@@ -76,7 +76,7 @@ describe('Surface 生命周期校验', () => {
   it('错误: updateComponents 在 createSurface 之前', () => {
     const messages = [
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] },
       },
     ];
@@ -86,7 +86,7 @@ describe('Surface 生命周期校验', () => {
   });
 
   it('错误: updateDataModel 在 createSurface 之前', () => {
-    const messages = [{ version: 'v1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } }];
+    const messages = [{ version: '1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } }];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toContain('createSurface 之前');
@@ -94,8 +94,8 @@ describe('Surface 生命周期校验', () => {
 
   it('错误: 重复 createSurface', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
     ];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(false);
@@ -104,10 +104,10 @@ describe('Surface 生命周期校验', () => {
 
   it('错误: deleteSurface 后 updateComponents', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] },
       },
     ];
@@ -118,9 +118,9 @@ describe('Surface 生命周期校验', () => {
 
   it('错误: deleteSurface 后 updateDataModel', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
-      { version: 'v1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', updateDataModel: { surfaceId: 's1', path: '/x', value: 1 } },
     ];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(false);
@@ -128,7 +128,7 @@ describe('Surface 生命周期校验', () => {
   });
 
   it('错误: deleteSurface 对不存在的 surface', () => {
-    const messages = [{ version: 'v1.0', deleteSurface: { surfaceId: 's1' } }];
+    const messages = [{ version: '1.0', deleteSurface: { surfaceId: 's1' } }];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toContain('不存在');
@@ -136,18 +136,18 @@ describe('Surface 生命周期校验', () => {
 
   it('正确: 多个 surface 并行生命周期', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', createSurface: { surfaceId: 's2', catalogId: 'c1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', createSurface: { surfaceId: 's2', catalogId: 'c1' } },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's1', components: [{ id: 'root' }] },
       },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
       {
-        version: 'v1.0',
+        version: '1.0',
         updateComponents: { surfaceId: 's2', components: [{ id: 'root' }] },
       },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's2' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's2' } },
     ];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(true);
@@ -155,10 +155,10 @@ describe('Surface 生命周期校验', () => {
 
   it('正确: createSurface 后可重新 create（先 delete）', () => {
     const messages = [
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
-      { version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
-      { version: 'v1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
+      { version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } },
+      { version: '1.0', deleteSurface: { surfaceId: 's1' } },
     ];
     const result = validateSurfaceLifecycle(messages);
     expect(result.valid).toBe(true);
@@ -183,7 +183,7 @@ describe('testing_catalog 下的 callRendererFunction 精确验证', () => {
     const validator = new SchemaValidator(undefined, 'testing_catalog.json');
     validator.loadSchemas();
     const data = {
-      version: 'v1.0',
+      version: '1.0',
       callRendererFunction: {
         functionCallId: 'call-1',
         callFunction: {

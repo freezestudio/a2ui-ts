@@ -15,7 +15,7 @@
   steps:
     - input: '<a2ui-json>'
       expect: []
-    - input: '{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
+    - input: '{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
       expect: []
     - input: '{"id":"root","component":"Column","children":["txt"]}'
       expect: []
@@ -31,7 +31,7 @@
   description: 从 root 不可达的孤立组件不下发，但其被引用的 id 以 placeholder 补齐。
   action: process_chunk
   steps:
-    - input: '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
+    - input: '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
       expect: []
     - input: '{"id":"root","component":"Column","children":["a"]}'
       expect: []
@@ -47,7 +47,7 @@
   description: 被引用但尚未开始的组件下发 placeholder（前向引用）。
   action: process_chunk
   steps:
-    - input: '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
+    - input: '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":['
       expect: []
     - input: '{"id":"root","component":"Column","children":["later"]}'
       expect: []
@@ -65,9 +65,9 @@
     闭合后一次性下发（避免按 surface catalog 误校验）。
   action: process_chunk
   steps:
-    - input: '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"basic"}},'
+    - input: '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"basic"}},'
       expect: []
-    - input: '{"version":"v1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Column","children":["m1"]},{"id":"m1","component":"CustomMetric","value":42'
+    - input: '{"version":"1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Column","children":["m1"]},{"id":"m1","component":"CustomMetric","value":42'
       expect:
         - components:
             - { id: root, type: Column }
@@ -84,13 +84,13 @@
   description: updateDataModel 消息下发时携带 dataModelDelta。
   action: process_chunk
   steps:
-    - input: '<a2ui-json>{"version":"v1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":[{"id":"root","component":"Column","children":[]}]}}'
+    - input: '<a2ui-json>{"version":"1.0","createSurface":{"surfaceId":"s1","catalogId":"c1","components":[{"id":"root","component":"Column","children":[]}]}}'
       expect:
         - components:
             - { id: root, type: Column }
     - input: '</a2ui-json>'
       expect: []
-    - input: '<a2ui-json>{"version":"v1.0","updateDataModel":{"surfaceId":"s1","path":"/x","value":1}}'
+    - input: '<a2ui-json>{"version":"1.0","updateDataModel":{"surfaceId":"s1","path":"/x","value":1}}'
       expect:
         - components: []
           dataModelDelta: { path: /x, value: 1 }
@@ -101,14 +101,14 @@
   description: 相同内容重复下发时不重新 yield（组件粒度去重）。
   action: process_chunk
   steps:
-    - input: '<a2ui-json>{"version":"v1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Row","children":["a"]},{"id":"a","component":"Text","text":"x"}]}}'
+    - input: '<a2ui-json>{"version":"1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Row","children":["a"]},{"id":"a","component":"Text","text":"x"}]}}'
       expect:
         - components:
             - { id: root, type: Row }
             - { id: a, type: Text }
     - input: '</a2ui-json>'
       expect: []
-    - input: '<a2ui-json>{"version":"v1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Row","children":["a"]},{"id":"a","component":"Text","text":"x"}]}}'
+    - input: '<a2ui-json>{"version":"1.0","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Row","children":["a"]},{"id":"a","component":"Text","text":"x"}]}}'
       expect: []
     - input: '</a2ui-json>'
       expect: []

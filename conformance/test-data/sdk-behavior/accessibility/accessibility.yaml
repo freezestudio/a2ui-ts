@@ -29,13 +29,13 @@
       - id: btn1
         component: Button
         title: 'Mute'
-        accessibility:
+        '@accessibility':
           label: 'Mute Notifications'
           description: 'Silences notifications about this conversation'
       - id: status_text
         component: Text
         text: 'Status: Active'
-        accessibility:
+        '@accessibility':
           live: 'polite'
   expect_accessibility:
     btn1:
@@ -61,7 +61,7 @@
       - id: alert_box
         component: Text
         text: 'Connection Lost!'
-        accessibility:
+        '@accessibility':
           label: 'Critical Alert'
           live: 'assertive'
   expect_accessibility:
@@ -80,7 +80,7 @@
     components:
       - id: root
         component: Column
-        accessibility:
+        '@accessibility':
           hidden: true
         children: [visible_text, decorative_icon]
       - id: visible_text

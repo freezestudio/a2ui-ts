@@ -82,6 +82,13 @@ function validateCatalogRefTargets(path: string): string[] {
     } else if (ref.startsWith('#/functions/')) {
       const target = ref.slice('#/functions/'.length);
       if (!(target in functions)) errors.push(`未知的本地 $ref 目标: '${ref}'`);
+    } else if (ref.startsWith('#/$defs/')) {
+      const target = ref.slice('#/$defs/'.length);
+      if (target === 'anyComponent' || target === 'anyFunction') {
+        errors.push(`不允许的 $ref 目标: '${ref}'`);
+      } else if (!(target in defs)) {
+        errors.push(`未知的本地 $ref 目标: '${ref}'`);
+      }
     } else if (ref.startsWith('common_types.json#/$defs/')) {
       const target = ref.slice('common_types.json#/$defs/'.length);
       if (!ALLOWED_EXTERNAL_REF_TARGETS.has(target)) {

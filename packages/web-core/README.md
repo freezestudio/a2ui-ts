@@ -16,7 +16,7 @@ npm install @freezestudio/a2ui-web-core
 import { A2uiMessageSchema, validateComponentByType } from '@freezestudio/a2ui-web-core';
 
 // 校验 A2UI 消息信封（createSurface/updateComponents/updateDataModel/...）
-const ok = A2uiMessageSchema.safeParse({ version: 'v1.0', createSurface: { surfaceId: 's1', components: [] } });
+const ok = A2uiMessageSchema.safeParse({ version: '1.0', createSurface: { surfaceId: 's1', components: [] } });
 ```
 
 ## 核心能力

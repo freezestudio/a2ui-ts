@@ -82,7 +82,7 @@ describe('A2UI Part 一致性', () => {
   });
 
   it('SDK: a2uiMessagesToPart 和 partToA2uiMessages 往返', () => {
-    const messages = [{ version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } }];
+    const messages = [{ version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } }];
     const part = a2uiMessagesToPart(messages);
     const recovered = partToA2uiMessages(part);
     expect(recovered).toEqual(messages);
@@ -169,7 +169,7 @@ describe('Capabilities 一致性', () => {
   runA2AIntegrationTests('capabilities', 'capabilities', (tc: A2AIntegrationTestCase) => {
     const caps = tc.args?.capabilities as Record<string, unknown>;
     if (caps) {
-      const v = caps['v1.0'] as Record<string, unknown>;
+      const v = caps['1.0'] as Record<string, unknown>;
       if (v) expect(v).toHaveProperty('supportedCatalogIds');
     }
     return tc.expect;
@@ -177,14 +177,14 @@ describe('Capabilities 一致性', () => {
 
   it('SDK: A2uiClientCapabilitiesSchema 校验有效能力', () => {
     const result = A2uiClientCapabilitiesSchema.safeParse({
-      'v1.0': { supportedCatalogIds: ['catalog-1'] },
+      '1.0': { supportedCatalogIds: ['catalog-1'] },
     });
     expect(result.success).toBe(true);
   });
 
   it('SDK: A2uiServerCapabilitiesSchema 校验有效能力', () => {
     const result = A2uiServerCapabilitiesSchema.safeParse({
-      'v1.0': { supportedCatalogIds: ['catalog-1'], acceptsInlineCatalogs: true },
+      '1.0': { supportedCatalogIds: ['catalog-1'], acceptsInlineCatalogs: true },
     });
     expect(result.success).toBe(true);
   });
@@ -214,7 +214,7 @@ describe('A2A Message Lists 一致性', () => {
 
   it('SDK: A2uiValidator 验证消息列表', () => {
     const validator = new A2uiValidator();
-    const messages = [{ version: 'v1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } }];
+    const messages = [{ version: '1.0', createSurface: { surfaceId: 's1', catalogId: 'c1' } }];
     const result = validator.validateMessageList(messages);
     expect(result.valid).toBe(true);
   });

@@ -3,7 +3,7 @@
   action: validate_data_model
   args:
     data_model:
-      version: 'v1.0'
+      version: '1.0'
       surfaces:
         surface_123: { user: { name: 'Alice' } }
   expect:
@@ -14,7 +14,7 @@
   action: validate_data_model
   args:
     data_model:
-      version: 'v1.0'
+      version: '1.0'
       surfaces:
         s1: { user: { name: 'Test User' } }
   expect:

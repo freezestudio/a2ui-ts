@@ -3,18 +3,22 @@ import { loadTestData } from '../../src/harness/loader';
 import { PACKAGE_ROOT } from '../../src/harness/package-root';
 import { join } from 'node:path';
 
-const ALLOWED = new Set(['surfaceProperties', 'anyComponent', 'anyFunction']);
+const UAX31_IDENTIFIER = /^[\p{XID_Start}_][\p{XID_Continue}]*$/u;
 
+/**
+ * v1.0 (#2724)：`$defs` 除 anyComponent / anyFunction 外允许叶子定义，
+ * 名称必须是 UAX #31 标识符；“不得定义组件”由 catalog_definition schema 用例覆盖。
+ */
 function checkDefs(defs: Record<string, unknown>, name: string): string[] {
   const errs = [];
   for (const k of Object.keys(defs)) {
-    if (!ALLOWED.has(k)) errs.push(name + ': unexpected $defs key: ' + k);
+    if (!UAX31_IDENTIFIER.test(k)) errs.push(name + ': invalid $defs key: ' + k);
   }
   return errs;
 }
 
 describe('Catalog $defs key validation', () => {
-  it('testing_catalog.json $defs has only allowed keys', () => {
+  it('testing_catalog.json $defs 名称符合 UAX #31', () => {
     const c = loadTestData(
       join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'specification', 'v1_0', 'test', 'testing_catalog.json'),
     );
@@ -22,7 +26,7 @@ describe('Catalog $defs key validation', () => {
     expect(checkDefs(defs, 'testing_catalog')).toEqual([]);
   });
 
-  it('basic/catalog.json $defs has only allowed keys', () => {
+  it('basic/catalog.json $defs 名称符合 UAX #31', () => {
     const c = loadTestData(
       join(PACKAGE_ROOT, '..', 'packages', 'sdk', 'resources', 'catalogs', 'basic', 'v1', 'catalog.json'),
     );

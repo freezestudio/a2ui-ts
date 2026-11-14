@@ -69,7 +69,7 @@ function collectChildIds(comp: Record<string, unknown>): string[] {
 
 /**
  * 构建无障碍树：
- * - 每个组件的 accessibility 属性先按 AccessibilityAttributesSchema 校验（v1.0 #2209）
+ * - 每个组件的 @accessibility 属性先按 AccessibilityAttributesSchema 校验（v1.0 #2209）
  * - 显式 label/description 解析动态值；live/hidden 透传
  * - hidden 沿子树递归传播（hidden=true 隐藏自身与全部后代）
  * - 隐式可访问名称推断：Button 的 title → label（无显式 label 时）
@@ -107,7 +107,7 @@ function buildAccessibilityTree(
     const id = compId(comp);
     if (!id) continue;
 
-    const raw = (comp['accessibility'] ?? {}) as Record<string, unknown>;
+    const raw = (comp['@accessibility'] ?? {}) as Record<string, unknown>;
     const parsed = AccessibilityAttributesSchema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(`组件 "${id}" 的 accessibility 属性不符合 v1.0 规范: ${JSON.stringify(parsed.error?.issues)}`);

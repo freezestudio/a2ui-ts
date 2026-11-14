@@ -13,7 +13,7 @@
 ```typescript
 interface CatalogDefinition {
   catalogId: string; // 如 "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json"
-  protocolVersion?: string; // 规范版本（semver 如 "1.0"），缺省默认 "0.9"（上游 2b8f8661）
+  protocolVersion?: string; // 规范版本（wire 为 "1.0"，不带 v 前缀）；缺省视为 1.0
   instructions?: string; // Markdown，LLM 设计指南
   components: Record<string, ComponentSchema>; // Map: 组件类型名 → JSON Schema
   functions: Record<string, FunctionSchema>; // Map: 函数名 → JSON Schema
@@ -27,7 +27,7 @@ interface CatalogDefinition {
 每个组件实例都包含以下通用属性（来自 `ComponentCommon`）：
 
 - `weight?: number` — flex 布局权重
-- `accessibility?: { label?: string; hint?: string }` — 无障碍描述
+- `@accessibility?: { label?: string; description?: string }` — 无障碍描述
 
 ### 通用核查项
 
@@ -95,26 +95,26 @@ interface ButtonProps {
   child: ComponentId; // ★ 按钮内的子组件 ID
   action: Action; // ★ 点击触发的 action（{ event: ActionEvent } 或 { functionCall: FunctionCall }）
   variant?: 'default' | 'primary' | 'borderless'; // 默认 default
-  checks?: CheckRule[]; // 校验条件（来自 Checkable，失败则 disabled）
+  '@checks'?: CheckRule[]; // 校验条件（来自 Checkable，失败则 disabled）
 }
 ```
 
-| #   | 核查项                                                                                                                 | ✓   |
-| --- | ---------------------------------------------------------------------------------------------------------------------- | --- |
-| 2.1 | `child` 是否指向合法的子组件 ID（通常为 Text 或 Icon）？                                                               |     |
-| 2.2 | `action` 是否正确包含 `event.name` 和可选的 `context`？                                                                |     |
-| 2.3 | `checks` 中所有 check 的 `condition` 是否为 `DynamicBoolean`（支持 FunctionCall/DataBinding/boolean 字面量三种形态）？ |     |
-| 2.4 | 任一 check 失败时，Button 是否自动 disabled？                                                                          |     |
-| 2.5 | 点击是否触发了 `ActionEmitter.emit(action)`？                                                                          |     |
-| 2.6 | action 的 `context` 中如有 `path`，是否从最新的 dataModel 快照解析？                                                   |     |
-| 2.7 | `action` 是否使用 `Action` 类型（`{ event: ActionEvent }` 或 `{ functionCall: FunctionCall }` 二选一）？               |     |
-| 2.8 | `data-a2ui-action-type` 是否正确设置为 `"client"` 或 `"server"`？                                                      |     |
+| #   | 核查项                                                                                                                  | ✓   |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | --- |
+| 2.1 | `child` 是否指向合法的子组件 ID（通常为 Text 或 Icon）？                                                                |     |
+| 2.2 | `action` 是否正确包含 `event.name` 和可选的 `context`？                                                                 |     |
+| 2.3 | `@checks` 中所有 check 的 `condition` 是否为 `DynamicBoolean`（支持 FunctionCall/DataBinding/boolean 字面量三种形态）？ |     |
+| 2.4 | 任一 check 失败时，Button 是否自动 disabled？                                                                           |     |
+| 2.5 | 点击是否触发了 `ActionEmitter.emit(action)`？                                                                           |     |
+| 2.6 | action 的 `context` 中如有 `path`，是否从最新的 dataModel 快照解析？                                                    |     |
+| 2.7 | `action` 是否使用 `Action` 类型（`{ event: ActionEvent }` 或 `{ functionCall: FunctionCall }` 二选一）？                |     |
+| 2.8 | `data-a2ui-action-type` 是否正确设置为 `"client"` 或 `"server"`？                                                       |     |
 
 **常见误用**:
 
 - ❌ `action` 中 `context.value` 用了 `{ "path": "/value" }` 但忘记前导 `/`
-- ❌ checks 失败时 Button 仍可点击 — 应在样式 + 事件上都拦截
-- ❌ checks 使用了不存在的函数名 — FunctionRegistry 中查不到
+- ❌ `@checks` 失败时 Button 仍可点击 — 应在样式 + 事件上都拦截
+- ❌ `@checks` 使用了不存在的函数名 — FunctionRegistry 中查不到
 
 ---
 
@@ -125,7 +125,7 @@ interface TextFieldProps {
   label: DynamicString; // ★ 标签文本（支持动态绑定）
   value?: DynamicString; // 双向绑定路径（可选，但实践中几乎总是提供）
   variant?: 'shortText' | 'longText' | 'number' | 'obscured';
-  checks?: CheckRule[]; // 输入校验（来自 Checkable）
+  '@checks'?: CheckRule[]; // 输入校验（来自 Checkable）
   placeholder?: DynamicString; // ★ 占位提示文本（支持动态绑定）
 }
 ```
@@ -134,7 +134,7 @@ interface TextFieldProps {
 | --- | ------------------------------------------------------------------------ | --- |
 | 3.1 | `value` 的 `path` 是否正确绑定到 dataModel？                             |     |
 | 3.2 | 用户输入时，`DynamicBinding.write()` 是否**立即同步**到 DataModelStore？ |     |
-| 3.3 | `checks` 中的 `required`/`email`/`regex` 是否在每次输入时实时校验？      |     |
+| 3.3 | `@checks` 中的 `required`/`email`/`regex` 是否在每次输入时实时校验？     |     |
 | 3.4 | 校验失败时 `DynamicBinding.error` signal 是否更新为错误 message？        |     |
 | 3.5 | 校验失败时，输入框是否显示错误样式 + 错误提示文本？                      |     |
 | 3.6 | `placeholder` 是否在输入框为空时显示占位提示文本？                       |     |
@@ -145,7 +145,7 @@ interface TextFieldProps {
 **常见误用**:
 
 - ❌ `write()` 异步化 — 规范要求同步更新 DataModel
-- ❌ checks 只在 blur 时才校验 — 应实时显示错误
+- ❌ `@checks` 只在 blur 时才校验 — 应实时显示错误
 
 ---
 
@@ -316,7 +316,7 @@ interface SliderProps {
   min?: number; // 默认 0
   max: number; // ★ 必需属性
   steps?: number; // ★ 步长，integer（minimum: 1），非 DynamicNumber
-  checks?: CheckRule[]; // 输入校验（来自 Checkable）
+  '@checks'?: CheckRule[]; // 输入校验（来自 Checkable）
 }
 ```
 
@@ -329,7 +329,7 @@ interface SliderProps {
 | 11.5 | 滑块值变化时是否实时更新 dataModel + 显示当前值？ |     |
 | 11.6 | `min` 未设置时是否默认 0？                        |     |
 | 11.7 | `max` 是否必须设置（无默认值）？                  |     |
-| 11.8 | `checks` 中的校验是否在每次滑动时实时执行？       |     |
+| 11.8 | `@checks` 中的校验是否在每次滑动时实时执行？      |     |
 
 ---
 
@@ -452,7 +452,7 @@ interface SpacerProps {
 ```typescript
 interface DynamicBinding<T = string> {
   readonly value: Signal<T>; // 只读 Signal
-  readonly error: Signal<string | null>; // checks 校验结果
+  readonly error: Signal<string | null>; // `@checks` 校验结果
   write(v: T): void; // 同步回写 DataModelStore
 }
 ```
@@ -466,8 +466,8 @@ interface DynamicBinding<T = string> {
 | D.3 | `value` computed 是否读取 `DataModelStore.data()` Signal 建立依赖？                  |     |
 | D.4 | `write()` 是否内部调用 `DataModelStore.updatePointer(path, value)`（同步）？         |     |
 | D.5 | `error` computed 是否读取 `value` signal 并执行 checks？                             |     |
-| D.6 | checks 是否支持 `required`/`email`/`regex` 等标准函数？                              |     |
-| D.7 | checks 中的 FunctionCall args 是否也支持 Dynamic\*？                                 |     |
+| D.6 | `@checks` 是否支持 `required`/`email`/`regex` 等标准函数？                           |     |
+| D.7 | `@checks` 中的 FunctionCall args 是否也支持 Dynamic\*？                              |     |
 | D.8 | 多个组件绑定同一 path 时，一个 write 是否触发所有 bind 的 value 更新？               |     |
 
 **常见误用**:
@@ -704,7 +704,7 @@ interface CheckRule {
 | 9.1 | CheckRule 是否使用 `condition` 包裹（非直接 `{ call, args, message }`）？ |     |
 | 9.2 | `condition` 是否支持三种形态（FunctionCall / DataBinding / literal）？    |     |
 | 9.3 | `condition` 中是否支持嵌套逻辑（`and`/`or`/`not` 组合）？                 |     |
-| 9.4 | Button 的 checks 全部通过后才可点击（任一 fail → disabled）？             |     |
+| 9.4 | Button 的 `@checks` 全部通过后才可点击（任一 fail → disabled）？          |     |
 
 ---
 
@@ -745,7 +745,7 @@ interface CheckRule {
 | 12.3 | 同一模板的多个实例（实例 0 和实例 1）的 `DynamicBinding` 是否使用不同的 scope（`/items/0` vs `/items/1`）？ |     |
 | 12.4 | `value` computed 是否正确读取 `DataModelStore.data()` 建立依赖？                                            |     |
 | 12.5 | `write()` 是否在 path 不存在时**静默忽略**（非输入组件传入了 DynamicBinding 但无 path）？                   |     |
-| 12.6 | `error` computed 中的 checks 是否正确读取了 `value` signal？                                                |     |
+| 12.6 | `error` computed 中的 `@checks` 是否正确读取了 `value` signal？                                             |     |
 | 12.7 | `ngComponentOutletInputs` 是否包含了 `dataModel` 和 `scope`（供子组件创建嵌套 DynamicBinding）？            |     |
 
 ---
@@ -767,17 +767,17 @@ interface CheckRule {
 | 13.2.1 | `variant: 'primary'` 是否高亮（主操作）？                                |     |
 | 13.2.2 | `variant: 'borderless'` 是否为无边框的文字按钮？                         |     |
 | 13.2.3 | `action` 中的 `context` 是否所有值都从**最新** dataModel snapshot 解析？ |     |
-| 13.2.4 | `checks` 全部失败时，样式是否灰化 + 点击事件不触发？                     |     |
+| 13.2.4 | `@checks` 全部失败时，样式是否灰化 + 点击事件不触发？                    |     |
 
 ### 13.3 TextField 特殊属性
 
-| #      | 核查项                                                                         | ✓   |
-| ------ | ------------------------------------------------------------------------------ | --- |
-| 13.3.1 | `variant: 'number'` 时 `<input type="number">`？                               |     |
-| 13.3.2 | `variant: 'obscured'` 时 `<input type="password">`？                           |     |
-| 13.3.3 | `variant: 'longText'` 时 `<textarea>`？                                        |     |
-| 13.3.4 | checks 校验在每次 `input` 事件时实时执行（非 blur）？                          |     |
-| 13.3.5 | 校验失败时 `DynamicBinding.error` 是否被下游 Button 的 `checks` 读取并禁用它？ |     |
+| #      | 核查项                                                                          | ✓   |
+| ------ | ------------------------------------------------------------------------------- | --- |
+| 13.3.1 | `variant: 'number'` 时 `<input type="number">`？                                |     |
+| 13.3.2 | `variant: 'obscured'` 时 `<input type="password">`？                            |     |
+| 13.3.3 | `variant: 'longText'` 时 `<textarea>`？                                         |     |
+| 13.3.4 | `@checks` 校验在每次 `input` 事件时实时执行（非 blur）？                        |     |
+| 13.3.5 | 校验失败时 `DynamicBinding.error` 是否被下游 Button 的 `@checks` 读取并禁用它？ |     |
 
 ### 13.4 Row/Column 布局属性
 

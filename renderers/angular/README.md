@@ -36,7 +36,7 @@ export class DemoComponent {
     this.registry.register(BASIC_CATALOG_ID, getBasicComponentRegistrations());
     this.renderer.processMessages([
       {
-        version: 'v1.0',
+        version: '1.0',
         createSurface: {
           surfaceId: 'demo',
           catalogId: BASIC_CATALOG_ID,

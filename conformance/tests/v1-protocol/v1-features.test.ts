@@ -44,13 +44,13 @@ describe('官方规范 v1.0 renderer_to_agent 一致性（run_tests.py 同源）
   it('SDK 类型守卫: isCallAgentFunctionMessage', () => {
     expect(
       isCallRendererFunctionMessage({
-        version: 'v1.0',
+        version: '1.0',
         createSurface: { surfaceId: 's1', catalogId: 'c1' },
       }),
     ).toBe(false);
 
     const agentFn = A2uiClientMessageSchema.safeParse({
-      version: 'v1.0',
+      version: '1.0',
       callAgentFunction: { surfaceId: 's1', functionCallId: 'c1', callFunction: { '@call': 'fn' } },
     });
     expect(agentFn.success).toBe(true);
@@ -64,7 +64,7 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
   it('SDK 类型守卫: isCallRendererFunctionMessage', () => {
     expect(
       isCallRendererFunctionMessage({
-        version: 'v1.0',
+        version: '1.0',
         callRendererFunction: {
           functionCallId: 'call-1',
           callFunction: {
@@ -78,7 +78,7 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
 
     expect(
       isCallRendererFunctionMessage({
-        version: 'v1.0',
+        version: '1.0',
         createSurface: { surfaceId: 's1', catalogId: 'c1' },
       }),
     ).toBe(false);
@@ -87,14 +87,14 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
   it('SDK 类型守卫: isAgentFunctionResponseMessage', () => {
     expect(
       isAgentFunctionResponseMessage({
-        version: 'v1.0',
+        version: '1.0',
         agentFunctionResponse: { functionCallId: 'call-1', value: 'ok' },
       }),
     ).toBe(true);
 
     expect(
       isAgentFunctionResponseMessage({
-        version: 'v1.0',
+        version: '1.0',
         createSurface: { surfaceId: 's1', catalogId: 'c1' },
       }),
     ).toBe(false);
@@ -102,7 +102,7 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
 
   it('SDK: createSurface 支持内联 components', () => {
     const data = {
-      version: 'v1.0',
+      version: '1.0',
       createSurface: {
         surfaceId: 's1',
         catalogId: 'c1',
@@ -118,7 +118,7 @@ describe('官方规范 v1.0 agent_to_renderer 一致性（run_tests.py 同源）
 
   it('SDK: createSurface 支持内联 dataModel', () => {
     const data = {
-      version: 'v1.0',
+      version: '1.0',
       createSurface: {
         surfaceId: 's1',
         catalogId: 'c1',

@@ -1,7 +1,7 @@
 # A2UI 协议版本化策略
 
 > 对齐官方 authority rule（见官方仓库 `~/github/ai-tools/a2ui/AGENTS.md`）：
-> 官方当前主协议版本 v0.9.1，v1.0 为候选；**本实现以 v1.0 为主版本**（TS 参考实现）。
+> 官方 v1.0 已稳定（wire 版本号 `1.0`），v0.9.1 为上一版本；**本实现以 v1.0 为主版本**（TS 参考实现）。
 
 ## 版本模型
 
@@ -29,12 +29,16 @@
 | 破坏性变更（字段语义改变、移除能力）    | **新协议版本目录**（如 v2_0），旧版本目录保留；SDK 按版本分目录实现 |
 | 官方规范更新                            | rsync 同步副本 → 更新 zod schema → conformance 全绿 → 发布          |
 
+> **v1.0 稳定化例外**：上游在 v1.0 从候选转为稳定时，于同一 `v1_0` 目录内完成了
+> wire 破坏性变更（`v1.0` → `1.0`、组件信封键 `@` 前缀、Catalog 叶子 `$defs`）。
+> 本仓库跟随上游同步这些变更（包版本 major），不新开协议版本目录。
+
 ## 变更流程（协议语义变更）
 
 1. 同步官方规范副本（见 AGENTS.md「规范副本同步」）
 2. 在 web-core/sdk 更新对应 zod schema 与校验器
-3. `pnpm --filter @freezestudio/a2ui-conformance test` 全绿（670 基线）
-4. `pnpm -r test`（1434 基线）+ `pnpm check` 全绿
+3. `pnpm --filter @freezestudio/a2ui-conformance test` 全绿（714 基线）
+4. `pnpm -r test`（1607 基线）+ `pnpm check` 全绿
 5. 版本推进：按规则决定协议版本/包版本
 6. 发布（见 AGENTS.md「发布流程」）
 7. **验证 geo-scout 消费侧**：server 150 / web 144 测试 + 联调冒烟

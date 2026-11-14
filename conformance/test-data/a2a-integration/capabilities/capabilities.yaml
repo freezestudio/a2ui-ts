@@ -4,7 +4,7 @@
   args:
     type: client
     capabilities:
-      v1.0:
+      1.0:
         supportedCatalogIds: ['catalog-1']
         inlineCatalogs: []
   expect:
@@ -16,7 +16,7 @@
   args:
     type: server
     capabilities:
-      v1.0:
+      1.0:
         supportedCatalogIds: ['catalog-1']
         acceptsInlineCatalogs: true
   expect:
@@ -28,7 +28,7 @@
   args:
     type: client
     capabilities:
-      v1.0:
+      1.0:
         supportedCatalogIds: []
         inlineCatalogs: []
   expect:
